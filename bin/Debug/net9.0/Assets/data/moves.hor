@@ -1,0 +1,70 @@
+﻿let moves = {
+    standing: {
+        binding: "none",
+        direction: "any",
+        stance: "standing",
+        damage: 0,
+        interruptible: true,
+        
+        animation: { 
+            name: "idle",
+            hit: 0,
+            duration: 0
+        }
+    },
+    jump: {
+        binding: "dpadup",
+        direction: "any",
+        stance: "standing | crouching",
+        damage: 0,
+        interruptible: true,
+        callback: func() {
+            playerJump();
+        },
+        
+        animation: { 
+            name: "idle",
+            hit: 0,
+            duration: 0
+        }
+    },
+    walking: {
+        binding: "dpadup | dpaddown | dpadleft | dpadright",
+        direction: "any",
+        stance: "standing",
+        damage: 0,
+        interruptible: true,
+        
+        animation: { 
+            name: "walk",
+            hit: 0,
+            duration: 0
+        }
+    },
+	leftkick: {
+        binding: "A",
+        direction: "any",
+        stance: "standing | crouching",
+        damage: 10,
+        interruptible: false,
+        
+        animation: { 
+            name: "kick",
+            hit: 7,
+            duration: 9
+        }
+    },
+    rightkick: {
+        binding: "B",
+        direction: "any",
+        stance: "standing | crouching",
+        damage: 10,
+        interruptible: false,
+        
+        animation: { 
+            name: "kick",
+            hit: 7,
+            duration: 9
+        }
+    }
+}

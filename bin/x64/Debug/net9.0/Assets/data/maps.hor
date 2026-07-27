@@ -1,0 +1,14 @@
+﻿let maps = {
+	dungeon: {
+        pretty_name: "The Dungeon",
+        file_name: "dungeon.tmx",
+        description: "plenty weird stains on the walls.. hmmm... uuhhggg.. mmmhhh.....",
+        spawn_pos: { x: 20, y: -24 }
+    },
+    japan: {
+        pretty_name: "Japan",
+        file_name: "japan.tmx",
+        description: "no waifus to see here..",
+        spawn_pos: { x: 30, y: -12 }
+    }
+};
