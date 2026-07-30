@@ -151,6 +151,9 @@ internal class PlayerMoveManager : IGameComponent
 
         if (_state.CurrentStatus != PlayerStatusType.Normal) return;
 
+        if (GameEngine.Instance.InputManager.KeyboardManager.IsKeyPressed(Silk.NET.Input.Key.R))
+            _moveList.Reload();
+
         var movementDir = _input.GetMovementInput();
         if (movementDir.X != 0)
         {

@@ -396,3 +396,5 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+/bin/x64/Debug/net10.0/debug.log
+/obj/x64/Debug/net10.0/apphost.exe

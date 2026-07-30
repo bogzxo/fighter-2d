@@ -5,10 +5,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using Horizon.Engine;
 using Horizon.HIDL;
 using Horizon.HIDL.Runtime;
 
 using Silk.NET.Input;
+
 
 internal class MoveList
 {
@@ -19,14 +21,32 @@ internal class MoveList
 
     public FightingMove Idle { get; private set; }
 
+    private readonly string _filePath = string.Empty;
+
     public MoveList(in string file = "Assets/data/moves.hor")
     {
+        _filePath = file;
         HIDLRuntime runtime = new();
         runtime.GlobalScope.DeclareSystem("playerJump", new NativeFunctionValue());
 
         if (!File.Exists(file)) throw new FileNotFoundException($"Move list file not found: {file}");
 
         var (success, _) = runtime.Evaluate(File.ReadAllText(file));
+        if (!success) throw new Exception("Failed to evaluate move list script.");
+
+        ObjectValue movesValue = (ObjectValue)runtime.UserScope.Lookup("moves");
+        ParseMoves(movesValue);
+    }
+
+    public void Reload()
+    {
+        MovesLookup.Clear();
+        Moves.Clear();
+
+        HIDLRuntime runtime = new();
+        runtime.GlobalScope.DeclareSystem("playerJump", new NativeFunctionValue());
+
+        var (success, _) = runtime.Evaluate(File.ReadAllText(_filePath));
         if (!success) throw new Exception("Failed to evaluate move list script.");
 
         ObjectValue movesValue = (ObjectValue)runtime.UserScope.Lookup("moves");
