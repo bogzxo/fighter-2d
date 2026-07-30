@@ -36,11 +36,13 @@ internal class MainMenuScene : Scene
 
         if (Engine.ObjectManager.Textures.TryCreateOrGet("main_logo", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/ui/logo.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_logo))
         {
-            const uint logoScalar = 2;
+            const uint logoScalar = 4;
 
             logo = spriteBatch.AddEntity(new UIRectangle(new System.Numerics.Vector2(result_logo.Asset.Width * logoScalar, result_logo.Asset.Height * logoScalar)));
-            logo.Transform.SetPositionRelativeToOrigin(new System.Numerics.Vector2(-Engine.WindowManager.WindowSize.X / 2, Engine.WindowManager.WindowSize.Y/2));
-            logo.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_logo.Asset, new System.Numerics.Vector2(128,48)), "logo");
+
+            //logo.Transform.SetPositionRelativeToOrigin(new System.Numerics.Vector2(0));
+            logo.Transform.Position = new Vector2(0, 265);
+            logo.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_logo.Asset, new System.Numerics.Vector2(result_logo.Asset.Width, result_logo.Asset.Height)), "logo");
 
             spriteBatch.Add(logo);
         }
@@ -90,11 +92,5 @@ internal class MainMenuScene : Scene
         {
             Engine.SetScene(new MapSelectionScene());
         }
-    }
-    protected override void DisposeOther()
-    {
-        base.DisposeOther();
-
-        Engine.ObjectManager.Textures.Remove("main_logo");
     }
 }

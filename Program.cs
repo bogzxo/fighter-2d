@@ -79,8 +79,7 @@ internal class Program : Scene
 
         AddEntity(map);
         
-        map.ParallaxIndex = 1;
-        
+        map.ParallaxIndex = 2;
         map.ClippingOffset = 0.1f;
 
         for (int x = 0; x < map.Width * TileMapChunk.WIDTH; x++)
