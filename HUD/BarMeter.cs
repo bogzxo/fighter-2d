@@ -8,7 +8,7 @@ using Horizon.Core;
 using Horizon.Engine;
 using Horizon.Rendering.Spriting;
 
-namespace CumInstinctDuel.HUD;
+namespace Fighter2D.HUD;
 
 internal class BarMeter : GameObject
 {

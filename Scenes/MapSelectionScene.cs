@@ -8,7 +8,7 @@ using Horizon.Rendering.Text;
 
 using Silk.NET.Input;
 
-namespace CumInstinctDuel.Scenes;
+namespace Fighter2D.Scenes;
 
 internal class MapSelectionScene : Scene
 {

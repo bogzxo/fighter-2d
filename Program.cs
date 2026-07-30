@@ -1,4 +1,4 @@
-﻿global using static Horizon.Rendering.Tiling<CumInstinctDuel.Map.MapTileTexID>;
+﻿global using static Horizon.Rendering.Tiling<Fighter2D.Map.MapTileTexID>;
 
 using System.Numerics;
 
@@ -6,8 +6,8 @@ using Box2D.NetStandard.Common;
 using Box2D.NetStandard.Dynamics.World;
 using Box2D.NetStandard.Dynamics.World.Callbacks;
 
-using CumInstinctDuel.Player;
-using CumInstinctDuel.Scenes;
+using Fighter2D.Player;
+using Fighter2D.Scenes;
 
 using Horizon.Core;
 using Horizon.Core.Components;
@@ -18,8 +18,7 @@ using Horizon.Rendering;
 using Horizon.Rendering.Spriting;
 using Horizon.Rendering.UI;
 
-namespace CumInstinctDuel;
-
+namespace Fighter2D;
 
 internal class Program : Scene
 {
@@ -136,7 +135,7 @@ internal class Program : Scene
             InitialScene = typeof(MainMenuScene),
             WindowConfiguration = WindowManagerConfiguration.Default1600x900 with
             {
-                WindowTitle = "Cum Instinct: Duel",
+                WindowTitle = Constants.WINDOW_TITLE,
             }
         });
 

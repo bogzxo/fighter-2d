@@ -5,7 +5,7 @@ using Bogz.Logging.Loggers;
 using Horizon.HIDL;
 using Horizon.HIDL.Runtime;
 
-namespace CumInstinctDuel;
+namespace Fighter2D;
 
 internal static class MapLoader
 {

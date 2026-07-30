@@ -7,7 +7,7 @@ using Horizon.Input.Components;
 
 using Silk.NET.Input;
 
-namespace CumInstinctDuel.Player;
+namespace Fighter2D.Player;
 
 internal class PlayerInputTracker
 {

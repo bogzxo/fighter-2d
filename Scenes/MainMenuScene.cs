@@ -14,7 +14,7 @@ using Horizon.Rendering.UI;
 
 using ImGuiNET;
 
-namespace CumInstinctDuel.Scenes;
+namespace Fighter2D.Scenes;
 
 internal class MainMenuScene : Scene
 {
@@ -72,7 +72,7 @@ internal class MainMenuScene : Scene
 
         glyphRenderer.AddLabel("version", new TextLabel
         {
-            Text = "v.preCUM",
+            Text = Constants.VERSION_LABEL,
             Origin = Origin.TopRight,
             Transform = {
                 Position = new Vector2(Engine.WindowManager.WindowSize.X / 2, -Engine.WindowManager.WindowSize.Y / 2)

@@ -1,4 +1,4 @@
-﻿namespace CumInstinctDuel.Logic;
+﻿namespace Fighter2D.Logic;
 
 using System;
 using System.Collections.Generic;

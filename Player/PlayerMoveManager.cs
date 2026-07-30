@@ -4,7 +4,7 @@ using System.Numerics;
 
 using Bogz.Logging.Loggers;
 
-using CumInstinctDuel.Logic;
+using Fighter2D.Logic;
 
 using Horizon.Core;
 using Horizon.Core.Components;
@@ -14,7 +14,7 @@ using Horizon.Rendering.Particles;
 
 using ImGuiNET;
 
-namespace CumInstinctDuel.Player;
+namespace Fighter2D.Player;
 
 internal class PlayerMoveManager : IGameComponent
 {

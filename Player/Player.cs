@@ -11,7 +11,7 @@ using Horizon.GameEntity.Components.Physics2D;
 using Horizon.Rendering.Particles;
 using Horizon.Rendering.Spriting;
 
-namespace CumInstinctDuel.Player;
+namespace Fighter2D.Player;
 
 internal class Player : Sprite
 {

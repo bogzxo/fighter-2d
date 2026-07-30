@@ -1,6 +1,6 @@
-﻿using CumInstinctDuel.Logic;
+﻿using Fighter2D.Logic;
 
-namespace CumInstinctDuel.Player;
+namespace Fighter2D.Player;
 
 /// <summary>
 /// Handles Physics groundedness, Stance calculation, and Status Effect locks.
