@@ -11,18 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\source\repos\bogzxo\horizon\Bogz.Logging\Bogz.Logging.csproj" />
-    <ProjectReference Include="..\..\..\source\repos\bogzxo\horizon\Horizon.Content\Horizon.Content.csproj" />
-    <ProjectReference Include="..\..\..\source\repos\bogzxo\horizon\Horizon.Core\Horizon.Core.csproj" />
-    <ProjectReference Include="..\..\..\source\repos\bogzxo\horizon\Horizon.Engine\Horizon.Engine.csproj" />
-    <ProjectReference Include="..\..\..\source\repos\bogzxo\horizon\Horizon.Horlang\Horizon.HIDL.csproj" />
-    <ProjectReference Include="..\..\..\source\repos\bogzxo\horizon\Horizon.Input\Horizon.Input.csproj" />
-    <ProjectReference Include="..\..\..\source\repos\bogzxo\horizon\Horizon.OpenGL\Horizon.OpenGL.csproj" />
-    <ProjectReference Include="..\..\..\source\repos\bogzxo\horizon\Horizon.Rendering\Horizon.Rendering.csproj" />
-    <ProjectReference Include="..\..\..\source\repos\bogzxo\horizon\Horizon.Webhost\Horizon.Webhost.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="Assets\backgrounds\menu.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -125,6 +113,18 @@
 
   <ItemGroup>
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\horizon\Bogz.Logging\Bogz.Logging.csproj" />
+    <ProjectReference Include="..\horizon\Horizon.Content\Horizon.Content.csproj" />
+    <ProjectReference Include="..\horizon\Horizon.Core\Horizon.Core.csproj" />
+    <ProjectReference Include="..\horizon\Horizon.Engine\Horizon.Engine.csproj" />
+    <ProjectReference Include="..\horizon\Horizon.Horlang\Horizon.HIDL.csproj" />
+    <ProjectReference Include="..\horizon\Horizon.Input\Horizon.Input.csproj" />
+    <ProjectReference Include="..\horizon\Horizon.OpenGL\Horizon.OpenGL.csproj" />
+    <ProjectReference Include="..\horizon\Horizon.Rendering\Horizon.Rendering.csproj" />
+    <ProjectReference Include="..\horizon\Horizon.Webhost\Horizon.Webhost.csproj" />
   </ItemGroup>
 
 </Project>

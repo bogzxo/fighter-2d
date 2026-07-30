@@ -1716,48 +1716,48 @@
     },
     "Bogz.Logging/1.0.0": {
       "type": "project",
-      "path": "../../../source/repos/bogzxo/horizon/Bogz.Logging/Bogz.Logging.csproj",
-      "msbuildProject": "../../../source/repos/bogzxo/horizon/Bogz.Logging/Bogz.Logging.csproj"
+      "path": "../horizon/Bogz.Logging/Bogz.Logging.csproj",
+      "msbuildProject": "../horizon/Bogz.Logging/Bogz.Logging.csproj"
     },
     "Horizon.Content/1.0.0": {
       "type": "project",
-      "path": "../../../source/repos/bogzxo/horizon/Horizon.Content/Horizon.Content.csproj",
-      "msbuildProject": "../../../source/repos/bogzxo/horizon/Horizon.Content/Horizon.Content.csproj"
+      "path": "../horizon/Horizon.Content/Horizon.Content.csproj",
+      "msbuildProject": "../horizon/Horizon.Content/Horizon.Content.csproj"
     },
     "Horizon.Core/1.0.0": {
       "type": "project",
-      "path": "../../../source/repos/bogzxo/horizon/Horizon.Core/Horizon.Core.csproj",
-      "msbuildProject": "../../../source/repos/bogzxo/horizon/Horizon.Core/Horizon.Core.csproj"
+      "path": "../horizon/Horizon.Core/Horizon.Core.csproj",
+      "msbuildProject": "../horizon/Horizon.Core/Horizon.Core.csproj"
     },
     "Horizon.Engine/1.0.0": {
       "type": "project",
-      "path": "../../../source/repos/bogzxo/horizon/Horizon.Engine/Horizon.Engine.csproj",
-      "msbuildProject": "../../../source/repos/bogzxo/horizon/Horizon.Engine/Horizon.Engine.csproj"
+      "path": "../horizon/Horizon.Engine/Horizon.Engine.csproj",
+      "msbuildProject": "../horizon/Horizon.Engine/Horizon.Engine.csproj"
     },
     "Horizon.HIDL/1.0.0": {
       "type": "project",
-      "path": "../../../source/repos/bogzxo/horizon/Horizon.Horlang/Horizon.HIDL.csproj",
-      "msbuildProject": "../../../source/repos/bogzxo/horizon/Horizon.Horlang/Horizon.HIDL.csproj"
+      "path": "../horizon/Horizon.Horlang/Horizon.HIDL.csproj",
+      "msbuildProject": "../horizon/Horizon.Horlang/Horizon.HIDL.csproj"
     },
     "Horizon.Input/1.0.0": {
       "type": "project",
-      "path": "../../../source/repos/bogzxo/horizon/Horizon.Input/Horizon.Input.csproj",
-      "msbuildProject": "../../../source/repos/bogzxo/horizon/Horizon.Input/Horizon.Input.csproj"
+      "path": "../horizon/Horizon.Input/Horizon.Input.csproj",
+      "msbuildProject": "../horizon/Horizon.Input/Horizon.Input.csproj"
     },
     "Horizon.OpenGL/1.0.0": {
       "type": "project",
-      "path": "../../../source/repos/bogzxo/horizon/Horizon.OpenGL/Horizon.OpenGL.csproj",
-      "msbuildProject": "../../../source/repos/bogzxo/horizon/Horizon.OpenGL/Horizon.OpenGL.csproj"
+      "path": "../horizon/Horizon.OpenGL/Horizon.OpenGL.csproj",
+      "msbuildProject": "../horizon/Horizon.OpenGL/Horizon.OpenGL.csproj"
     },
     "Horizon.Rendering/1.0.0": {
       "type": "project",
-      "path": "../../../source/repos/bogzxo/horizon/Horizon.Rendering/Horizon.Rendering.csproj",
-      "msbuildProject": "../../../source/repos/bogzxo/horizon/Horizon.Rendering/Horizon.Rendering.csproj"
+      "path": "../horizon/Horizon.Rendering/Horizon.Rendering.csproj",
+      "msbuildProject": "../horizon/Horizon.Rendering/Horizon.Rendering.csproj"
     },
     "Horizon.Webhost/1.0.0": {
       "type": "project",
-      "path": "../../../source/repos/bogzxo/horizon/Horizon.Webhost/Horizon.Webhost.csproj",
-      "msbuildProject": "../../../source/repos/bogzxo/horizon/Horizon.Webhost/Horizon.Webhost.csproj"
+      "path": "../horizon/Horizon.Webhost/Horizon.Webhost.csproj",
+      "msbuildProject": "../horizon/Horizon.Webhost/Horizon.Webhost.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -1783,11 +1783,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\bogda\\Documents\\CumInstinctDuel\\CumInstinctDuel\\Fighter2D.csproj",
+      "projectUniqueName": "C:\\Users\\bogda\\source\\repos\\bogzxo\\Fighter2D\\Fighter2D.csproj",
       "projectName": "Fighter2D",
-      "projectPath": "C:\\Users\\bogda\\Documents\\CumInstinctDuel\\CumInstinctDuel\\Fighter2D.csproj",
+      "projectPath": "C:\\Users\\bogda\\source\\repos\\bogzxo\\Fighter2D\\Fighter2D.csproj",
       "packagesPath": "C:\\Users\\bogda\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\bogda\\Documents\\CumInstinctDuel\\CumInstinctDuel\\obj\\",
+      "outputPath": "C:\\Users\\bogda\\source\\repos\\bogzxo\\Fighter2D\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "BlXU35HFXpE=",
+  "dgSpecHash": "qibkZNtfiE8=",
   "success": true,
-  "projectFilePath": "C:\\Users\\bogda\\Documents\\CumInstinctDuel\\CumInstinctDuel\\Fighter2D.csproj",
+  "projectFilePath": "C:\\Users\\bogda\\source\\repos\\bogzxo\\Fighter2D\\Fighter2D.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\bogda\\.nuget\\packages\\box2d.netstandard\\2.4.7-alpha\\box2d.netstandard.2.4.7-alpha.nupkg.sha512",
     "C:\\Users\\bogda\\.nuget\\packages\\device.net\\4.2.1\\device.net.4.2.1.nupkg.sha512",
