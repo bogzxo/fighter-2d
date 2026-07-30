@@ -14,7 +14,8 @@
         damage: 0,
         interruptible: true,
         animation: { name: "jump", hit: 0 },
-        callback: func() { player.jump() }
+        callback: func() { player.jump() },
+        loopable: true
     },
     
     /* --- BASIC ATTACKS --- */
@@ -49,7 +50,7 @@
         direction: "any",
         stance: "standing",
         damage: 0,
-        interruptible: false,
+        interruptible: true,
         animation: { name: "roll", hit: 0 },
         callback: func() { player.dash() }
     },
