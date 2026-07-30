@@ -406,9 +406,6 @@
         }
       },
       "Horizon.HIDL/1.0.0": {
-        "dependencies": {
-          "Bogz.Logging": "1.0.0"
-        },
         "runtime": {
           "Horizon.HIDL.dll": {
             "assemblyVersion": "1.0.0.0",

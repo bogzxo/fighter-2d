@@ -23,10 +23,25 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Assets\backgrounds\menu.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Assets\data\moves.hor">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\data\maps.hor">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\fonts\Born2bSporty\Born2bSporty.fnt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\fonts\Born2bSporty\Born2bSporty.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\fonts\FIGHTERFISH\FIGHTERFISH.fnt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\fonts\FIGHTERFISH\FIGHTERFISH.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\maps\dungeon.tmx">
@@ -89,6 +104,9 @@
     <None Update="Assets\sprites\player\spritesheet.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Assets\sprites\player\_spritesheet.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Assets\ui\bar.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -101,6 +119,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Assets\fonts\" />
     <Folder Include="Assets\sprites\bar\" />
   </ItemGroup>
 

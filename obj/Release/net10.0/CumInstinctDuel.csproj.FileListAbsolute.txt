@@ -122,3 +122,4 @@ C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\Release\net10.0\ref
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\Release\net10.0\CumInstinctDuel.pdb
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\Release\net10.0\CumInstinctDuel.genruntimeconfig.cache
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\Release\net10.0\ref\CumInstinctDuel.dll
+C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\Release\net10.0\CumInstinctDuel.sourcelink.json

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CumInstinctDuel")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8db9a3816becb5652d2e6c439cf56247eb7c72b4")]
 [assembly: System.Reflection.AssemblyProductAttribute("CumInstinctDuel")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CumInstinctDuel")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,72 +1,115 @@
 ﻿let moves = {
-    standing: {
+    idle: {
         binding: "none",
         direction: "any",
         stance: "standing",
         damage: 0,
         interruptible: true,
-        
-        animation: { 
-            name: "idle",
-            hit: 0,
-            duration: 0
-        }
+        animation: { name: "idle", hit: 0 }
     },
     jump: {
         binding: "dpadup",
         direction: "any",
-        stance: "standing | crouching",
+        stance: "standing",
         damage: 0,
         interruptible: true,
-        callback: func() {
-            player.jump();
-        },
+        animation: { name: "jump", hit: 0 },
+        callback: func() { player.jump() }
+    },
+    
+    /* --- BASIC ATTACKS --- */
+    kick: {
+        binding: "A | B",
+        direction: "any",
+        stance: "standing | crouching",
+        damage: 10,
+        interruptible: false,
+        animation: { name: "kick", hit: 7 },
         
-        animation: { 
-            name: "idle",
-            hit: 0,
-            duration: 0
+        // Explicitly reroute the input to another move if you press it in these stances!
+        stance_reroutes: {
+            jumping: "jumpkick",
+            falling: "jumpkick"
         }
     },
-    walking: {
+
+    jumpkick: {
+        binding: "none",
+        direction: "any",
+        stance: "jumping | falling",
+        damage: 15,
+        interruptible: false,
+        animation: { name: "jump_kick", hit: 5 }
+    },
+
+    /* --- EVASION --- */
+    dodge_roll: {
+        binding: "dpadleft | dpadright",
+        double_tap: true,
+        direction: "any",
+        stance: "standing",
+        damage: 0,
+        interruptible: false,
+        animation: { name: "roll", hit: 0 },
+        callback: func() { player.dash() }
+    },
+    
+    /* --- HEAVY LANDING --- */
+    heavy_land: {
+        binding: "none",
+        direction: "any",
+        stance: "standing", 
+        damage: 0,
+        interruptible: false,
+        animation: { name: "hard_landing", hit: 0 }
+    },
+    
+    /* --- CROUSH STATE MACHINE --- */
+    crouch_start: {
+        binding: "dpaddown",
+        direction: "any",
+        stance: "crouching",
+        damage: 0,
+        interruptible: true,
+        next_move: "crouch",
+        animation: { name: "crouch_start", hit: 0 }
+    },
+    crouch: {
+        binding: "dpaddown",
+        direction: "any",
+        stance: "standing",
+        damage: 0,
+        interruptible: true,
+        loopable: true,
+        animation: { name: "crouch_loop", hit: 0 }
+    },
+
+    /* --- RUNNING STATE MACHINE --- */
+    run_start: {
         binding: "dpadleft | dpadright",
         direction: "any",
         stance: "standing",
         damage: 0,
         interruptible: true,
-        loopable: true
-        
-        animation: { 
-            name: "walk",
-            hit: 0,
-            duration: 0
-        }
+        next_move: "running",
+        animation: { name: "run_loop", hit: 0 }
     },
-	leftkick: {
-        binding: "A",
+    running: {
+        binding: "dpadleft | dpadright",
         direction: "any",
-        stance: "standing | crouching",
-        damage: 10,
-        interruptible: false,
+        stance: "standing",
+        damage: 0,
+        interruptible: true,
         loopable: true,
-        
-        animation: { 
-            name: "kick",
-            hit: 7,
-            duration: 9
-        }
+        release_move: "run_stop", 
+        animation: { name: "run_loop", hit: 0 }
     },
-    rightkick: {
-        binding: "B",
+    run_stop: {
+        binding: "none",
         direction: "any",
-        stance: "standing | crouching",
-        damage: 10,
+        stance: "standing",
+        damage: 0,
         interruptible: false,
-        
-        animation: { 
-            name: "kick",
-            hit: 7,
-            duration: 9
-        }
+        animation: { name: "run_stop", hit: 0 }
     }
 }

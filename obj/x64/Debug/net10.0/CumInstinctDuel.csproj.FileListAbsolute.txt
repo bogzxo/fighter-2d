@@ -3,7 +3,11 @@ C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\x64\Debug\net10.0\C
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\x64\Debug\net10.0\CumInstinctDuel.AssemblyInfoInputs.cache
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\x64\Debug\net10.0\CumInstinctDuel.AssemblyInfo.cs
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\x64\Debug\net10.0\CumInstinctDuel.csproj.CoreCompileInputs.cache
+C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\x64\Debug\net10.0\CumInstinctDuel.sourcelink.json
+C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Horizon.HIDL.deps.json
+C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Horizon.HIDL.runtimeconfig.json
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\test.hor
+C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Horizon.HIDL.exe
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\web_host\dashboard\dash.html
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\web_host\dashboard\icon.png
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\web_host\dashboard\index.html
@@ -43,6 +47,8 @@ C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\s
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\shaders\tilemap\tilemap.vert
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\data\maps.hor
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\data\moves.hor
+C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\fonts\FIGHTERFISH\FIGHTERFISH.fnt
+C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\fonts\FIGHTERFISH\FIGHTERFISH.png
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\maps\dungeon.tmx
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\maps\japan.tmx
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\maps\tilesets\Background.tsx
@@ -56,6 +62,7 @@ C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\A
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\player.png
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\sprites\player\definition.hor
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\sprites\player\spritesheet.png
+C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\sprites\player\_spritesheet.png
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\ui\bar.png
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\ui\edge_button.png
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\ui\logo.png
@@ -129,3 +136,6 @@ C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\x64\Debug\net10.0\r
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\x64\Debug\net10.0\CumInstinctDuel.pdb
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\x64\Debug\net10.0\CumInstinctDuel.genruntimeconfig.cache
 C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\obj\x64\Debug\net10.0\ref\CumInstinctDuel.dll
+C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\fonts\Born2bSporty\Born2bSporty.fnt
+C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\fonts\Born2bSporty\Born2bSporty.png
+C:\Users\bogda\Documents\CumInstinctDuel\CumInstinctDuel\bin\x64\Debug\net10.0\Assets\backgrounds\menu.png

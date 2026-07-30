@@ -1,85 +1,60 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Collections.Generic;
+
+using Bogz.Logging.Loggers;
 
 using CumInstinctDuel.Logic;
 
 using Horizon.Core;
-using Horizon.Core.Collections;
 using Horizon.Core.Components;
 using Horizon.Engine;
-using Horizon.HIDL;
 using Horizon.HIDL.Runtime;
-using Horizon.Input.Components;
 using Horizon.Rendering.Particles;
 
 using ImGuiNET;
-
-using Silk.NET.Input;
-
-using Bogz.Logging.Loggers;
 
 namespace CumInstinctDuel.Player;
 
 internal class PlayerMoveManager : IGameComponent
 {
-    #region Public Properties
-    public FightingMove CurrentMove => _currentMove;
     public bool Enabled { get; set; }
     public string Name { get; set; } = string.Empty;
     public Entity Parent { get; set; }
 
-    public bool IsGrounded { get; private set; }
+    public FightingMove CurrentMove { get; private set; }
 
-    // Expose current stance and status for external systems (AI, UI, Hitboxes)
-    public Stance CurrentStance => _currentStance;
-    public PlayerStatusType CurrentStatus => _currentStatus;
-    #endregion
-
-    #region Private Fields 
+    private readonly PlayerInputTracker _input = new();
+    private readonly PlayerStateTracker _state = new();
     private readonly MoveList _moveList = new();
     private readonly Random _random = new();
-    private readonly List<ButtonName> _buttonPresses = [];
 
-    private FightingMove _currentMove;
-    private IGamepad? _gamepad = null;
-    private IntervalRunner _runner;
+    private IntervalRunner _particleRunner;
 
     private float _frameStepTimer = 0.0f;
+    private float _totalEngineTime = 0.0f;
     private float _jumpForce = 2000f;
     private float _speed = 2500f;
 
-    // State & Status Tracking
-    private Stance _currentStance = Stance.Standing;
-    private PlayerStatusType _currentStatus = PlayerStatusType.Normal;
-    private float _statusTimer = 0.0f;
-    private bool deltaOnGround = false;
-    #endregion
-
-    #region Initialization
     public void Initialize()
     {
-        SetupHIDLRuntime();
-        _currentMove = _moveList.Idle;
+        CurrentMove = _moveList.Idle;
         Player.Instance.AnimationManager.Enabled = false;
 
+        SetupHIDLRuntime();
         SetupAmbienceParticleRunner();
     }
 
+    #region Callbacks & Particles
     private void SetupAmbienceParticleRunner()
     {
-        _runner = new IntervalRunner(1 / 15.0f, () =>
+        _particleRunner = new IntervalRunner(1 / 15.0f, () =>
         {
-            (float, float) Roll(int diag) => (
-                _random.NextSingle() * GameEngine.Instance.WindowManager.WindowSize.X + diag / 2.0f,
-                _random.NextSingle() * GameEngine.Instance.WindowManager.WindowSize.Y + diag / 2.0f
-            );
-
             for (int diagonal = 0; diagonal < 4; diagonal++)
             {
-                var (x, y) = Roll(diagonal);
+                float x = _random.NextSingle() * GameEngine.Instance.WindowManager.WindowSize.X + diagonal / 2.0f;
+                float y = _random.NextSingle() * GameEngine.Instance.WindowManager.WindowSize.Y + diagonal / 2.0f;
+
                 var position = GameEngine.Instance.ActiveCamera.ScreenToWorld(new Vector2(x, y));
                 SpawnParticle(position, -Vector2.One, 0.2f);
             }
@@ -88,28 +63,44 @@ internal class PlayerMoveManager : IGameComponent
 
     private void SetupHIDLRuntime()
     {
-        GameEngine.Instance.Debugger.Console.Runtime.GlobalScope.DeclareSystem("_PLAYER_JUMP", new NativeFunctionValue((_, _) =>
+        var globalScope = GameEngine.Instance.Debugger.Console.Runtime.GlobalScope;
+
+        globalScope.DeclareSystem("_PLAYER_JUMP", new NativeFunctionValue((_, _) =>
         {
-            if (IsGrounded && _currentStatus == PlayerStatusType.Normal)
+            if (_state.IsGrounded && _state.CurrentStatus == PlayerStatusType.Normal)
             {
                 Player.Instance.PlayerBody.ApplyLinearImpulseToCenter(new Vector2(0, _jumpForce));
-                _currentStance = Stance.Jumping;
+                _state.ResetFallDuration();
+            }
+            return new NullValue();
+        }));
+
+        globalScope.DeclareSystem("_PLAYER_DASH", new NativeFunctionValue((_, _) =>
+        {
+            if (_state.IsGrounded && _state.CurrentStatus == PlayerStatusType.Normal)
+            {
+                float direction = Player.Instance.Flipped ? -1.0f : 1.0f;
+                Player.Instance.PlayerBody.ApplyLinearImpulseToCenter(new Vector2(direction * (_speed * 1.5f), 0));
+
+                for (int i = 0; i < 32; i++)
+                {
+                    SpawnParticle(Player.Instance.Transform.Position - new Vector2(0, 32), new Vector2(-direction * 2f, 0.5f), 0.8f);
+                }
             }
             return new NullValue();
         }));
 
         GameEngine.Instance.Debugger.Console.Runtime.Evaluate(@"
-let player = {
-    jump: func() {
-        _PLAYER_JUMP();
-    }
-}", true);
+        let player = {
+            jump: func() { _PLAYER_JUMP(); },
+            dash: func() { _PLAYER_DASH(); }
+        }", true);
 
         foreach (var (_, move) in _moveList.Moves)
         {
             if (move.Callback is not null)
             {
-                GameEngine.Instance.Debugger.Console.Runtime.GlobalScope.Assign(move.Name, move.Callback.Value with { Environment = GameEngine.Instance.Debugger.Console.Runtime.GlobalScope });
+                globalScope.Assign(move.Name, move.Callback.Value with { Environment = globalScope });
             }
         }
     }
@@ -118,138 +109,49 @@ let player = {
     #region Loops
     public void UpdatePhysics(float dt)
     {
-        CheckGround();
+        _totalEngineTime += dt;
+        _input.Update(_totalEngineTime);
+        _state.UpdatePhysicsState(dt, CurrentMove.Name.Equals("crouch", StringComparison.OrdinalIgnoreCase));
+        _state.UpdateStatus(dt);
 
-        // 1. Update status effects timer (Stun/Combos recovery)
-        UpdateStatus(dt);
+        CheckHeavyLanding();
 
-        // 2. Update dynamic air/ground states (Jumping / Falling / Standing)
-        UpdateStanceState();
-
-        CheckJumpLand();
-        AcquireGamepad();
-
-        // If player is stunned or trapped in a combo, suppress normal move logic/input matching
-        if (_currentStatus != PlayerStatusType.Normal)
+        if (_state.CurrentStatus != PlayerStatusType.Normal)
         {
-            MoveHandler(dt);
+            ProcessAnimationFrames(dt);
             Player.Instance.SetAnimation(CurrentMove.Animation.Name);
             return;
         }
 
-        if (TryChangeMove())
+        if (!string.IsNullOrEmpty(CurrentMove.ReleaseMove) && !IsMoveHeld(CurrentMove))
         {
-            Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
-
-            if (CurrentMove.Callback is not null)
+            if (_moveList.Moves.TryGetValue(CurrentMove.ReleaseMove, out var releaseMove))
             {
-                var (succ, msg) = GameEngine.Instance.Debugger.Console.Runtime.Evaluate(CurrentMove.Name + "();");
-                if (!succ) ConcurrentLogger.Instance.Log(Bogz.Logging.LogLevel.Error, msg);
+                ChangeToMove(releaseMove);
             }
-
-            GameEngine.Instance.Debugger.Console.Log($"Matched Move '{CurrentMove.Name}'");
         }
 
-        MoveHandler(dt);
+        TryProcessNewInputs();
+        ProcessAnimationFrames(dt);
         TryResumeHeldMove();
 
-        Player.Instance.SetAnimation(CurrentMove.Animation.Name);
-    }
-
-    private void CheckGround()
-    {
-        IsGrounded = false;
-
-        // 1. Velocity gate: If moving upward rapidly, we are airborne
-        float verticalVelocity = Player.Instance.PlayerBody.GetLinearVelocity().Y;
-        if (verticalVelocity > 0.15f) return;
-
-        var body = Player.Instance.PlayerBody;
-        if (body == null) return;
-
-        // 2. Iterate through all active contacts on the player's body
-        for (var edge = body.GetContactList(); edge != null; edge = edge.next)
+        if (_state.CurrentStance != Stance.Standing && CurrentMove.Name == "standing")
         {
-            var contact = edge.contact;
-
-            // Skip if not actively touching or disabled
-            if (contact == null || !contact.IsTouching()) continue;
-
-            // 3. Check if either fixture involved in this collision is our Foot Sensor
-            var fixtureA = contact.FixtureA;
-            var fixtureB = contact.FixtureB;
-
-            bool isFootContact = (fixtureA.UserData as string == "FootSensor") ||
-                                 (fixtureB.UserData as string == "FootSensor");
-
-            if (isFootContact)
-            {
-                IsGrounded = true;
-                return;
-            }
-        }
-    }
-
-    private void UpdateStanceState()
-    {
-        float verticalVelocity = Player.Instance.PlayerBody.GetLinearVelocity().Y;
-
-        if (IsGrounded)
-        {
-            if (_currentStance == Stance.Jumping || _currentStance == Stance.Falling)
-            {
-                _currentStance = Stance.Standing;
-            }
+            Player.Instance.SetAnimation(_state.CurrentStance == Stance.Falling ? "fall" : "idle");
         }
         else
         {
-            // Moving upward after jump impulse
-            if (verticalVelocity > 0.1f)
-            {
-                _currentStance = Stance.Jumping;
-            }
-            // Moving downward (Falling state active until landing)
-            else if (verticalVelocity <= -0.1f)
-            {
-                _currentStance = Stance.Falling;
-            }
+            Player.Instance.SetAnimation(CurrentMove.Animation.Name);
         }
-    }
-
-    private void UpdateStatus(float dt)
-    {
-        if (_currentStatus == PlayerStatusType.Normal) return;
-
-        _statusTimer -= dt;
-        if (_statusTimer <= 0)
-        {
-            // Recover back to normal fighting state
-            ClearStatus();
-        }
-    }
-
-    private void CheckJumpLand()
-    {
-        if (deltaOnGround != IsGrounded)
-        {
-            for (int i = 0; i < 32; i++)
-            {
-                Vector2 randomDir = new Vector2((float)_random.NextDouble(), (float)_random.NextDouble());
-                SpawnParticle(Player.Instance.Transform.Position + Vector2.UnitY * -64, randomDir);
-            }
-        }
-
-        deltaOnGround = IsGrounded;
     }
 
     public void UpdateState(float dt)
     {
-        _runner?.UpdateState(dt);
+        _particleRunner?.UpdateState(dt);
 
-        // Restrict movement input capability if stunned or combo-locked
-        if (_currentStatus != PlayerStatusType.Normal) return;
+        if (_state.CurrentStatus != PlayerStatusType.Normal) return;
 
-        var movementDir = GetMovementInput();
+        var movementDir = _input.GetMovementInput();
         if (movementDir.X != 0)
         {
             Player.Instance.Flipped = movementDir.X < 0;
@@ -259,163 +161,173 @@ let player = {
     }
     #endregion
 
-    #region Extension Hooks: Stun & Combo Management
-    /// <summary>
-    /// Applies a stun effect for a given duration, forcing an interrupt and locking inputs.
-    /// </summary>
+    #region External Status API
     public void ApplyStun(float duration, string stunAnimationName = "stun")
     {
-        _currentStatus = PlayerStatusType.Stunned;
-        _statusTimer = duration;
+        _state.ApplyStun(duration);
         ForceMoveAnimation(stunAnimationName);
     }
 
-    /// <summary>
-    /// Traps the player in a combo sequence, rendering them unable to act until released or finished.
-    /// </summary>
     public void TrapInCombo(FightingMove comboMove, float lockDuration)
     {
-        _currentStatus = PlayerStatusType.ComboTrapped;
-        _statusTimer = lockDuration;
-        _currentMove = comboMove;
+        _state.ApplyComboTrap(lockDuration);
+        CurrentMove = comboMove;
         Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
-    }
-
-    private void ClearStatus()
-    {
-        _currentStatus = PlayerStatusType.Normal;
-        _statusTimer = 0.0f;
     }
 
     private void ForceMoveAnimation(string animName)
     {
-        // Fallback safety lookup or override for damage/stun states
-        if (_moveList.Moves.ContainsKey(animName))
+        if (_moveList.Moves.TryGetValue(animName, out var target))
         {
-            _currentMove = _moveList.Moves[animName];
+            CurrentMove = target;
         }
         Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
     }
     #endregion
 
-    #region Movement and Animation Logic 
-    private void MoveHandler(float dt)
+    #region Logic & Animation
+    private void CheckHeavyLanding()
+    {
+        if (!_state.DeltaOnGround && _state.IsGrounded)
+        {
+            if (_state.FallDuration > 0.2f && _moveList.Moves.TryGetValue("heavy_land", out var landMove))
+            {
+                ChangeToMove(landMove);
+            }
+
+            for (int i = 0; i < 32; i++)
+            {
+                Vector2 randomDir = new Vector2((float)_random.NextDouble(), (float)_random.NextDouble());
+                SpawnParticle(Player.Instance.Transform.Position + Vector2.UnitY * -64, randomDir);
+            }
+            _state.ResetFallDuration();
+        }
+    }
+
+    private void ProcessAnimationFrames(float dt)
     {
         _frameStepTimer += dt;
-        if (_frameStepTimer > 1.0f / 25f)
+        if (_frameStepTimer > 1.0f / 30f)
         {
             _frameStepTimer = 0;
 
             var (finished, index) = Player.Instance.AnimationManager.IncrementFrame(CurrentMove.Animation.Name);
             if (finished)
             {
-                if (_currentStatus != PlayerStatusType.Normal)
-                {
-                    // Status animations might loop or hold on last frame depending on design
-                    return;
-                }
+                if (_state.CurrentStatus != PlayerStatusType.Normal) return;
 
-                if (CurrentMove.Loopable && IsMoveHeld(CurrentMove))
+                if (!string.IsNullOrEmpty(CurrentMove.NextMove) && _moveList.Moves.TryGetValue(CurrentMove.NextMove, out var next))
+                {
+                    ChangeToMove(next);
+                }
+                else if (CurrentMove.Loopable && IsMoveHeld(CurrentMove))
                 {
                     Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
 
                     if (CurrentMove.Callback is not null)
                     {
-                        GameEngine.Instance.Debugger.Console.Runtime.Evaluate(CurrentMove.Name + "(); playerJump();");
+                        GameEngine.Instance.Debugger.Console.Runtime.Evaluate($"{CurrentMove.Name}(); playerJump();");
                     }
                 }
                 else
                 {
-                    _currentMove = _moveList.Idle;
+                    CurrentMove = _moveList.Idle;
                 }
             }
         }
     }
 
-    private bool TryChangeMove()
+    private void TryProcessNewInputs()
     {
-        if (_buttonPresses.Count > 0)
-        {
-            var buttons = _buttonPresses.ToArray();
-            _buttonPresses.Clear();
+        var buttons = _input.ConsumeFramePresses();
+        if (buttons.Length == 0 || !CurrentMove.Interuptable) return;
 
-            if (CurrentMove.Interuptable)
-            {
-                foreach (var (name, candidate) in _moveList.Moves)
-                {
-                    if (candidate.Bindings.Length == 0) continue;
-
-                    // **Stance Validation**: Ensure the candidate move can be executed in our current stance (e.g. Jumping / Falling)
-                    if (!candidate.Stances.HasFlag(_currentStance)) continue;
-
-                    bool matched = candidate.UseAnyBindings
-                        ? candidate.Bindings.Any(btn => buttons.Contains(btn))
-                        : candidate.Bindings.All(btn => buttons.Contains(btn));
-
-                    if (matched && !_currentMove.Name.Equals(candidate.Name))
-                    {
-                        _currentMove = candidate;
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    private void TryResumeHeldMove()
-    {
-        if (_currentMove.Name != _moveList.Idle.Name) return;
-
-        foreach (var (name, candidate) in _moveList.Moves)
+        foreach (var candidate in _moveList.Moves.Values)
         {
             if (candidate.Bindings.Length == 0) continue;
 
-            // Validate Stance compatibility
-            if (!candidate.Stances.HasFlag(_currentStance)) continue;
+            bool matched = candidate.UseAnyBindings
+                ? candidate.Bindings.Any(buttons.Contains)
+                : candidate.Bindings.All(buttons.Contains);
 
-            if (candidate.Loopable && IsMoveHeld(candidate))
+            if (matched)
             {
-                _currentMove = candidate;
-                Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
-                Player.Instance.SetAnimation(CurrentMove.Animation.Name);
+                FightingMove moveToExecute = candidate;
 
-                GameEngine.Instance.Debugger.Console.Log($"Resumed Held Move '{CurrentMove.Name}'");
+                if (!IsStanceValid(candidate.Stances))
+                {
+                    if (candidate.StanceReroutes != null &&
+                        candidate.StanceReroutes.TryGetValue(_state.CurrentStance, out string? reroutedName) &&
+                        _moveList.Moves.TryGetValue(reroutedName, out var reroutedMove))
+                    {
+                        moveToExecute = reroutedMove;
+                    }
+                    else continue;
+                }
+
+                if (CurrentMove.Name == moveToExecute.Name) continue;
+
+                if (candidate.DoubleTap || moveToExecute.DoubleTap)
+                {
+                    bool isDoubleTap = false;
+                    foreach (var btn in candidate.Bindings.Where(buttons.Contains))
+                    {
+                        if (_input.HasDoubleTap(btn, _totalEngineTime, 0.3f))
+                        {
+                            isDoubleTap = true;
+                            _input.ClearButtonHistory(btn);
+                            break;
+                        }
+                    }
+                    if (!isDoubleTap) continue;
+                }
+
+                ChangeToMove(moveToExecute);
                 return;
             }
         }
     }
-    #endregion
 
-    #region Input & Helpers 
-    private void AcquireGamepad()
+    private void TryResumeHeldMove()
     {
-        if (_gamepad is null && GameEngine.Instance.InputManager.NativeInputContext?.Gamepads.Count > 0)
+        if (CurrentMove.Name != _moveList.Idle.Name) return;
+
+        foreach (var candidate in _moveList.Moves.Values)
         {
-            _gamepad = GameEngine.Instance.InputManager.NativeInputContext.Gamepads[0];
-            _gamepad.ButtonDown += (_, args) =>
+            if (candidate.Bindings.Length == 0 || !candidate.Loopable || !IsMoveHeld(candidate)) continue;
+
+            FightingMove moveToExecute = candidate;
+            if (!IsStanceValid(candidate.Stances))
             {
-                // Disallow button inputs if stunned or combo trapped
-                if (_currentStatus == PlayerStatusType.Normal)
+                if (candidate.StanceReroutes != null &&
+                    candidate.StanceReroutes.TryGetValue(_state.CurrentStance, out string? reroutedName) &&
+                    _moveList.Moves.TryGetValue(reroutedName, out var reroutedMove))
                 {
-                    _buttonPresses.Add(args.Name);
+                    moveToExecute = reroutedMove;
                 }
-            };
+                else continue;
+            }
+
+            CurrentMove = moveToExecute;
+            Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
+            Player.Instance.SetAnimation(CurrentMove.Animation.Name);
+            return;
         }
     }
 
-    internal Vector2 GetMovementInput()
+    private bool IsStanceValid(Stance candidateStances)
     {
-        var joystick = XInputJoystickInputManager.Gamepad;
-        return new Vector2(
-            joystick.DPadLeft().Pressed ? -1 : joystick.DPadRight().Pressed ? 1 : 0,
-            joystick.DPadUp().Pressed ? 1 : joystick.DPadDown().Pressed ? -1 : 0
-        );
-    }
-
-    private bool IsButtonHeld(ButtonName btn)
-    {
-        return _gamepad?.Buttons.Any(b => b.Name == btn && b.Pressed) ?? false;
+        switch (_state.CurrentStance)
+        {
+            case Stance.Jumping:
+                return candidateStances.HasFlag(Stance.Jumping);
+            case Stance.Falling:
+                return candidateStances.HasFlag(Stance.Falling);
+            case Stance.Crouching:
+                return candidateStances.HasFlag(Stance.Crouching) || candidateStances == Stance.Standing;
+            default:
+                return candidateStances == Stance.Standing || candidateStances.HasFlag(Stance.Crouching);
+        }
     }
 
     private bool IsMoveHeld(FightingMove candidate)
@@ -423,29 +335,43 @@ let player = {
         if (candidate.Bindings.Length == 0) return false;
 
         return candidate.UseAnyBindings
-            ? candidate.Bindings.Any(IsButtonHeld)
-            : candidate.Bindings.All(IsButtonHeld);
+            ? candidate.Bindings.Any(_input.IsButtonHeld)
+            : candidate.Bindings.All(_input.IsButtonHeld);
+    }
+
+    private void ChangeToMove(FightingMove newMove)
+    {
+        CurrentMove = newMove;
+        Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
+
+        if (CurrentMove.Callback is not null)
+        {
+            var (succ, msg) = GameEngine.Instance.Debugger.Console.Runtime.Evaluate($"{CurrentMove.Name}();");
+            if (!succ) ConcurrentLogger.Instance.Log(Bogz.Logging.LogLevel.Error, msg);
+        }
     }
 
     private void SpawnParticle(Vector2 pos, Vector2 dir, float blend = 0.5f)
     {
-        float val = ((_random.NextSingle() * 2.0f) - MathF.PI);
+        float val = (_random.NextSingle() * MathF.PI * 2.0f) - MathF.PI;
 
         Player.Instance.Particles.Add(new Particle2D(
             new Vector2(MathF.Sin(val), MathF.Cos(val)) * (1.0f - blend) + dir * blend,
             pos
         ));
     }
+    #endregion
 
     public void Render(float dt, object? obj = null)
     {
         if (ImGui.Begin("Player Movement Manager"))
         {
             ImGui.Text($"Current Move: {CurrentMove.Name}");
-            ImGui.Text($"Current Stance: {_currentStance}");
-            ImGui.Text($"Player Status: {_currentStatus}");
+            ImGui.Text($"Current Stance: {_state.CurrentStance}");
+            ImGui.Text($"Player Status: {_state.CurrentStatus}");
             ImGui.Text($"Player Pos: {Player.Instance.Transform.Position}");
-            ImGui.Text($"Grounded: {IsGrounded}");
+            ImGui.Text($"Grounded: {_state.IsGrounded}");
+            ImGui.Text($"Fall Duration: {_state.FallDuration:0.00}s");
 
             ImGui.DragFloat("Player Speed", ref _speed);
             ImGui.DragFloat("Player Jump", ref _jumpForce);
@@ -453,5 +379,4 @@ let player = {
             ImGui.End();
         }
     }
-    #endregion
 }
