@@ -1783,9 +1783,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\bogda\\Documents\\CumInstinctDuel\\CumInstinctDuel\\CumInstinctDuel.csproj",
-      "projectName": "CumInstinctDuel",
-      "projectPath": "C:\\Users\\bogda\\Documents\\CumInstinctDuel\\CumInstinctDuel\\CumInstinctDuel.csproj",
+      "projectUniqueName": "C:\\Users\\bogda\\Documents\\CumInstinctDuel\\CumInstinctDuel\\Fighter2D.csproj",
+      "projectName": "Fighter2D",
+      "projectPath": "C:\\Users\\bogda\\Documents\\CumInstinctDuel\\CumInstinctDuel\\Fighter2D.csproj",
       "packagesPath": "C:\\Users\\bogda\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\bogda\\Documents\\CumInstinctDuel\\CumInstinctDuel\\obj\\",
       "projectStyle": "PackageReference",
