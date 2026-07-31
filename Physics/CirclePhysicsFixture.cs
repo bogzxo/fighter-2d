@@ -2,12 +2,12 @@
 
 namespace Fighter2D.Physics;
 
-internal class CirclePhysicsFixture(in PhysicsBody parent, float radius, Vector2 position) : IPhysicsFixture
+internal class CirclePhysicsFixture(in PhysicsBodyComponent2D parent, float radius, Vector2 position) : IPhysicsFixture
 {
     public float Radius { get; init; } = radius;
     public Vector2 Position { get; init; } = position;
     public PhysicsFixtureShape Shape { get; init; } = PhysicsFixtureShape.Circle;
-    public PhysicsBody Parent { get; init; } = parent;
+    public PhysicsBodyComponent2D Parent { get; init; } = parent;
 
     public bool TestIntersection(in IPhysicsFixture other)
     {

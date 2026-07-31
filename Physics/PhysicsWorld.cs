@@ -15,8 +15,8 @@ namespace Fighter2D.Physics;
 internal class PhysicsWorld : IGameComponent
 {
     public bool RenderDebug { get; set; } = true;
-    public ConcurrentBag<PhysicsBody> StaticBodies { get; init; } = new();
-    public ConcurrentBag<PhysicsBody> DynamicBodies { get; init; } = new();
+    public ConcurrentBag<PhysicsBodyComponent2D> StaticBodies { get; init; } = new();
+    public ConcurrentBag<PhysicsBodyComponent2D> DynamicBodies { get; init; } = new();
 
     public bool Enabled { get; set; }
     public string Name { get; set; } = "Physics World";
@@ -24,7 +24,18 @@ internal class PhysicsWorld : IGameComponent
 
     private Box2DDebugRendererComponent debugRenderer = new();
 
-    public void AddBody(in PhysicsBody body)
+    public PhysicsBodyComponent2D CreateBody(PhysicsBodySimulationType simulationType, Vector2 initialPosition)
+    {
+        return AddBody(new PhysicsBodyComponent2D() { 
+            SimulationType = simulationType,
+            Position = initialPosition,
+        });
+    }
+    public PhysicsBodyComponent2D CreateBody(PhysicsBodySimulationType simulationType)
+        => CreateBody(simulationType, Vector2.Zero);
+
+
+    public PhysicsBodyComponent2D AddBody(in PhysicsBodyComponent2D body)
     {
         switch (body.SimulationType)
         {
@@ -35,6 +46,8 @@ internal class PhysicsWorld : IGameComponent
                 this.DynamicBodies.Add(body);
                 break;
         }
+
+        return body;
     }
 
     public void Initialize()
@@ -43,7 +56,7 @@ internal class PhysicsWorld : IGameComponent
     }
     public void UpdatePhysics(float dt)
     {
-
+        // TODO: implement dynamics
     }
     public void UpdateState(float dt)
     {
@@ -51,7 +64,7 @@ internal class PhysicsWorld : IGameComponent
     }
     public void Render(float dt, object? obj = null)
     {
-        void drawBody(in PhysicsBody body, Vector4 colour)
+        void drawBody(in PhysicsBodyComponent2D body, Vector4 colour)
         {
             foreach (var fixture in body.Fixtures)
             {

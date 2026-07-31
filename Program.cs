@@ -74,11 +74,7 @@ internal class Program : Scene
         map.ClippingOffset = 0.1f;
 
 
-        List<RectanglePhysicsFixture> tileFixtures = [];
-        PhysicsBody worldBody = new()
-        {
-            SimulationType = PhysicsBodySimulationType.Static
-        };
+        PhysicsBodyComponent2D worldBody = world.CreateBody(PhysicsBodySimulationType.Static);
 
         for (int x = 0; x < map.Width * TileMapChunk.WIDTH; x++)
         {
@@ -89,14 +85,11 @@ internal class Program : Scene
                     Tile? tile = map[x, y, z];
                     if (tile?.PhysicsData.IsCollidable == true)
                     {
-                        tileFixtures.Add(new RectanglePhysicsFixture(worldBody, tile.GlobalPosition - map.TileSize / 2, map.TileSize));
+                        worldBody.CreateRectangularFixture( tile.GlobalPosition - map.TileSize / 2, map.TileSize);
                     }
                 }
             }
         }
-
-        worldBody.Fixtures = [.. tileFixtures];
-        world.AddBody(worldBody);
     }
 
     private Vector3 _exactCameraPosition;

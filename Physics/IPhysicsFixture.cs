@@ -8,7 +8,7 @@ namespace Fighter2D.Physics;
 
 internal interface IPhysicsFixture
 {
-    public PhysicsBody Parent { get; init; }
+    public PhysicsBodyComponent2D Parent { get; init; }
     public PhysicsFixtureShape Shape { get; init; }
     public bool TestIntersection(in IPhysicsFixture other);
 }

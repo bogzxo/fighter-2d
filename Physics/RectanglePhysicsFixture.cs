@@ -11,9 +11,9 @@ internal class RectanglePhysicsFixture : IPhysicsFixture
     public Vector2 Position => Bounds.Position;
     public Vector2 Size => Bounds.Size;
 
-    public PhysicsBody Parent { get; init; }
+    public PhysicsBodyComponent2D Parent { get; init; }
 
-    public RectanglePhysicsFixture(in PhysicsBody parent, Vector2 position, Vector2 size)
+    public RectanglePhysicsFixture(in PhysicsBodyComponent2D parent, Vector2 position, Vector2 size)
     {
         this.Parent = parent;
         this.Bounds = new PhysicsRectangle(position, size);

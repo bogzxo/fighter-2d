@@ -26,6 +26,7 @@ internal class Player : Sprite
     private bool _controlled;
 
     private PhysicsWorld world;
+    public PhysicsBodyComponent2D PhysicsBody { get; internal set; }
 
     public Player(bool controlled=true) : base(SIZE)
     {
@@ -37,7 +38,9 @@ internal class Player : Sprite
     public override void Initialize()
     {
         world = Parent.GetComponent<PhysicsWorld>();
-
+        // Create player physics body and feet fixture
+        PhysicsBody = AddComponent(world.CreateBody(PhysicsBodySimulationType.Dynamic));
+        PhysicsBody.CreateCircleFixture(Vector2.UnitY * -48, 16.0f);
 
         if (!LoadSpriteSheetFromDirectory("Assets/sprites/player"))
         {
