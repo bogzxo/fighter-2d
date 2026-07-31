@@ -52,48 +52,48 @@ internal class PlayerStateTracker
     private void CheckGround()
     {
         IsGrounded = false;
-        var body = Player.Instance.PlayerBody;
-        if (body == null) return;
+        //var body = Player.Instance.PlayerBody;
+        //if (body == null) return;
 
-        // Velocity gate: Rapid upward movement overrides physical touch
-        if (body.GetLinearVelocity().Y > 0.15f) return;
+        //// Velocity gate: Rapid upward movement overrides physical touch
+        //if (body.GetLinearVelocity().Y > 0.15f) return;
 
-        for (var edge = body.GetContactList(); edge != null; edge = edge.next)
-        {
-            var contact = edge.contact;
-            if (contact == null || !contact.IsTouching()) continue;
+        //for (var edge = body.GetContactList(); edge != null; edge = edge.next)
+        //{
+        //    var contact = edge.contact;
+        //    if (contact == null || !contact.IsTouching()) continue;
 
-            bool isFootContact = (contact.FixtureA.UserData as string == "FootSensor") ||
-                                 (contact.FixtureB.UserData as string == "FootSensor");
+        //    bool isFootContact = (contact.FixtureA.UserData as string == "FootSensor") ||
+        //                         (contact.FixtureB.UserData as string == "FootSensor");
 
-            if (isFootContact)
-            {
-                IsGrounded = true;
-                return;
-            }
-        }
+        //    if (isFootContact)
+        //    {
+        //        IsGrounded = true;
+        //        return;
+        //    }
+        //}
     }
 
     private void UpdateStance(float dt, bool isCrouchingMove)
     {
-        float verticalVelocity = Player.Instance.PlayerBody.GetLinearVelocity().Y;
+        //float verticalVelocity = Player.Instance.PlayerBody.GetLinearVelocity().Y;
 
-        if (IsGrounded)
-        {
-            CurrentStance = isCrouchingMove ? Stance.Crouching : Stance.Standing;
-        }
-        else
-        {
-            if (verticalVelocity > 0.1f)
-            {
-                CurrentStance = Stance.Jumping;
-                FallDuration = 0f;
-            }
-            else if (verticalVelocity <= -0.1f)
-            {
-                CurrentStance = Stance.Falling;
-                FallDuration += dt;
-            }
-        }
+        //if (IsGrounded)
+        //{
+        //    CurrentStance = isCrouchingMove ? Stance.Crouching : Stance.Standing;
+        //}
+        //else
+        //{
+        //    if (verticalVelocity > 0.1f)
+        //    {
+        //        CurrentStance = Stance.Jumping;
+        //        FallDuration = 0f;
+        //    }
+        //    else if (verticalVelocity <= -0.1f)
+        //    {
+        //        CurrentStance = Stance.Falling;
+        //        FallDuration += dt;
+        //    }
+        //}
     }
 }

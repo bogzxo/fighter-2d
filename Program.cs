@@ -6,6 +6,7 @@ using Box2D.NetStandard.Common;
 using Box2D.NetStandard.Dynamics.World;
 using Box2D.NetStandard.Dynamics.World.Callbacks;
 
+using Fighter2D.Physics;
 using Fighter2D.Player;
 using Fighter2D.Scenes;
 
@@ -26,9 +27,8 @@ internal class Program : Scene
 
     // Sprite Rendering
     private SpriteBatch spriteBatch;
-    private Sprite player;
-    private World world;
-    private Box2DDebugRendererComponent debugRendererComponent;
+    private Sprite player, dummy;
+    private PhysicsWorld world;
     //private UIRectangle
 
     // General Rendering
@@ -45,20 +45,17 @@ internal class Program : Scene
 
     public override void Initialize()
     {
-        //debugRendererComponent = AddComponent<Box2DDebugRendererComponent>();
-        //debugRendererComponent.AppendFlags(DrawFlags.Shape | DrawFlags.Joint | DrawFlags.CenterOfMass | DrawFlags.Aabb | DrawFlags.Pair);
-        LoadMap();
         Engine.GL.ClearColor(System.Drawing.Color.Black);
 
+        world = AddComponent<PhysicsWorld>();
+        LoadMap();
         ActiveCamera = camera = AddEntity<Camera2D>(new(Engine.WindowManager.ViewportSize / 2.0f));
 
         spriteBatch = AddEntity<SpriteBatch>();
 
-        spriteBatch.Add(player = AddEntity(new Player.Player(world.CreateBody(new Box2D.NetStandard.Dynamics.Bodies.BodyDef {
-            type = Box2D.NetStandard.Dynamics.Bodies.BodyType.Dynamic,
-            allowSleep = false,
-            position = new Vector2(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
-        }))));
+        spriteBatch.Add(player = AddEntity(new Player.Player()));
+
+        spriteBatch.Add(dummy = AddEntity(new Player.Player(false)));
 
         camera.Position = new Vector3(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y, 0.0f);
 
@@ -67,10 +64,6 @@ internal class Program : Scene
 
     private void LoadMap()
     {
-        world = AddComponent(new Box2DWorldComponent(new Vector2(0, -2000f)));
-        world.SetDebugDraw(debugRendererComponent);
-
-
         if (!TileMap.TryFromTiledMap(this, "Assets/maps/" + mapDefinition.FileName, out map))
         {
             throw new Exception("Something bad happened...");
@@ -81,6 +74,9 @@ internal class Program : Scene
         map.ParallaxIndex = 2;
         map.ClippingOffset = 0.1f;
 
+
+        List<RectanglePhysicsFixture> tileFixtures = [];
+
         for (int x = 0; x < map.Width * TileMapChunk.WIDTH; x++)
         {
             for (int y = 0; y < map.Height * TileMapChunk.HEIGHT; y++)
@@ -90,23 +86,19 @@ internal class Program : Scene
                     Tile? tile = map[x, y, z];
                     if (tile?.PhysicsData.IsCollidable == true)
                     {
-                        tile.TryGenerateCollider();
+                        tileFixtures.Add(new RectanglePhysicsFixture(tile.GlobalPosition - map.TileSize / 2, map.TileSize));
                     }
                 }
             }
         }
+
+        PhysicsBody worldBody = new() { 
+            Fixtures = tileFixtures.ToArray(),
+            SimulationType = PhysicsBodySimulationType.Static
+        };
+        world.AddBody(worldBody);
     }
 
-
-    public override void Render(float dt, object? obj = null)
-    {
-        base.Render(dt, obj);
-        if (debugRendererComponent is not null)
-        {
-            debugRendererComponent.ClearBuffers();
-            world.DrawDebugData();
-        }
-    }
     private Vector3 _exactCameraPosition;
     private float _cameraFollowSpeed = 2.0f; // Tweak this for looser/tighter follow
     public override void UpdateState(float dt)

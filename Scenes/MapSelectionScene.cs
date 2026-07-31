@@ -114,6 +114,6 @@ internal class MapSelectionScene : Scene
                 glyphRenderer[mapDefinitions[i].FileName].Text = mapDefinitions[i].PrettyName;
         }
 
-        glyphRenderer.SetDirty();
+        glyphRenderer.MarkDirty();
     }
 }

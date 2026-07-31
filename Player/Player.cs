@@ -18,16 +18,16 @@ internal class Player : Sprite
     internal static Player Instance;
     private static readonly Vector2 SIZE = new(128);
 
-    internal PlayerMoveManager MoveManager { get; private set; }
-    public Box2DBodyComponent Box2DBody { get; private set; }
-    public Body PhysicsBody => Box2DBody.Body;
-    public Body PlayerBody { get; }
+    internal ControllablePlayerMoveManager MoveManager { get; private set; }
     internal ParticleRenderer2D Particles { get; private set; }
 
-    public Player(in Body playerBody) : base(SIZE)
+    private bool _controlled;
+
+    public Player(bool controlled=true) : base(SIZE)
     {
-        Instance = this;
-        PlayerBody = playerBody;
+        this._controlled = controlled;
+        if (this._controlled)
+            Instance = this;
     }
 
     public override void Initialize()
@@ -37,45 +37,15 @@ internal class Player : Sprite
             ConcurrentLogger.Instance.Log(Bogz.Logging.LogLevel.Error, "Failed to load player sprite!");
         }
 
-        Parent.GetComponent<Box2DWorldComponent>().Enabled = false;
-
         SetAnimation("idle");
         AnimationManager.Enabled = true;
 
-        Box2DBody = AddComponent(new Box2DBodyComponent(PlayerBody));
-        MoveManager = AddComponent<PlayerMoveManager>();
+
+        if (_controlled)
+            MoveManager = AddComponent<ControllablePlayerMoveManager>();
 
         Particles = AddEntity(new ParticleRenderer2D(32768) { EndColor = new Vector3(0, 0, 0.6f) });
 
-        SetupPhysicsFixtures();
-
-        Parent.GetComponent<Box2DWorldComponent>().Enabled = true;
         base.Initialize();
-    }
-
-    private void SetupPhysicsFixtures()
-    {
-        PolygonShape torso = new();
-        torso.SetAsBox(16, 16, new Vector2(0, -16), 0);
-
-        CircleShape feet = new() { Radius = 16.0f, Center = new Vector2(0, -SIZE.Y / 2 + 16) };
-
-        PolygonShape footShape = new();
-        footShape.SetAsBox(SIZE.X * 0.1f, 2.0f, new Vector2(0, -SIZE.Y / 2f), 0);
-
-        FixtureDef footFixtureDef = new()
-        {
-            shape = footShape,
-            isSensor = true,
-            userData = "FootSensor"
-        };
-
-        PhysicsBody.CreateFixture(footFixtureDef);
-        PhysicsBody.CreateFixture(torso, 0.001f);
-        PhysicsBody.CreateFixture(feet, 0.001f);
-
-        PhysicsBody.SetFixedRotation(true);
-        PhysicsBody.SetLinearDampling(5.0f);
-        PhysicsBody.SetGravityScale(1.0f);
     }
 }

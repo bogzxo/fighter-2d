@@ -12,11 +12,11 @@ using Horizon.Engine;
 using Horizon.HIDL.Runtime;
 using Horizon.Rendering.Particles;
 
-using ImGuiNET;
+
 
 namespace Fighter2D.Player;
 
-internal class PlayerMoveManager : IGameComponent
+internal class ControllablePlayerMoveManager : IGameComponent
 {
     public bool Enabled { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -69,7 +69,7 @@ internal class PlayerMoveManager : IGameComponent
         {
             if (_state.IsGrounded && _state.CurrentStatus == PlayerStatusType.Normal)
             {
-                Player.Instance.PlayerBody.ApplyLinearImpulseToCenter(new Vector2(0, _jumpForce));
+                //Player.Instance.PlayerBody.ApplyLinearImpulseToCenter(new Vector2(0, _jumpForce));
                 _state.ResetFallDuration();
             }
             return new NullValue();
@@ -80,7 +80,7 @@ internal class PlayerMoveManager : IGameComponent
             if (_state.IsGrounded && _state.CurrentStatus == PlayerStatusType.Normal)
             {
                 float direction = Player.Instance.Flipped ? -1.0f : 1.0f;
-                Player.Instance.PlayerBody.ApplyLinearImpulseToCenter(new Vector2(direction * (_speed * 1.5f), 0));
+                //Player.Instance.PlayerBody.ApplyLinearImpulseToCenter(new Vector2(direction * (_speed * 1.5f), 0));
 
                 for (int i = 0; i < 32; i++)
                 {
@@ -160,7 +160,7 @@ internal class PlayerMoveManager : IGameComponent
             Player.Instance.Flipped = movementDir.X < 0;
         }
 
-        Player.Instance.PlayerBody.ApplyLinearImpulseToCenter(movementDir * Vector2.UnitX * dt * _speed);
+        Player.Instance.Transform.Position += (movementDir /* * Vector2.UnitX */ * dt * _speed);
     }
     #endregion
 
@@ -367,19 +367,6 @@ internal class PlayerMoveManager : IGameComponent
 
     public void Render(float dt, object? obj = null)
     {
-        if (ImGui.Begin("Player Movement Manager"))
-        {
-            ImGui.Text($"Current Move: {CurrentMove.Name}");
-            ImGui.Text($"Current Stance: {_state.CurrentStance}");
-            ImGui.Text($"Player Status: {_state.CurrentStatus}");
-            ImGui.Text($"Player Pos: {Player.Instance.Transform.Position}");
-            ImGui.Text($"Grounded: {_state.IsGrounded}");
-            ImGui.Text($"Fall Duration: {_state.FallDuration:0.00}s");
-
-            ImGui.DragFloat("Player Speed", ref _speed);
-            ImGui.DragFloat("Player Jump", ref _jumpForce);
-
-            ImGui.End();
-        }
+        
     }
 }

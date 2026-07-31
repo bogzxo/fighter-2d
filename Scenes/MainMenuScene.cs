@@ -12,7 +12,7 @@ using Horizon.Rendering.Spriting;
 using Horizon.Rendering.Text;
 using Horizon.Rendering.UI;
 
-using ImGuiNET;
+
 
 namespace Fighter2D.Scenes;
 
@@ -59,8 +59,7 @@ internal class MainMenuScene : Scene
         ActiveCamera = camera = AddEntity<Camera2D>(new(new System.Numerics.Vector2(Engine.WindowManager.WindowSize.X, Engine.WindowManager.WindowSize.Y)));
 
         glyphRenderer = AddEntity(new GlyphRenderer("Assets/Fonts/Born2bSporty", "Born2bSporty.fnt"));
-        glyphRenderer.Initialize();
-
+        
         glyphRenderer.AddLabel("hint", new TextLabel
         {
             Text = "Press X to begin!",
@@ -87,6 +86,9 @@ internal class MainMenuScene : Scene
     {
         time += dt;
         base.UpdatePhysics(dt);
+
+        glyphRenderer["hint"].Text = dt.ToString();
+        glyphRenderer.MarkDirty();
 
         if (Engine.InputManager.IsPressed(Horizon.Input.VirtualAction.Interact))
         {
