@@ -57,15 +57,15 @@ internal class PhysicsWorld : IGameComponent
             {
                 if (fixture is CirclePhysicsFixture c)
                 {
-                    debugRenderer.DrawCircle(c.Position, c.Radius, colour);
+                    debugRenderer.DrawCircle(body.Position + c.Position, c.Radius, colour);
                 }
                 else if (fixture is RectanglePhysicsFixture r)
                 {
                     debugRenderer.DrawPolygon(new Vector2[] {
-                            new Vector2(r.Bounds.Left, r.Bounds.Top),
-                            new Vector2(r.Bounds.Right, r.Bounds.Top),
-                            new Vector2(r.Bounds.Right, r.Bounds.Bottom),
-                            new Vector2(r.Bounds.Left, r.Bounds.Bottom),
+                            new Vector2(body.Position.X + r.Bounds.Left, body.Position.Y + r.Bounds.Top),
+                            new Vector2(body.Position.X + r.Bounds.Right, body.Position.Y + r.Bounds.Top),
+                            new Vector2(body.Position.X + r.Bounds.Right, body.Position.Y + r.Bounds.Bottom),
+                            new Vector2(body.Position.X + r.Bounds.Left, body.Position.Y + r.Bounds.Bottom),
                         }, colour);
                 }
             }

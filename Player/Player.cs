@@ -6,6 +6,8 @@ using Box2D.NetStandard.Collision.Shapes;
 using Box2D.NetStandard.Dynamics.Bodies;
 using Box2D.NetStandard.Dynamics.Fixtures;
 
+using Fighter2D.Physics;
+
 using Horizon.Core.Components.Physics2D;
 using Horizon.GameEntity.Components.Physics2D;
 using Horizon.Rendering.Particles;
@@ -23,6 +25,8 @@ internal class Player : Sprite
 
     private bool _controlled;
 
+    private PhysicsWorld world;
+
     public Player(bool controlled=true) : base(SIZE)
     {
         this._controlled = controlled;
@@ -32,6 +36,9 @@ internal class Player : Sprite
 
     public override void Initialize()
     {
+        world = Parent.GetComponent<PhysicsWorld>();
+
+
         if (!LoadSpriteSheetFromDirectory("Assets/sprites/player"))
         {
             ConcurrentLogger.Instance.Log(Bogz.Logging.LogLevel.Error, "Failed to load player sprite!");

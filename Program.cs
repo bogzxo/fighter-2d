@@ -49,12 +49,11 @@ internal class Program : Scene
 
         world = AddComponent<PhysicsWorld>();
         LoadMap();
+
         ActiveCamera = camera = AddEntity<Camera2D>(new(Engine.WindowManager.ViewportSize / 2.0f));
-
+        
         spriteBatch = AddEntity<SpriteBatch>();
-
         spriteBatch.Add(player = AddEntity(new Player.Player()));
-
         spriteBatch.Add(dummy = AddEntity(new Player.Player(false)));
 
         camera.Position = new Vector3(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y, 0.0f);
@@ -76,6 +75,10 @@ internal class Program : Scene
 
 
         List<RectanglePhysicsFixture> tileFixtures = [];
+        PhysicsBody worldBody = new()
+        {
+            SimulationType = PhysicsBodySimulationType.Static
+        };
 
         for (int x = 0; x < map.Width * TileMapChunk.WIDTH; x++)
         {
@@ -86,16 +89,13 @@ internal class Program : Scene
                     Tile? tile = map[x, y, z];
                     if (tile?.PhysicsData.IsCollidable == true)
                     {
-                        tileFixtures.Add(new RectanglePhysicsFixture(tile.GlobalPosition - map.TileSize / 2, map.TileSize));
+                        tileFixtures.Add(new RectanglePhysicsFixture(worldBody, tile.GlobalPosition - map.TileSize / 2, map.TileSize));
                     }
                 }
             }
         }
 
-        PhysicsBody worldBody = new() { 
-            Fixtures = tileFixtures.ToArray(),
-            SimulationType = PhysicsBodySimulationType.Static
-        };
+        worldBody.Fixtures = [.. tileFixtures];
         world.AddBody(worldBody);
     }
 
