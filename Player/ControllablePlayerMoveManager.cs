@@ -160,6 +160,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
             Player.Instance.Flipped = movementDir.X < 0;
         }
 
+        // TODO: this will need to apply a force, not overide the position
         Player.Instance.PhysicsBody.Position += (movementDir /* * Vector2.UnitX */ * dt * _speed);
     }
     #endregion

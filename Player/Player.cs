@@ -6,7 +6,7 @@ using Box2D.NetStandard.Collision.Shapes;
 using Box2D.NetStandard.Dynamics.Bodies;
 using Box2D.NetStandard.Dynamics.Fixtures;
 
-using Fighter2D.Physics;
+using Horizon.Physics;
 
 using Horizon.Core.Components.Physics2D;
 using Horizon.GameEntity.Components.Physics2D;

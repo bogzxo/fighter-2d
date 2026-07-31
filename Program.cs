@@ -6,7 +6,7 @@ using Box2D.NetStandard.Common;
 using Box2D.NetStandard.Dynamics.World;
 using Box2D.NetStandard.Dynamics.World.Callbacks;
 
-using Fighter2D.Physics;
+using Horizon.Physics;
 using Fighter2D.Player;
 using Fighter2D.Scenes;
 
