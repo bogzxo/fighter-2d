@@ -92,8 +92,8 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
             }
 
             CurrentMove = moveToExecute;
-            //Player.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
-            //Player.SetAnimation(CurrentMove.Animation.Name);
+            Player.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
+            Player.SetAnimation(CurrentMove.Animation.Name);
             return;
         }
     }
@@ -107,7 +107,7 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
         if (StateTracker.CurrentStatus != PlayerStatusType.Normal)
         {
             ProcessAnimationFrames(dt);
-            //Player.SetAnimation(CurrentMove.Animation.Name);
+            Player.SetAnimation(CurrentMove.Animation.Name);
             return;
         }
 

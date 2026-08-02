@@ -75,7 +75,7 @@ namespace Fighter2D.Player.Controllers
 
         public override void Update(float dt)
         {
-            _input.Update();
+            _input.Update(dt);
 
             var movementDir = _input.GetMovementInput();
 
