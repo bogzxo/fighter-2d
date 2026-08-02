@@ -153,7 +153,6 @@ internal class ControllablePlayerMoveManager : IGameComponent
         {
             case Stance.Falling:
                 _playerInstance.SetAnimation("fall");
-                Console.WriteLine("fall");
                 break;
             case Stance.Jumping:
                 _playerInstance.SetAnimation("jump");
@@ -161,7 +160,6 @@ internal class ControllablePlayerMoveManager : IGameComponent
             case Stance.Standing:
             case Stance.Crouching:
             default:
-                Console.WriteLine("OTHER???");
                 _playerInstance.SetAnimation(CurrentMove.Animation.Name);
                 break;
         }

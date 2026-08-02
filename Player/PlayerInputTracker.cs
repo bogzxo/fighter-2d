@@ -17,12 +17,6 @@ internal class PlayerInputTracker
 
     public bool IsConnected => _gamepad != null && _gamepad.IsConnected;
 
-    // Previous frame states for D-Pad polling (since XInput D-Pad is polled, not event-driven)
-    private bool _prevLeft;
-    private bool _prevRight;
-    private bool _prevUp;
-    private bool _prevDown;
-
     public PlayerInputTracker(int index)
     {
         _gamepad = GameEngine.Instance.InputManager.NativeInputContext.Gamepads[index];
@@ -30,34 +24,10 @@ internal class PlayerInputTracker
         {
             RegisterButtonPress(args.Name);
         };
-
-        _prevLeft = false;
-        _prevRight = false;
-        _prevUp = false;
-        _prevDown = false;
     }
 
     public void Update()
     {
-        // Poll D-Pad states from XInput joystick manager to support dpadleft/dpadright/dpadup/dpaddown bindings & double-taps
-        if (_gamepad != null)
-        {
-            bool leftPressed = _gamepad.DPadLeft().Pressed;
-            bool rightPressed = _gamepad.DPadRight().Pressed;
-            bool upPressed = _gamepad.DPadUp().Pressed;
-            bool downPressed = _gamepad.DPadDown().Pressed;
-
-            if (leftPressed && !_prevLeft) RegisterButtonPress(ButtonName.DPadLeft);
-            if (rightPressed && !_prevRight) RegisterButtonPress(ButtonName.DPadRight);
-            if (upPressed && !_prevUp) RegisterButtonPress(ButtonName.DPadUp);
-            if (downPressed && !_prevDown) RegisterButtonPress(ButtonName.DPadDown);
-
-            _prevLeft = leftPressed;
-            _prevRight = rightPressed;
-            _prevUp = upPressed;
-            _prevDown = downPressed;
-        }
-
         _inputHistory.RemoveAll(x => GameEngine.Instance.TotalTime - x.Time > 0.5f);
     }
 
@@ -90,15 +60,18 @@ internal class PlayerInputTracker
             return true;
 
         //var joystick = XInputJoystickInputManager.Gamepad;
-        if (_gamepad != null)
-        {
-            if (btn == ButtonName.DPadLeft && _gamepad.DPadLeft().Pressed) return true;
-            if (btn == ButtonName.DPadRight && _gamepad.DPadRight().Pressed) return true;
-            if (btn == ButtonName.DPadUp && _gamepad.DPadUp().Pressed) return true;
-            if (btn == ButtonName.DPadDown && _gamepad.DPadDown().Pressed) return true;
-        }
+        if (_gamepad == null) return false;
 
-        return false;
+        switch (btn)
+        {
+            case ButtonName.DPadLeft when _gamepad.DPadLeft().Pressed:
+            case ButtonName.DPadRight when _gamepad.DPadRight().Pressed:
+            case ButtonName.DPadUp when _gamepad.DPadUp().Pressed:
+            case ButtonName.DPadDown when _gamepad.DPadDown().Pressed:
+                return true;
+            default:
+                return false;
+        }
     }
 
     public Vector2 GetMovementInput()
