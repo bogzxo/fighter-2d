@@ -1,10 +1,7 @@
 ﻿using Horizon.Engine;
 using Horizon.Physics;
 using Horizon.Rendering.Spriting;
-using System;
-using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
 
 namespace Fighter2D.Scenes
 {
@@ -43,12 +40,12 @@ namespace Fighter2D.Scenes
             ActiveCamera = camera = AddEntity<Camera2D>(new(Engine.WindowManager.ViewportSize / 2.0f));
 
             spriteBatch = AddEntity<SpriteBatch>();
-            spriteBatch.Add(player = AddEntity(new Player.Player()
+            spriteBatch.Add(AddEntity(player = new Player.Player()
             {
                 SpawnPosition = new(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
             }));
 
-            spriteBatch.Add(dummy = AddEntity(new Player.Player(false)
+            spriteBatch.Add(AddEntity(dummy = new Player.Player(false)
             {
                 SpawnPosition = new(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
             }));

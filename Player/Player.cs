@@ -2,14 +2,8 @@ using System.Numerics;
 
 using Bogz.Logging.Loggers;
 
-using Box2D.NetStandard.Collision.Shapes;
-using Box2D.NetStandard.Dynamics.Bodies;
-using Box2D.NetStandard.Dynamics.Fixtures;
-
 using Horizon.Physics;
 
-using Horizon.Core.Components.Physics2D;
-using Horizon.GameEntity.Components.Physics2D;
 using Horizon.Rendering.Particles;
 using Horizon.Rendering.Spriting;
 
@@ -17,7 +11,6 @@ namespace Fighter2D.Player;
 
 internal class Player : Sprite
 {
-    internal static Player Instance;
     private static readonly Vector2 SIZE = new(128);
 
     internal ControllablePlayerMoveManager MoveManager { get; private set; }
@@ -32,8 +25,6 @@ internal class Player : Sprite
     public Player(bool controlled = true) : base(SIZE)
     {
         this._controlled = controlled;
-        if (this._controlled)
-            Instance = this;
     }
 
     public override void Initialize()
@@ -58,7 +49,7 @@ internal class Player : Sprite
 
 
         if (_controlled)
-            MoveManager = AddComponent<ControllablePlayerMoveManager>();
+            MoveManager = AddComponent(new ControllablePlayerMoveManager(this, 0));
 
         Particles = AddEntity(new ParticleRenderer2D(32768) { EndColor = new Vector3(0, 0, 0.6f) });
 

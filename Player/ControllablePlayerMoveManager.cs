@@ -23,23 +23,32 @@ internal class ControllablePlayerMoveManager : IGameComponent
 
     public FightingMove CurrentMove { get; private set; }
 
-    private readonly PlayerInputTracker _input = new();
-    private readonly PlayerStateTracker _state = new();
+    private readonly PlayerInputTracker _input;
+    private readonly PlayerStateTracker _state;
     private readonly MoveList _moveList = new();
     private readonly Random _random = new();
 
     private IntervalRunner _particleRunner;
-
 
     private float _frameStepTimer = 0.0f;
     private float _totalEngineTime = 0.0f;
     private float _jumpImpulse = 2500f;  // Changed from force to impulse
     private float _speed = 2000f;        // Desired max speed
 
+    public Player _playerInstance;
+    
+    public ControllablePlayerMoveManager(Player playerInstance, int gamepadIndex)
+    {
+        _playerInstance = playerInstance;
+        _input = new PlayerInputTracker(gamepadIndex);
+        _state = new PlayerStateTracker(_playerInstance);
+        Enabled = true;
+    }
+
     public void Initialize()
     {
         CurrentMove = _moveList.Idle;
-        Player.Instance.AnimationManager.Enabled = false;
+        _playerInstance.AnimationManager.Enabled = false;
 
         SetupHIDLRuntime();
         SetupAmbienceParticleRunner();
@@ -69,7 +78,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
         {
             if (_state.IsGrounded && _state.CurrentStatus == PlayerStatusType.Normal)
             {
-                Player.Instance.PhysicsBody.ApplyImpulse(new (0, _jumpImpulse));  // Negative because world Y goes down
+                _playerInstance.PhysicsBody.ApplyImpulse(new (0, _jumpImpulse));  // Negative because world Y goes down
 
                 _state.ResetFallDuration();
             }
@@ -80,12 +89,12 @@ internal class ControllablePlayerMoveManager : IGameComponent
         {
             if (_state.IsGrounded && _state.CurrentStatus == PlayerStatusType.Normal)
             {
-                float direction = Player.Instance.Flipped ? -1.0f : 1.0f;
-                Player.Instance.PhysicsBody.ApplyImpulse(new Vector2(direction * _speed * 1.75f, 0));  // Dash impulse
+                float direction = _playerInstance.Flipped ? -1.0f : 1.0f;
+                _playerInstance.PhysicsBody.ApplyImpulse(new Vector2(direction * _speed * 1.75f, 0));  // Dash impulse
 
                 for (int i = 0; i < 32; i++)
                 {
-                    SpawnParticle(Player.Instance.Transform.Position - new Vector2(0, 32), new Vector2(-direction * 2f, 0.5f), 0.8f);
+                    SpawnParticle(_playerInstance.Transform.Position - new Vector2(0, 32), new Vector2(-direction * 2f, 0.5f), 0.8f);
                 }
             }
             return new NullValue();
@@ -115,7 +124,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
     private void Physics(float dt)
     {
         _totalEngineTime += dt;
-        _input.Update(_totalEngineTime);
+        _input.Update();
         _state.UpdatePhysicsState(dt, CurrentMove.Name.Equals("crouch", StringComparison.OrdinalIgnoreCase));
         _state.UpdateStatus(dt);
 
@@ -124,7 +133,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
         if (_state.CurrentStatus != PlayerStatusType.Normal)
         {
             ProcessAnimationFrames(dt);
-            Player.Instance.SetAnimation(CurrentMove.Animation.Name);
+            _playerInstance.SetAnimation(CurrentMove.Animation.Name);
             return;
         }
 
@@ -143,17 +152,17 @@ internal class ControllablePlayerMoveManager : IGameComponent
         switch (_state.CurrentStance)
         {
             case Stance.Falling:
-                Player.Instance.SetAnimation("fall");
+                _playerInstance.SetAnimation("fall");
                 Console.WriteLine("fall");
                 break;
             case Stance.Jumping:
-                Player.Instance.SetAnimation("jump");
+                _playerInstance.SetAnimation("jump");
                 break;
             case Stance.Standing:
             case Stance.Crouching:
             default:
                 Console.WriteLine("OTHER???");
-                Player.Instance.SetAnimation(CurrentMove.Animation.Name);
+                _playerInstance.SetAnimation(CurrentMove.Animation.Name);
                 break;
         }
     }
@@ -170,18 +179,18 @@ internal class ControllablePlayerMoveManager : IGameComponent
         var movementDir = _input.GetMovementInput();
         if (movementDir.X != 0)
         {
-            Player.Instance.Flipped = movementDir.X < 0;
+            _playerInstance.Flipped = movementDir.X < 0;
         }
 
         // Apply velocity-based movement with damping
         if (movementDir.X != 0)
         {
             var targetVelocity = movementDir.X * _speed;
-            var currentVelocityX = Player.Instance.PhysicsBody.Velocity.X;
+            var currentVelocityX = _playerInstance.PhysicsBody.Velocity.X;
             var velocityDiff = targetVelocity - currentVelocityX;
             
             // Apply force proportional to velocity difference for responsive control
-            Player.Instance.PhysicsBody.ApplyForce(new Vector2(velocityDiff * Player.Instance.PhysicsBody.Mass * 5f, 0));
+            _playerInstance.PhysicsBody.ApplyForce(new Vector2(velocityDiff * _playerInstance.PhysicsBody.Mass * 5f, 0));
         }
 
         Physics(dt);
@@ -199,7 +208,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
     {
         _state.ApplyComboTrap(lockDuration);
         CurrentMove = comboMove;
-        Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
+        _playerInstance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
     }
 
     private void ForceMoveAnimation(string animName)
@@ -208,7 +217,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
         {
             CurrentMove = target;
         }
-        Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
+        _playerInstance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
     }
     #endregion
 
@@ -225,7 +234,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
             for (int i = 0; i < 32; i++)
             {
                 Vector2 randomDir = new Vector2((float)_random.NextDouble(), (float)_random.NextDouble());
-                SpawnParticle(Player.Instance.Transform.Position + Vector2.UnitY * -64, randomDir);
+                SpawnParticle(_playerInstance.Transform.Position + Vector2.UnitY * -64, randomDir);
             }
             _state.ResetFallDuration();
         }
@@ -238,7 +247,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
         {
             _frameStepTimer = 0;
 
-            var (finished, index) = Player.Instance.AnimationManager.IncrementFrame(CurrentMove.Animation.Name);
+            var (finished, index) = _playerInstance.AnimationManager.IncrementFrame(CurrentMove.Animation.Name);
             if (finished)
             {
                 if (_state.CurrentStatus != PlayerStatusType.Normal) return;
@@ -249,7 +258,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
                 }
                 else if (CurrentMove.Loopable && IsMoveHeld(CurrentMove))
                 {
-                    Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
+                    _playerInstance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
 
                     if (CurrentMove.Callback is not null)
                     {
@@ -299,7 +308,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
                     bool isDoubleTap = false;
                     foreach (var btn in candidate.Bindings.Where(buttons.Contains))
                     {
-                        if (_input.HasDoubleTap(btn, _totalEngineTime, 0.3f))
+                        if (_input.HasDoubleTap(btn, 0.3f))
                         {
                             isDoubleTap = true;
                             _input.ClearButtonHistory(btn);
@@ -336,8 +345,8 @@ internal class ControllablePlayerMoveManager : IGameComponent
             }
 
             CurrentMove = moveToExecute;
-            Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
-            Player.Instance.SetAnimation(CurrentMove.Animation.Name);
+            _playerInstance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
+            _playerInstance.SetAnimation(CurrentMove.Animation.Name);
             return;
         }
     }
@@ -369,7 +378,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
     private void ChangeToMove(FightingMove newMove)
     {
         CurrentMove = newMove;
-        Player.Instance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
+        _playerInstance.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
 
         if (CurrentMove.Callback is not null)
         {
@@ -382,7 +391,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
     {
         float val = (_random.NextSingle() * MathF.PI * 2.0f) - MathF.PI;
 
-        Player.Instance.Particles.Add(new Particle2D(
+        _playerInstance.Particles.Add(new Particle2D(
             new Vector2(MathF.Sin(val), MathF.Cos(val)) * (1.0f - blend) + dir * blend,
             pos
         ));
