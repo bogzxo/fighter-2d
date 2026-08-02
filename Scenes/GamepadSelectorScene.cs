@@ -13,6 +13,7 @@ namespace Fighter2D.Scenes;
 
 internal class GamepadSelectorScene : Scene
 {
+    private GlyphRenderer glyphRenderer;
     public override Camera ActiveCamera { get; protected set; }
 
     public override void Initialize()
@@ -22,17 +23,30 @@ internal class GamepadSelectorScene : Scene
         CompositeImages();
         CompositeText();
 
-        // todo: something like 
+        base.Initialize();
+    }
+
+    public override void UpdateState(float dt)
+    {
+        if (!Engine.InputManager.NativeInputContext!.Gamepads.Any())
+        {
+            glyphRenderer["insertGamepadHint"].IsVisible = true;
+            glyphRenderer["gamepadPressX"].IsVisible = false;
+        }
+        else
+        {
+            glyphRenderer["insertGamepadHint"].IsVisible = false;
+            glyphRenderer["gamepadPressX"].IsVisible = true;
+        }
+
         foreach (var gamepad in Engine.InputManager.NativeInputContext!.Gamepads)
         {
             if (gamepad.X().Pressed)
             {
-                // this one
-                // gamepad
+                Engine.SetScene(new MapSelectionScene());
             }
         }
-
-        base.Initialize();
+        base.UpdateState(dt);
     }
 
     private void CompositeImages()
@@ -51,8 +65,15 @@ internal class GamepadSelectorScene : Scene
 
     private void CompositeText()
     {
-        var glyphRenderer = AddEntity(new GlyphRenderer("Assets/Fonts/Born2bSporty", "Born2bSporty.fnt"));
-
+        glyphRenderer = AddEntity(new GlyphRenderer("Assets/Fonts/Born2bSporty", "Born2bSporty.fnt"));
+        glyphRenderer.AddLabel("insertGamepadHint", new()
+        {
+            Text = "Insert Gamepad to Continue",
+            Origin = Horizon.Rendering.Origin.Center
+        });
+        glyphRenderer.AddLabel("gamepadPressX", new()
+        {
+            Text = "Press X to Continue"
+        });
     }
 }
-
