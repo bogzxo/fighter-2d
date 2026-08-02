@@ -81,7 +81,7 @@ internal class MapSelectionScene : Scene
         // Process Scene Transition on the MAIN THREAD safely
         if (totalEngineTime > 1.0f && Engine.InputManager.IsPressed(Horizon.Input.VirtualAction.Interact))
         {
-            Engine.SetScene(new Program(mapDefinitions[selectedIndex]));
+            Engine.SetScene(new FightScene(mapDefinitions[selectedIndex]));
             return;
         }
 
