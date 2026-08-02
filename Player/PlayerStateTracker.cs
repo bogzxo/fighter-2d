@@ -5,8 +5,9 @@ namespace Fighter2D.Player;
 /// <summary>
 /// Handles Physics groundedness, Stance calculation, and Status Effect locks.
 /// </summary>
-internal class PlayerStateTracker
+internal class PlayerStateTracker(Player player)
 {
+    public Player Player { get; } = player;
     public bool IsGrounded { get; private set; }
     public Stance CurrentStance { get; private set; } = Stance.Standing;
     public PlayerStatusType CurrentStatus { get; private set; } = PlayerStatusType.Normal;
@@ -51,13 +52,13 @@ internal class PlayerStateTracker
 
     private void CheckGround()
     {
-        var feetFixture = Player.Instance.PhysicsBody.KinematicFixtures.Find(f => f.Tag == "feet");
+        var feetFixture = Player.PhysicsBody.KinematicFixtures.Find(f => f.Tag == "feet");
         IsGrounded = feetFixture?.IsTouching ?? false;
     }
 
     private void UpdateStance(float dt, bool isCrouchingMove)
     {
-        float verticalVelocity = Player.Instance.PhysicsBody.Velocity.Y;
+        float verticalVelocity = Player.PhysicsBody.Velocity.Y;
 
         if (IsGrounded)
         {

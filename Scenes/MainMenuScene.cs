@@ -12,8 +12,6 @@ using Horizon.Rendering.Spriting;
 using Horizon.Rendering.Text;
 using Horizon.Rendering.UI;
 
-
-
 namespace Fighter2D.Scenes;
 
 internal class MainMenuScene : Scene
@@ -21,10 +19,10 @@ internal class MainMenuScene : Scene
     public override Camera ActiveCamera { get; protected set; } = null!;
     private Camera2D camera = null!;
 
-   
     // UI Elements
     private SpriteBatch spriteBatch = null!;
-    private UIRectangle logo =null!, bg = null!;
+
+    private UIRectangle logo = null!, bg = null!;
     private GlyphRenderer glyphRenderer = null!;
 
     public override void Initialize()
@@ -55,11 +53,10 @@ internal class MainMenuScene : Scene
             spriteBatch.Add(bg);
         }
 
-
         ActiveCamera = camera = AddEntity<Camera2D>(new(new System.Numerics.Vector2(Engine.WindowManager.WindowSize.X, Engine.WindowManager.WindowSize.Y)));
 
         glyphRenderer = AddEntity(new GlyphRenderer("Assets/Fonts/Born2bSporty", "Born2bSporty.fnt"));
-        
+
         glyphRenderer.AddLabel("hint", new TextLabel
         {
             Text = "Press X to begin!",
@@ -81,18 +78,13 @@ internal class MainMenuScene : Scene
         base.Initialize();
     }
 
-    private float time;
     public override void UpdatePhysics(float dt)
     {
-        time += dt;
         base.UpdatePhysics(dt);
-
-        glyphRenderer["hint"].Text = dt.ToString();
-        glyphRenderer.MarkDirty();
 
         if (Engine.InputManager.IsPressed(Horizon.Input.VirtualAction.Interact))
         {
-            Engine.SetScene(new MapSelectionScene());
+            Engine.SetScene(new GamepadSelectorScene());
         }
     }
 }

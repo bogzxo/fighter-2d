@@ -10,11 +10,10 @@ using Silk.NET.Input;
 
 namespace Fighter2D.Scenes;
 
-internal class MapSelectionScene : Scene
+internal class MapSelectionScene(int gamepadIndex) : Scene
 {
     public override Camera ActiveCamera { get; protected set; }
     private Camera2D camera;
-
 
     private MapLoader.MapDefinition[] mapDefinitions;
     private GlyphRenderer glyphRenderer;
@@ -39,7 +38,6 @@ internal class MapSelectionScene : Scene
                 Position = new Vector2(0, Engine.WindowManager.WindowSize.Y / 2)
             }
         });
-
 
         float offsetY = 0;
         for (int i = 0; i < mapDefinitions.Length; i++)
@@ -81,7 +79,7 @@ internal class MapSelectionScene : Scene
         // Process Scene Transition on the MAIN THREAD safely
         if (totalEngineTime > 1.0f && Engine.InputManager.IsPressed(Horizon.Input.VirtualAction.Interact))
         {
-            Engine.SetScene(new Program(mapDefinitions[selectedIndex]));
+            Engine.SetScene(new FightScene(mapDefinitions[selectedIndex], gamepadIndex));
             return;
         }
 

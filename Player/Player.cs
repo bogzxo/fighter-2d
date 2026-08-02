@@ -6,38 +6,47 @@ using Box2D.NetStandard.Collision.Shapes;
 using Box2D.NetStandard.Dynamics.Bodies;
 using Box2D.NetStandard.Dynamics.Fixtures;
 
-using Horizon.Physics;
+using Fighter2D.Logic;
+using Fighter2D.Player.Controllers;
 
 using Horizon.Core.Components.Physics2D;
 using Horizon.GameEntity.Components.Physics2D;
+using Horizon.Physics;
 using Horizon.Rendering.Particles;
 using Horizon.Rendering.Spriting;
+
+using ImGuiNET;
 
 namespace Fighter2D.Player;
 
 internal class Player : Sprite
 {
-    internal static Player Instance;
     private static readonly Vector2 SIZE = new(128);
+    private readonly MoveList _moveList = new();
 
-    internal ControllablePlayerMoveManager MoveManager { get; private set; }
+    protected PlayerController Controller { get; init; }
     internal ParticleRenderer2D Particles { get; private set; }
     public Vector2 SpawnPosition { get; init; }
-
-    private bool _controlled;
 
     private PhysicsWorld world;
     public PhysicsBodyComponent2D PhysicsBody { get; internal set; }
 
-    public Player(bool controlled = true) : base(SIZE)
+    public Player(int index) : base(SIZE)
     {
-        this._controlled = controlled;
-        if (this._controlled)
-            Instance = this;
+        Controller = new GamepadPlayerController(index, _moveList);
     }
 
     public override void Initialize()
     {
+        base.Initialize();
+
+        if (!LoadSpriteSheetFromDirectory("Assets/sprites/player"))
+        {
+            ConcurrentLogger.Instance.Log(Bogz.Logging.LogLevel.Error, "Failed to load player sprite!");
+        }
+
+        AnimationManager.AnimateFrames = false;
+
         world = Parent.GetComponent<PhysicsWorld>();
         // Create player physics body and feet fixture
         PhysicsBody = AddComponent(world.CreateBody(PhysicsBodySimulationType.Dynamic, SpawnPosition));
@@ -48,20 +57,25 @@ internal class Player : Sprite
         PhysicsBody.Mass = 1.0f;
         PhysicsBody.Restitution = 0.3f;
 
-        if (!LoadSpriteSheetFromDirectory("Assets/sprites/player"))
-        {
-            ConcurrentLogger.Instance.Log(Bogz.Logging.LogLevel.Error, "Failed to load player sprite!");
-        }
-
         SetAnimation("idle");
-        AnimationManager.Enabled = true;
 
-
-        if (_controlled)
-            MoveManager = AddComponent<ControllablePlayerMoveManager>();
+        AddComponent(Controller);
 
         Particles = AddEntity(new ParticleRenderer2D(32768) { EndColor = new Vector3(0, 0, 0.6f) });
+    }
 
-        base.Initialize();
+    public override void Render(float dt, object? obj = null)
+    {
+        base.Render(dt, obj);
+
+        if (ImGui.Begin("Player"))
+        {
+            // Display all relevant player information
+
+            ImGui.Text("Player Information");
+            ImGui.Text($"Current Move: {Controller.CurrentMove.Name}");
+            ImGui.Text($"Current Stance: {Controller.StateTracker.CurrentStance}");
+            ImGui.Text($"Is Grounded: {Controller.StateTracker.IsGrounded}");
+        }
     }
 }
