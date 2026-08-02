@@ -12,7 +12,7 @@ namespace Fighter2D.HUD;
 
 internal class BarMeter : GameObject
 {
-    private static SpriteSheet _barSheet = null!;
+    private static SpriteSheet _barSheet;
 
     private Sprite foreground, background;
 

@@ -12,8 +12,6 @@ using Horizon.Engine;
 using Horizon.HIDL.Runtime;
 using Horizon.Rendering.Particles;
 
-
-
 namespace Fighter2D.Player;
 
 internal class ControllablePlayerMoveManager : IGameComponent
@@ -31,10 +29,11 @@ internal class ControllablePlayerMoveManager : IGameComponent
 
     private IntervalRunner _particleRunner;
 
+
     private float _frameStepTimer = 0.0f;
     private float _totalEngineTime = 0.0f;
-    private float _jumpForce = 2000f;
-    private float _speed = 2500f;
+    private float _jumpImpulse = 2500f;  // Changed from force to impulse
+    private float _speed = 2000f;        // Desired max speed
 
     public void Initialize()
     {
@@ -69,7 +68,8 @@ internal class ControllablePlayerMoveManager : IGameComponent
         {
             if (_state.IsGrounded && _state.CurrentStatus == PlayerStatusType.Normal)
             {
-                //Player.Instance.PlayerBody.ApplyLinearImpulseToCenter(new Vector2(0, _jumpForce));
+                Player.Instance.PhysicsBody.ApplyImpulse(new (0, _jumpImpulse));  // Negative because world Y goes down
+
                 _state.ResetFallDuration();
             }
             return new NullValue();
@@ -80,7 +80,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
             if (_state.IsGrounded && _state.CurrentStatus == PlayerStatusType.Normal)
             {
                 float direction = Player.Instance.Flipped ? -1.0f : 1.0f;
-                //Player.Instance.PlayerBody.ApplyLinearImpulseToCenter(new Vector2(direction * (_speed * 1.5f), 0));
+                Player.Instance.PhysicsBody.ApplyImpulse(new Vector2(direction * _speed * 1.75f, 0));  // Dash impulse
 
                 for (int i = 0; i < 32; i++)
                 {
@@ -135,14 +135,22 @@ internal class ControllablePlayerMoveManager : IGameComponent
         ProcessAnimationFrames(dt);
         TryResumeHeldMove();
 
-        if (_state.CurrentStance != Stance.Standing && CurrentMove.Name == "standing")
+        
+        // Check if the current move is ANY default resting state
+        bool isDefaultIdleState = CurrentMove.Name.Equals(_moveList.Idle.Name, StringComparison.OrdinalIgnoreCase) ||
+                                  CurrentMove.Name.Equals("standing", StringComparison.OrdinalIgnoreCase) ||
+                                  CurrentMove.Name.Equals("idle", StringComparison.OrdinalIgnoreCase);
+
+        // If we are airborne, and no attack/dash move is currently dictating the animation, force the air animations
+        if (_state.CurrentStance != Stance.Standing && isDefaultIdleState)
         {
-            Player.Instance.SetAnimation(_state.CurrentStance == Stance.Falling ? "fall" : "idle");
+            Player.Instance.SetAnimation(_state.CurrentStance == Stance.Falling ? "fall" : "jump");
         }
         else
         {
             Player.Instance.SetAnimation(CurrentMove.Animation.Name);
         }
+
     }
 
     public void UpdateState(float dt)
@@ -160,8 +168,26 @@ internal class ControllablePlayerMoveManager : IGameComponent
             Player.Instance.Flipped = movementDir.X < 0;
         }
 
-        // TODO: this will need to apply a force, not overide the position
-        Player.Instance.PhysicsBody.Position += (movementDir /* * Vector2.UnitX */ * dt * _speed);
+        // Apply velocity-based movement with damping
+        if (movementDir.X != 0)
+        {
+            var targetVelocity = movementDir.X * _speed;
+            var currentVelocityX = Player.Instance.PhysicsBody.Velocity.X;
+            var velocityDiff = targetVelocity - currentVelocityX;
+            
+            // Apply force proportional to velocity difference for responsive control
+            Player.Instance.PhysicsBody.ApplyForce(new Vector2(velocityDiff * Player.Instance.PhysicsBody.Mass * 5f, 0));
+        }
+        //else
+        //{
+        //    // No input - drag naturally slow down the player
+        //    var currentVelocityX = Player.Instance.PhysicsBody.Velocity.X;
+        //    if (Math.Abs(currentVelocityX) > 1.0f)
+        //    {
+        //        // Gradually reduce velocity when no input
+        //        Player.Instance.PhysicsBody.ApplyForce(new Vector2(-currentVelocityX * Player.Instance.PhysicsBody.Mass * 8f, 0));
+        //    }
+        //}
     }
     #endregion
 
@@ -230,7 +256,7 @@ internal class ControllablePlayerMoveManager : IGameComponent
 
                     if (CurrentMove.Callback is not null)
                     {
-                        GameEngine.Instance.Debugger.Console.Runtime.Evaluate($"{CurrentMove.Name}(); playerJump();");
+                        GameEngine.Instance.Debugger.Console.Runtime.Evaluate($"{CurrentMove.Name}();");
                     }
                 }
                 else

@@ -48,12 +48,17 @@ internal class Program : Scene
         Engine.GL.ClearColor(System.Drawing.Color.Black);
 
         world = AddComponent<PhysicsWorld>();
+        world.Gravity = new Vector2(0, -4000);
         LoadMap();
 
         ActiveCamera = camera = AddEntity<Camera2D>(new(Engine.WindowManager.ViewportSize / 2.0f));
         
         spriteBatch = AddEntity<SpriteBatch>();
-        spriteBatch.Add(player = AddEntity(new Player.Player()));
+        spriteBatch.Add(player = AddEntity(new Player.Player()
+        {
+            SpawnPosition = new (mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
+        }));
+        
         spriteBatch.Add(dummy = AddEntity(new Player.Player(false)));
 
         camera.Position = new Vector3(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y, 0.0f);
@@ -110,6 +115,7 @@ internal class Program : Scene
                 _exactCameraPosition.Z // Usually keep Z as-is depending on your depth buffer
             );
         }
+        //camera.Position = new Vector3(player.Transform.Position, 0.0f);
         base.UpdateState(dt);
     }
 

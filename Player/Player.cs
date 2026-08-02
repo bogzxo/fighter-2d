@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 
 using Bogz.Logging.Loggers;
 
@@ -22,13 +22,14 @@ internal class Player : Sprite
 
     internal ControllablePlayerMoveManager MoveManager { get; private set; }
     internal ParticleRenderer2D Particles { get; private set; }
+    public Vector2 SpawnPosition { get; init; }
 
     private bool _controlled;
 
     private PhysicsWorld world;
     public PhysicsBodyComponent2D PhysicsBody { get; internal set; }
 
-    public Player(bool controlled=true) : base(SIZE)
+    public Player(bool controlled = true) : base(SIZE)
     {
         this._controlled = controlled;
         if (this._controlled)
@@ -39,8 +40,13 @@ internal class Player : Sprite
     {
         world = Parent.GetComponent<PhysicsWorld>();
         // Create player physics body and feet fixture
-        PhysicsBody = AddComponent(world.CreateBody(PhysicsBodySimulationType.Dynamic));
+        PhysicsBody = AddComponent(world.CreateBody(PhysicsBodySimulationType.Dynamic, SpawnPosition));
         PhysicsBody.CreateCircleFixture(Vector2.UnitY * -48, 16.0f);
+        PhysicsBody.CreateCircleFixture(Vector2.UnitY * -64, 8.0f, true, "feet");
+
+        PhysicsBody.LinearDrag = 16.0f;
+        PhysicsBody.Mass = 1.0f;
+        PhysicsBody.Restitution = 0.3f;
 
         if (!LoadSpriteSheetFromDirectory("Assets/sprites/player"))
         {
