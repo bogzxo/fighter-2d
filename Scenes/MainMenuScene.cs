@@ -81,14 +81,9 @@ internal class MainMenuScene : Scene
         base.Initialize();
     }
 
-    private float time;
     public override void UpdatePhysics(float dt)
     {
-        time += dt;
         base.UpdatePhysics(dt);
-
-        glyphRenderer["hint"].Text = dt.ToString();
-        glyphRenderer.MarkDirty();
 
         if (Engine.InputManager.IsPressed(Horizon.Input.VirtualAction.Interact))
         {
