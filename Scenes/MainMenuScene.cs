@@ -87,7 +87,7 @@ internal class MainMenuScene : Scene
 
         if (Engine.InputManager.IsPressed(Horizon.Input.VirtualAction.Interact))
         {
-            Engine.SetScene(new MapSelectionScene());
+            Engine.SetScene(new GamepadSelectorScene());
         }
     }
 }
