@@ -11,6 +11,7 @@ using Horizon.Core.Components;
 using Horizon.Engine;
 using Horizon.HIDL.Runtime;
 using Horizon.Rendering.Particles;
+using ImGuiNET;
 
 namespace Fighter2D.Player;
 
@@ -109,6 +110,10 @@ internal class ControllablePlayerMoveManager : IGameComponent
     #region Loops
     public void UpdatePhysics(float dt)
     {
+    }
+
+    private void Physics(float dt)
+    {
         _totalEngineTime += dt;
         _input.Update(_totalEngineTime);
         _state.UpdatePhysicsState(dt, CurrentMove.Name.Equals("crouch", StringComparison.OrdinalIgnoreCase));
@@ -135,22 +140,22 @@ internal class ControllablePlayerMoveManager : IGameComponent
         ProcessAnimationFrames(dt);
         TryResumeHeldMove();
 
-        
-        // Check if the current move is ANY default resting state
-        bool isDefaultIdleState = CurrentMove.Name.Equals(_moveList.Idle.Name, StringComparison.OrdinalIgnoreCase) ||
-                                  CurrentMove.Name.Equals("standing", StringComparison.OrdinalIgnoreCase) ||
-                                  CurrentMove.Name.Equals("idle", StringComparison.OrdinalIgnoreCase);
-
-        // If we are airborne, and no attack/dash move is currently dictating the animation, force the air animations
-        if (_state.CurrentStance != Stance.Standing && isDefaultIdleState)
+        switch (_state.CurrentStance)
         {
-            Player.Instance.SetAnimation(_state.CurrentStance == Stance.Falling ? "fall" : "jump");
+            case Stance.Falling:
+                Player.Instance.SetAnimation("fall");
+                Console.WriteLine("fall");
+                break;
+            case Stance.Jumping:
+                Player.Instance.SetAnimation("jump");
+                break;
+            case Stance.Standing:
+            case Stance.Crouching:
+            default:
+                Console.WriteLine("OTHER???");
+                Player.Instance.SetAnimation(CurrentMove.Animation.Name);
+                break;
         }
-        else
-        {
-            Player.Instance.SetAnimation(CurrentMove.Animation.Name);
-        }
-
     }
 
     public void UpdateState(float dt)
@@ -178,16 +183,8 @@ internal class ControllablePlayerMoveManager : IGameComponent
             // Apply force proportional to velocity difference for responsive control
             Player.Instance.PhysicsBody.ApplyForce(new Vector2(velocityDiff * Player.Instance.PhysicsBody.Mass * 5f, 0));
         }
-        //else
-        //{
-        //    // No input - drag naturally slow down the player
-        //    var currentVelocityX = Player.Instance.PhysicsBody.Velocity.X;
-        //    if (Math.Abs(currentVelocityX) > 1.0f)
-        //    {
-        //        // Gradually reduce velocity when no input
-        //        Player.Instance.PhysicsBody.ApplyForce(new Vector2(-currentVelocityX * Player.Instance.PhysicsBody.Mass * 8f, 0));
-        //    }
-        //}
+
+        Physics(dt);
     }
     #endregion
 
@@ -394,6 +391,14 @@ internal class ControllablePlayerMoveManager : IGameComponent
 
     public void Render(float dt, object? obj = null)
     {
-        
+        if (ImGui.Begin("Player"))
+        {
+            // Display all relevant player information
+
+            ImGui.Text("Player Information");
+            ImGui.Text($"Current Move: {CurrentMove.Name}");
+            ImGui.Text($"Current Stance: {_state.CurrentStance}");
+            ImGui.Text($"Is Grounded: {_state.IsGrounded}");    
+        }
     }
 }

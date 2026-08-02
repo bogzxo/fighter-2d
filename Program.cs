@@ -48,6 +48,8 @@ internal class Program : Scene
         Engine.GL.ClearColor(System.Drawing.Color.Black);
 
         world = AddComponent<PhysicsWorld>();
+        world.RenderDebug = false;
+
         world.Gravity = new Vector2(0, -4000);
         LoadMap();
 
@@ -59,7 +61,10 @@ internal class Program : Scene
             SpawnPosition = new (mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
         }));
         
-        spriteBatch.Add(dummy = AddEntity(new Player.Player(false)));
+        spriteBatch.Add(dummy = AddEntity(new Player.Player(false)
+        {
+            SpawnPosition = new(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
+        }));
 
         camera.Position = new Vector3(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y, 0.0f);
 

@@ -7,6 +7,7 @@ let sprite = {
         run_loop: {x: 0, y: 1, l: 12, t: 0.05 },
         run_stop: {x: 0, y: 2, l: 5, t: 0.05 },
         jump: {x: 0, y: 3, l: 11, t: 0.05 },
+        fall: {x: 7, y: 3, l: 1, t: 0.05 },
         hard_landing: {x: 0, y: 4, l: 6, t: 0.05 },
         roll: {x: 0, y: 5, l: 9, t: 0.05 },
         jump_kick: {x: 0, y: 6, l: 8, t: 0.05 },
