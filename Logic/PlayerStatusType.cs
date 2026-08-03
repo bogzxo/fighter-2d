@@ -41,14 +41,15 @@ public struct MoveAnimation
     public int HitFrame;
 }
 
-public class FightingMove
+internal class FightingMove
 {
     public string Name { get; set; } = string.Empty;
     public int Damage { get; set; }
     public MoveAnimation Animation { get; set; }
     public Stance Stances { get; set; }
     public Direction Directions { get; set; }
-    public ButtonName[] Bindings { get; set; } = [];
+    //public ButtonName[] Bindings { get; set; } = [];
+    public InputFlags InputSignature { get; set; }
     public bool UseAnyBindings { get; set; }
     public bool Interuptable { get; set; }
     public bool Loopable { get; set; }

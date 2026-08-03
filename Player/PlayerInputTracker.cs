@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using Horizon.Core.Collections;
 using System.Linq;
 using System.Numerics;
 
@@ -7,11 +7,15 @@ using Horizon.Engine;
 using Horizon.Input.Components;
 
 using Silk.NET.Input;
+using Fighter2D.Logic;
+using Fighter2D.Scenes;
 
 namespace Fighter2D.Player;
 
 internal class PlayerInputTracker
 {
+    
+
     private struct InputState : IEquatable<InputState>
     {
         public bool A_Button;
@@ -52,7 +56,8 @@ internal class PlayerInputTracker
     }
 
     private const int MaxInputHistory = 16;
-    private Horizon.Core.Collections.CircularBuffer<InputState> _circularInputHistory = new(MaxInputHistory);
+    private CircularBuffer<InputFlags> _circularInputFlags = new(MaxInputHistory);
+    private readonly MoveList _moveList;
 
     private IntervalRunner _runner;
     private readonly List<ButtonName> _frameButtonPresses = new();
@@ -61,8 +66,9 @@ internal class PlayerInputTracker
 
     public bool IsConnected => _gamepad != null && _gamepad.IsConnected;
 
-    public PlayerInputTracker(int index)
+    public PlayerInputTracker(int index, MoveList moveList)
     {
+        _moveList = moveList;
         _gamepad = GameEngine.Instance.InputManager.NativeInputContext.Gamepads[index];
         _gamepad.ButtonDown += (_, args) =>
         {
@@ -73,40 +79,44 @@ internal class PlayerInputTracker
 
     private void FixedUpdate()
     {
-        // (bool left, bool up, bool down, bool right, bool a_button, bool b_button, bool x_button, bool y_button)
+        // (bool left, bool up, bool down, bool right, bool a_button, bool b_button, bool x_button, bool y_button
 
         // save current state of the player input
-        _circularInputHistory.Append(new InputState(
-            _gamepad?.DPadLeft().Pressed ?? false,
-            _gamepad?.DPadUp().Pressed ?? false,
-            _gamepad?.DPadDown().Pressed ?? false,
-            _gamepad?.DPadRight().Pressed ?? false,
-            _gamepad?.Buttons.FirstOrDefault(b => b.Name == ButtonName.A).Pressed ?? false,
-            _gamepad?.Buttons.FirstOrDefault(b => b.Name == ButtonName.B).Pressed ?? false,
-            _gamepad?.Buttons.FirstOrDefault(b => b.Name == ButtonName.X).Pressed ?? false,
-            _gamepad?.Buttons.FirstOrDefault(b => b.Name == ButtonName.Y).Pressed ?? false
-        ));
+        InputFlags current = (
+            (_gamepad?.DPadLeft().Pressed ?? false ? InputFlags.DPadLeft : InputFlags.None) |
+            (_gamepad?.DPadRight().Pressed ?? false ? InputFlags.DPadRight : InputFlags.None) |
+            (_gamepad?.DPadUp().Pressed ?? false ? InputFlags.DPadUp : InputFlags.None) |
+            (_gamepad?.DPadDown().Pressed ?? false ? InputFlags.DPadDown : InputFlags.None) |
+            ((_gamepad?.A().Pressed ?? false) & FightScene.ControlledPlayer.Controller.MoveAnimationFinishedEvent.IsSet ? InputFlags.A : InputFlags.None) |
+            ((_gamepad?.B().Pressed ?? false) & FightScene.ControlledPlayer.Controller.MoveAnimationFinishedEvent.IsSet ? InputFlags.B : InputFlags.None) |
+            ((_gamepad?.X().Pressed ?? false) & FightScene.ControlledPlayer.Controller.MoveAnimationFinishedEvent.IsSet ? InputFlags.X : InputFlags.None) |
+            ((_gamepad?.Y().Pressed ?? false) & FightScene.ControlledPlayer.Controller.MoveAnimationFinishedEvent.IsSet ? InputFlags.Y : InputFlags.None)
+        );
+
+        _circularInputFlags.Append(current);
+        Console.WriteLine(current);
 
         // squash into just the diffs for that whole array
-        List<InputState> inputStates = new List<InputState>();
-        foreach (var inputState in _circularInputHistory.ToArray())
+        List<InputFlags> inputStates = new List<InputFlags>();
+        foreach (var inputState in _circularInputFlags.ToArray())
         {
             if (!inputStates.Contains(inputState))
                 inputStates.Add(inputState);
         }
 
         // match it to a move in an order of priority
-
-        foreach (var inputState in inputStates)
+        foreach (var (name, move) in _moveList.Moves)
         {
-            // in an ideal world:
-            //var move = MoveList.MatchInput(inputState);
-            //if (move != null)
-            //{
-            //    // trigger the move
-            //    GameEngine.Instance.TriggerMove(move);
-            //    break;
-            //}
+            if (move.InputSignature == InputFlags.None) continue;
+            foreach (var inputState in inputStates)
+            {
+                if ((move.InputSignature ^ inputState) == InputFlags.None)
+                {
+                    Console.WriteLine(name);
+                    //controller.domove
+
+                }
+            }
         }
     }
 

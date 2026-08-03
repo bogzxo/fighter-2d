@@ -22,9 +22,6 @@ internal class MoveList
 
     public Dictionary<string, FightingMove> AllMoves { get; init; } = new();
 
-    // Changed key to string (joined bindings) because arrays pass by reference, breaking dictionary lookups.
-    public Dictionary<string, string> MovesLookup { get; init; } = new();
-
     public FightingMove Idle { get; private set; }
 
     private readonly string _filePath = string.Empty;
@@ -125,7 +122,7 @@ internal class MoveList
                 Animation = new MoveAnimation { HitFrame = animHit, Name = animName },
                 Stances = ParseStance(stanceraw),
                 Directions = ParseDirection(dirraw),
-                Bindings = bindings,
+                InputSignature = flags,
                 UseAnyBindings = anyInput,
                 Interuptable = interuptable,
                 Callback = callback,
