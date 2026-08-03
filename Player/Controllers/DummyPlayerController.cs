@@ -29,6 +29,10 @@ internal class DummyPlayerController(MoveList moveList) : PlayerController(moveL
             {
                 ChangeToMove(MoveList["counter_attack"]);
             }
+            else if (FightScene.ControlledPlayer.Controller.CurrentMove.Name == "dodge_roll")
+            {
+                ChangeToMove(MoveList["jump"]);
+            }
         }
     }
 
