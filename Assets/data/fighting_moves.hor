@@ -1,0 +1,54 @@
+﻿let moves = {
+    block: {
+        binding: "none",
+        direction: "any",
+        stance: "standing",
+        damage: 0,
+        interruptible: true,
+        animation: { name: "block", hit: 0 }
+    },
+    counter_attack: {
+        binding: "none",
+        direction: "any",
+        stance: "standing",
+        damage: 0,
+        interruptible: true,
+        animation: { name: "counter_attack", hit: 3 }
+    },
+    kick_left: {
+        binding: "A",
+        direction: "any",
+        stance: "standing | crouching",
+        damage: 10,
+        interruptible: false,
+        animation: { name: "kick", hit: 7 },
+        
+        // Explicitly reroute the input to another move if you press it in these stances!
+        stance_reroutes: {
+            jumping: "jumpkick",
+            falling: "jumpkick"
+        }
+    },
+    kick_right: {
+        binding: "B",
+        direction: "any",
+        stance: "standing | crouching",
+        damage: 10,
+        interruptible: false,
+        animation: { name: "kick", hit: 7 },
+        
+        // Explicitly reroute the input to another move if you press it in these stances!
+        stance_reroutes: {
+            jumping: "jumpkick",
+            falling: "jumpkick"
+        }
+    },
+    jumpkick: {
+        binding: "none",
+        direction: "any",
+        stance: "jumping | falling",
+        damage: 15,
+        interruptible: false,
+        animation: { name: "jump_kick", hit: 5 }
+    },
+}

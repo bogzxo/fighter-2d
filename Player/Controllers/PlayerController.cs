@@ -63,7 +63,7 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
             dash: func() { _PLAYER_DASH(); }
         }", true);
 
-        foreach (var (_, move) in MoveList.Moves)
+        foreach (var (_, move) in MoveList.AllMoves)
         {
             if (move.Callback is not null)
             {
@@ -78,7 +78,7 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
     {
         if (CurrentMove.Name != MoveList.Idle.Name) return;
 
-        foreach (var candidate in MoveList.Moves.Values)
+        foreach (var candidate in MoveList.AllMoves.Values)
         {
             if (candidate.Bindings.Length == 0 || !candidate.Loopable || !IsMoveHeld(candidate)) continue;
 
@@ -87,7 +87,7 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
             {
                 if (candidate.StanceReroutes != null &&
                     candidate.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out string? reroutedName) &&
-                    MoveList.Moves.TryGetValue(reroutedName, out var reroutedMove))
+                    MoveList.AllMoves.TryGetValue(reroutedName, out var reroutedMove))
                 {
                     moveToExecute = reroutedMove;
                 }
@@ -121,7 +121,7 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
 
         if (!string.IsNullOrEmpty(CurrentMove.ReleaseMove) && !IsMoveHeld(CurrentMove))
         {
-            if (MoveList.Moves.TryGetValue(CurrentMove.ReleaseMove, out var releaseMove))
+            if (MoveList.AllMoves.TryGetValue(CurrentMove.ReleaseMove, out var releaseMove))
             {
                 ChangeToMove(releaseMove);
             }
@@ -154,7 +154,7 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
     {
         if (StateTracker is { DeltaOnGround: false, IsGrounded: true })
         {
-            if (StateTracker.FallDuration > 0.2f && MoveList.Moves.TryGetValue("heavy_land", out var landMove))
+            if (StateTracker.FallDuration > 0.2f && MoveList.AllMoves.TryGetValue("heavy_land", out var landMove))
             {
                 ChangeToMove(landMove);
             }
@@ -191,7 +191,7 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
                 if (StateTracker.CurrentStatus != PlayerStatusType.Normal) return;
 
                 if (!string.IsNullOrEmpty(CurrentMove.NextMove) &&
-                    MoveList.Moves.TryGetValue(CurrentMove.NextMove, out var next))
+                    MoveList.AllMoves.TryGetValue(CurrentMove.NextMove, out var next))
                 {
                     ChangeToMove(next);
                 }
@@ -258,7 +258,7 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
 
     private void ForceMoveAnimation(string animName)
     {
-        if (MoveList.Moves.TryGetValue(animName, out var target))
+        if (MoveList.AllMoves.TryGetValue(animName, out var target))
         {
             CurrentMove = target;
         }

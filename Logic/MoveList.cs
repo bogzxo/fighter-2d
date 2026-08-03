@@ -14,7 +14,13 @@ using Silk.NET.Input;
 
 internal class MoveList
 {
-    public Dictionary<string, FightingMove> Moves { get; init; } = new();
+    private const string FIGHTING_MOVES_FILE = "Assets/data/fighting_moves.hor";
+    private const string MOVEMENT_MOVES_FILE = "Assets/data/movement_moves.hor";
+
+    public Dictionary<string, FightingMove> FightingMoves { get; init; } = new();
+    public Dictionary<string, FightingMove> MovingMoves { get; init; } = new();
+
+    public Dictionary<string, FightingMove> AllMoves { get; init; } = new();
 
     // Changed key to string (joined bindings) because arrays pass by reference, breaking dictionary lookups.
     public Dictionary<string, string> MovesLookup { get; init; } = new();
@@ -23,39 +29,50 @@ internal class MoveList
 
     private readonly string _filePath = string.Empty;
 
-    public FightingMove this[string index] => Moves[index];
+    public FightingMove this[string index] => this.FightingMoves.TryGetValue(index, out var item) ? item : this.MovingMoves[index];
 
-    public MoveList(in string file = "Assets/data/moves.hor")
+    public bool TryGetMove(in string index, out FightingMove move)
     {
-        _filePath = file;
+        if (AllMoves.TryGetValue(index, out var fight))
+        {
+            move = fight;
+            return true;
+        }
+
+        move = Idle;
+        return false;
+    }
+
+    public MoveList()
+    {
         HIDLRuntime runtime = new();
         runtime.GlobalScope.DeclareSystem("playerJump", new NativeFunctionValue());
 
-        if (!File.Exists(file)) throw new FileNotFoundException($"Move list file not found: {file}");
+        if (!File.Exists(FIGHTING_MOVES_FILE)) throw new FileNotFoundException($"Move list file not found: {FIGHTING_MOVES_FILE}");
+        if (!File.Exists(MOVEMENT_MOVES_FILE)) throw new FileNotFoundException($"Move list file not found: {MOVEMENT_MOVES_FILE}");
 
-        var (success, _) = runtime.Evaluate(File.ReadAllText(file));
-        if (!success) throw new Exception("Failed to evaluate move list script.");
+        // Load fighting moves
+        var (success_fight, _) = runtime.Evaluate(File.ReadAllText(FIGHTING_MOVES_FILE));
+        if (!success_fight) throw new Exception("Failed to evaluate move list script.");
 
+        // Extract and parse fighting moves
         ObjectValue movesValue = (ObjectValue)runtime.UserScope.Lookup("moves");
-        ParseMoves(movesValue);
+        ParseMoves(movesValue, FightingMoves);
+
+        // Reset scope for further moves
+        runtime.UserScope.Reset();
+
+        // Load movement moves
+        var (success_move, _) = runtime.Evaluate(File.ReadAllText(MOVEMENT_MOVES_FILE));
+        if (!success_move) throw new Exception("Failed to evaluate move list script.");
+
+
+        // Extract and parse movement moves
+        movesValue = (ObjectValue)runtime.UserScope.Lookup("moves");
+        ParseMoves(movesValue, MovingMoves);
     }
 
-    public void Reload()
-    {
-        MovesLookup.Clear();
-        Moves.Clear();
-
-        HIDLRuntime runtime = new();
-        runtime.GlobalScope.DeclareSystem("playerJump", new NativeFunctionValue());
-
-        var (success, _) = runtime.Evaluate(File.ReadAllText(_filePath));
-        if (!success) throw new Exception("Failed to evaluate move list script.");
-
-        ObjectValue movesValue = (ObjectValue)runtime.UserScope.Lookup("moves");
-        ParseMoves(movesValue);
-    }
-
-    private void ParseMoves(ObjectValue movesValue)
+    private void ParseMoves(ObjectValue movesValue, Dictionary<string, FightingMove> dict)
     {
         foreach (var move in movesValue.Properties)
         {
@@ -100,12 +117,6 @@ internal class MoveList
 
             var (anyInput, bindings) = ParseBindings(bindraw);
 
-            // Map to string to prevent array reference mismatch
-            string bindKey = string.Join("+", bindings);
-            if (bindings.Length > 0 && !MovesLookup.ContainsKey(bindKey))
-            {
-                MovesLookup.Add(bindKey, moveName);
-            }
 
             var fmove = new FightingMove
             {
@@ -130,7 +141,8 @@ internal class MoveList
                 Idle = fmove;
             }
 
-            Moves.Add(moveName, fmove);
+            AllMoves.Add(moveName, fmove);
+            dict.Add(moveName, fmove);
         }
     }
 

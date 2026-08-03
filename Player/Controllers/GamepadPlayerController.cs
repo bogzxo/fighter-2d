@@ -27,7 +27,7 @@ namespace Fighter2D.Player.Controllers
             var buttons = _input.ConsumeFramePresses();
             if (buttons.Length == 0 || !CurrentMove.Interuptable) return;
 
-            foreach (var candidate in MoveList.Moves.Values)
+            foreach (var candidate in MoveList.FightingMoves.Values)
             {
                 if (candidate.Bindings.Length == 0) continue;
 
@@ -43,7 +43,7 @@ namespace Fighter2D.Player.Controllers
                     {
                         if (candidate.StanceReroutes != null &&
                             candidate.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out string? reroutedName) &&
-                            MoveList.Moves.TryGetValue(reroutedName, out var reroutedMove))
+                            MoveList.FightingMoves.TryGetValue(reroutedName, out var reroutedMove))
                         {
                             moveToExecute = reroutedMove;
                         }
