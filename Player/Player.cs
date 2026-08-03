@@ -19,22 +19,16 @@ using ImGuiNET;
 
 namespace Fighter2D.Player;
 
-internal class Player : Sprite
+internal class Player() : Sprite(SIZE)
 {
     private static readonly Vector2 SIZE = new(128);
-    private readonly MoveList _moveList = new();
-
-    protected PlayerController Controller { get; init; }
+    internal required PlayerController Controller { get; init; }
     internal ParticleRenderer2D Particles { get; private set; }
     public Vector2 SpawnPosition { get; init; }
 
     private PhysicsWorld world;
     public PhysicsBodyComponent2D PhysicsBody { get; internal set; }
 
-    public Player(int index) : base(SIZE)
-    {
-        Controller = new GamepadPlayerController(index, _moveList);
-    }
 
     public override void Initialize()
     {
@@ -51,7 +45,9 @@ internal class Player : Sprite
         // Create player physics body and feet fixture
         PhysicsBody = AddComponent(world.CreateBody(PhysicsBodySimulationType.Dynamic, SpawnPosition));
         PhysicsBody.CreateCircleFixture(Vector2.UnitY * -48, 16.0f);
-        PhysicsBody.CreateCircleFixture(Vector2.UnitY * -64, 8.0f, true, "feet");
+        PhysicsBody.CreateCircleFixture(new (0, -32), 16.0f);
+
+        PhysicsBody.CreateCircleFixture(Vector2.UnitY * -64, 12.0f, true, "feet");
 
         PhysicsBody.LinearDrag = 16.0f;
         PhysicsBody.Mass = 1.0f;

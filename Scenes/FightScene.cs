@@ -1,8 +1,11 @@
-﻿using Horizon.Engine;
+﻿using System.Numerics;
+
+using Fighter2D.Logic;
+using Fighter2D.Player.Controllers;
+
+using Horizon.Engine;
 using Horizon.Physics;
 using Horizon.Rendering.Spriting;
-
-using System.Numerics;
 
 namespace Fighter2D.Scenes
 {
@@ -13,16 +16,18 @@ namespace Fighter2D.Scenes
         // Sprite Rendering
         private SpriteBatch spriteBatch;
 
-        private Sprite player;
+        private Sprite player, dummy;
         private PhysicsWorld world;
         //private UIRectangle
 
         // General Rendering
         private Camera2D camera;
 
+
+        internal readonly MoveList MoveList = new();
+
         // Map renderer
         private TileMap map;
-
         private MapLoader.MapDefinition mapDefinition;
         private readonly int gamepadIndex;
 
@@ -37,7 +42,7 @@ namespace Fighter2D.Scenes
             Engine.GL.ClearColor(System.Drawing.Color.Black);
 
             world = AddComponent<PhysicsWorld>();
-            world.RenderDebug = false;
+            //world.RenderDebug = false;
 
             world.Gravity = new Vector2(0, -4000);
             LoadMap();
@@ -45,9 +50,17 @@ namespace Fighter2D.Scenes
             ActiveCamera = camera = AddEntity<Camera2D>(new(Engine.WindowManager.ViewportSize / 2.0f));
 
             spriteBatch = AddEntity<SpriteBatch>();
-            spriteBatch.Add(AddEntity(player = new Player.Player(gamepadIndex)
+            spriteBatch.Add(AddEntity(player = new Player.Player()
             {
+                Controller = new GamepadPlayerController(gamepadIndex, MoveList),
                 SpawnPosition = new(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
+            }));
+
+
+            spriteBatch.Add(AddEntity(dummy = new Player.Player()
+            {
+                Controller = new DummyPlayerController(MoveList),
+                SpawnPosition = new(mapDefinition.SpawnPosition.X * map.TileSize.X + 196, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
             }));
 
             camera.Position = new Vector3(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y, 0.0f);
