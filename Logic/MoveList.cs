@@ -69,7 +69,25 @@ internal class MoveList
         ParseMoves(movesValue, MovingMoves);
     }
 
+<<<<<<< Updated upstream
     private void ParseMoves(ObjectValue movesValue, Dictionary<string, FightingMove> dict)
+=======
+    public void Reload()
+    {
+        Moves.Clear();
+
+        HIDLRuntime runtime = new();
+        runtime.GlobalScope.DeclareSystem("playerJump", new NativeFunctionValue());
+
+        var (success, _) = runtime.Evaluate(File.ReadAllText(_filePath));
+        if (!success) throw new Exception("Failed to evaluate move list script.");
+
+        ObjectValue movesValue = (ObjectValue)runtime.UserScope.Lookup("moves");
+        ParseMoves(movesValue);
+    }
+
+    private void ParseMoves(ObjectValue movesValue)
+>>>>>>> Stashed changes
     {
         foreach (var move in movesValue.Properties)
         {
@@ -114,6 +132,22 @@ internal class MoveList
 
             var (anyInput, bindings) = ParseBindings(bindraw);
 
+            var flags = InputFlags.None;
+            foreach (var binding in bindings)
+            {
+                flags |= binding switch
+                {
+                    ButtonName.A => InputFlags.A,
+                    ButtonName.B => InputFlags.B,
+                    ButtonName.X => InputFlags.X,
+                    ButtonName.Y => InputFlags.Y,
+                    ButtonName.DPadUp => InputFlags.DPadUp,
+                    ButtonName.DPadDown => InputFlags.DPadDown,
+                    ButtonName.DPadLeft => InputFlags.DPadLeft,
+                    ButtonName.DPadRight => InputFlags.DPadRight,
+                    _ => InputFlags.None
+                };
+            }
 
             var fmove = new FightingMove
             {
