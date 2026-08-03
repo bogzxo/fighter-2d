@@ -27,8 +27,12 @@ internal class GamepadSelectorScene : Scene
         base.Initialize();
     }
 
+    private float _delayTimer = 0.0f;
+
     public override void UpdateState(float dt)
     {
+        _delayTimer += dt;
+
         if (!Engine.InputManager.NativeInputContext!.Gamepads.Any())
         {
             glyphRenderer["insertGamepadHint"].IsVisible = true;
@@ -40,14 +44,16 @@ internal class GamepadSelectorScene : Scene
             glyphRenderer["gamepadPressX"].IsVisible = true;
         }
 
+        base.UpdateState(dt);
+        if (_delayTimer < 0.25f) return;
+
         foreach (var gamepad in Engine.InputManager.NativeInputContext!.Gamepads)
         {
-            if (gamepad.X().Pressed)
+            if (gamepad.A().Pressed)
             {
                 Engine.SetScene(new MapSelectionScene(gamepad.Index));
             }
         }
-        base.UpdateState(dt);
     }
 
     private void CompositeImages()
