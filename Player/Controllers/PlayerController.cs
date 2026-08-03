@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
@@ -21,6 +22,8 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
     internal PlayerStateTracker StateTracker;
     public FightingMove CurrentMove { get; private set; }
     private readonly HIDLRuntime _runtime = new();
+
+    public ManualResetEventSlim MoveAnimationFinishedEvent { get; init; } = new();
 
     public void Initialize()
     {
@@ -204,6 +207,19 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
                 else
                 {
                     CurrentMove = MoveList.Idle;
+
+                    if (!(CurrentMove.Name.Equals("idle") ||
+                          CurrentMove.Name.Equals("jump") ||
+                          CurrentMove.Name.Equals("dodge_roll") ||
+                          CurrentMove.Name.Equals("heavy_land") ||
+                          CurrentMove.Name.Equals("crouch_start") ||
+                          CurrentMove.Name.Equals("crouch") ||
+                          CurrentMove.Name.Equals("run_start") ||
+                          CurrentMove.Name.Equals("running") ||
+                          CurrentMove.Name.Equals("run_stop")))
+                    {
+                        MoveAnimationFinishedEvent.Set();
+                    }
                 }
             }
         }
