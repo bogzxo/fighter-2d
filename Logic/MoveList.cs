@@ -57,7 +57,8 @@ internal class MoveList
         ParseMoves(movesValue, FightingMoves);
 
         // Reset scope for further moves
-        runtime.UserScope.Reset();
+        runtime = new();
+        runtime.GlobalScope.DeclareSystem("playerJump", new NativeFunctionValue());
 
         // Load movement moves
         var (success_move, _) = runtime.Evaluate(File.ReadAllText(MOVEMENT_MOVES_FILE));

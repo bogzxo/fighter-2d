@@ -6,7 +6,6 @@ using System.Text;
 using Horizon.Engine;
 using Horizon.Rendering.Spriting;
 using Horizon.Rendering.Text;
-using Horizon.Rendering.UI;
 
 using Silk.NET.Input;
 
@@ -62,7 +61,7 @@ internal class GamepadSelectorScene : Scene
 
         if (Engine.ObjectManager.Textures.TryCreateOrGet("gpselbg", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/backgrounds/player_select_bg.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_bg))
         {
-            var bg = spriteBatch.AddEntity(new UIRectangle(Engine.WindowManager.WindowSize));
+            var bg = spriteBatch.AddEntity(new Sprite(Engine.WindowManager.WindowSize));
             bg.Transform.SetPositionRelativeToOrigin(new System.Numerics.Vector2(-Engine.WindowManager.WindowSize.X / 2, Engine.WindowManager.WindowSize.Y / 2));
             bg.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_bg.Asset, new Vector2(result_bg.Asset.Width, result_bg.Asset.Height)), "bg");
 

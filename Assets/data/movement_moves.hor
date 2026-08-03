@@ -7,7 +7,6 @@
         interruptible: true,
         animation: { name: "idle", hit: 0 }
     },
-    
     jump: {
         binding: "dpadup",
         direction: "any",
@@ -16,8 +15,9 @@
         interruptible: true,
         animation: { name: "jump", hit: 0 },
         callback: func() { player.jump() },
+        loopable: true
     },
-
+    
     /* --- EVASION --- */
     dodge_roll: {
         binding: "dpadleft | dpadright",

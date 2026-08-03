@@ -76,29 +76,29 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
 
     private void TryResumeHeldMove()
     {
-        if (CurrentMove.Name != MoveList.Idle.Name) return;
+        //if (CurrentMove.Name != MoveList.Idle.Name) return;
 
-        foreach (var candidate in MoveList.AllMoves.Values)
-        {
-            if (candidate.Bindings.Length == 0 || !candidate.Loopable || !IsMoveHeld(candidate)) continue;
+        //foreach (var candidate in MoveList.AllMoves.Values)
+        //{
+        //    if (candidate.Bindings.Length == 0 || !candidate.Loopable || !IsMoveHeld(candidate)) continue;
 
-            FightingMove moveToExecute = candidate;
-            if (!IsStanceValid(candidate.Stances))
-            {
-                if (candidate.StanceReroutes != null &&
-                    candidate.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out string? reroutedName) &&
-                    MoveList.AllMoves.TryGetValue(reroutedName, out var reroutedMove))
-                {
-                    moveToExecute = reroutedMove;
-                }
-                else continue;
-            }
+        //    FightingMove moveToExecute = candidate;
+        //    if (!IsStanceValid(candidate.Stances))
+        //    {
+        //        if (candidate.StanceReroutes != null &&
+        //            candidate.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out string? reroutedName) &&
+        //            MoveList.AllMoves.TryGetValue(reroutedName, out var reroutedMove))
+        //        {
+        //            moveToExecute = reroutedMove;
+        //        }
+        //        else continue;
+        //    }
 
-            CurrentMove = moveToExecute;
-            Player.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
-            Player.SetAnimation(CurrentMove.Animation.Name);
-            return;
-        }
+        //    CurrentMove = moveToExecute;
+        //    Player.AnimationManager.Animations[CurrentMove.Animation.Name].ResetIndex();
+        //    Player.SetAnimation(CurrentMove.Animation.Name);
+        //    return;
+        //}
     }
 
     public abstract void TryProcessNewInputs(float dt);

@@ -10,7 +10,6 @@ using Horizon.Engine;
 using Horizon.Rendering;
 using Horizon.Rendering.Spriting;
 using Horizon.Rendering.Text;
-using Horizon.Rendering.UI;
 
 namespace Fighter2D.Scenes;
 
@@ -22,7 +21,7 @@ internal class MainMenuScene : Scene
     // UI Elements
     private SpriteBatch spriteBatch = null!;
 
-    private UIRectangle logo = null!, bg = null!;
+    private Sprite logo = null!, bg = null!;
     private GlyphRenderer glyphRenderer = null!;
 
     public override void Initialize()
@@ -36,7 +35,7 @@ internal class MainMenuScene : Scene
         {
             const uint logoScalar = 4;
 
-            logo = spriteBatch.AddEntity(new UIRectangle(new System.Numerics.Vector2(result_logo.Asset.Width * logoScalar, result_logo.Asset.Height * logoScalar)));
+            logo = spriteBatch.AddEntity(new Sprite(new System.Numerics.Vector2(result_logo.Asset.Width * logoScalar, result_logo.Asset.Height * logoScalar)));
 
             //logo.Transform.SetPositionRelativeToOrigin(new System.Numerics.Vector2(0));
             logo.Transform.Position = new Vector2(0, 265);
@@ -46,7 +45,7 @@ internal class MainMenuScene : Scene
         }
         if (Engine.ObjectManager.Textures.TryCreateOrGet("main_bg", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/backgrounds/menu.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_bg))
         {
-            bg = spriteBatch.AddEntity(new UIRectangle(Engine.WindowManager.WindowSize));
+            bg = spriteBatch.AddEntity(new Sprite(Engine.WindowManager.WindowSize));
             bg.Transform.SetPositionRelativeToOrigin(new System.Numerics.Vector2(-Engine.WindowManager.WindowSize.X / 2, Engine.WindowManager.WindowSize.Y / 2));
             bg.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_bg.Asset, new Vector2(result_bg.Asset.Width, result_bg.Asset.Height)), "bg");
 

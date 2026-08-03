@@ -105,7 +105,7 @@ internal class PlayerInputTracker
         }
 
         // match it to a move in an order of priority
-        foreach (var (name, move) in _moveList.Moves)
+        foreach (var (name, move) in _moveList.FightingMoves)
         {
             if (move.InputSignature == InputFlags.None) continue;
             foreach (var inputState in inputStates)
