@@ -69,25 +69,7 @@ internal class MoveList
         ParseMoves(movesValue, MovingMoves);
     }
 
-<<<<<<< Updated upstream
     private void ParseMoves(ObjectValue movesValue, Dictionary<string, FightingMove> dict)
-=======
-    public void Reload()
-    {
-        Moves.Clear();
-
-        HIDLRuntime runtime = new();
-        runtime.GlobalScope.DeclareSystem("playerJump", new NativeFunctionValue());
-
-        var (success, _) = runtime.Evaluate(File.ReadAllText(_filePath));
-        if (!success) throw new Exception("Failed to evaluate move list script.");
-
-        ObjectValue movesValue = (ObjectValue)runtime.UserScope.Lookup("moves");
-        ParseMoves(movesValue);
-    }
-
-    private void ParseMoves(ObjectValue movesValue)
->>>>>>> Stashed changes
     {
         foreach (var move in movesValue.Properties)
         {
