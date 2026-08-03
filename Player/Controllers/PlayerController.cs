@@ -275,7 +275,7 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
 
     protected Player Player { get; private set; }
 
-    public void Render(float dt, object? obj = null)
+    public virtual void Render(float dt, object? obj = null)
     {
     }
 }
