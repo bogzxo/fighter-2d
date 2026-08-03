@@ -23,6 +23,8 @@ internal class MoveList
 
     private readonly string _filePath = string.Empty;
 
+    public FightingMove this[string index] => Moves[index];
+
     public MoveList(in string file = "Assets/data/moves.hor")
     {
         _filePath = file;

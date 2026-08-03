@@ -12,6 +12,7 @@ using Fighter2D.Player.Controllers;
 using Horizon.Core.Components.Physics2D;
 using Horizon.GameEntity.Components.Physics2D;
 using Horizon.Physics;
+using Horizon.Physics.Fixtures;
 using Horizon.Rendering.Particles;
 using Horizon.Rendering.Spriting;
 
@@ -29,6 +30,7 @@ internal class Player() : Sprite(SIZE)
     private PhysicsWorld world;
     public PhysicsBodyComponent2D PhysicsBody { get; internal set; }
 
+    public CirclePhysicsFixture HitboxFixture { get; private set; }
 
     public override void Initialize()
     {
@@ -44,10 +46,11 @@ internal class Player() : Sprite(SIZE)
         world = Parent.GetComponent<PhysicsWorld>();
         // Create player physics body and feet fixture
         PhysicsBody = AddComponent(world.CreateBody(PhysicsBodySimulationType.Dynamic, SpawnPosition));
+
         PhysicsBody.CreateCircleFixture(Vector2.UnitY * -48, 16.0f);
         PhysicsBody.CreateCircleFixture(new (0, -32), 16.0f);
-
         PhysicsBody.CreateCircleFixture(Vector2.UnitY * -64, 12.0f, true, "feet");
+        HitboxFixture = PhysicsBody.CreateCircleFixture(Vector2.UnitY * -24, 32, true, "hitbox");
 
         PhysicsBody.LinearDrag = 16.0f;
         PhysicsBody.Mass = 1.0f;

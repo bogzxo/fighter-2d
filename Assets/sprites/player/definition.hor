@@ -14,5 +14,7 @@ let sprite = {
         kick: {x: 0, y: 7, l: 5, t: 0.05 },
         crouch_start: {x: 0, y: 8, l: 3, t: 0.05 },
         crouch_loop: {x: 2, y: 8, l: 1, t: 0.05 },
+        block: {x: 0, y: 9, l: 7, t: 0.05 },
+        counter_attack: {x: 0, y: 10, l: 4, t: 0.05 },
     }
 }

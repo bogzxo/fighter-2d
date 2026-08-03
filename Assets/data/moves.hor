@@ -7,6 +7,22 @@
         interruptible: true,
         animation: { name: "idle", hit: 0 }
     },
+    block: {
+        binding: "none",
+        direction: "any",
+        stance: "standing",
+        damage: 0,
+        interruptible: true,
+        animation: { name: "block", hit: 0 }
+    },
+    counter_attack: {
+        binding: "none",
+        direction: "any",
+        stance: "standing",
+        damage: 0,
+        interruptible: true,
+        animation: { name: "counter_attack", hit: 3 }
+    },
     jump: {
         binding: "dpadup",
         direction: "any",
