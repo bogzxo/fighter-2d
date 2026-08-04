@@ -1,4 +1,4 @@
-﻿namespace Fighter2D.Player.Controllers;
+﻿namespace Fighter2D.Character.Controllers;
 
 internal static class PlayerConfig
 {

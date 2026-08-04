@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
-
+using Fighter2D.Character;
 using Fighter2D.Logic;
-using Fighter2D.Player.Controllers;
+using Fighter2D.Character.Controllers;
 
 using Horizon.Engine;
 using Horizon.Physics;
@@ -20,7 +20,7 @@ namespace Fighter2D.Scenes
         private PhysicsWorld world;
         //private UIRectangle
 
-        internal static Player.Player ControlledPlayer;
+        internal static Player ControlledPlayer;
 
         // General Rendering
         private Camera2D camera;
@@ -52,18 +52,18 @@ namespace Fighter2D.Scenes
             ActiveCamera = camera = AddEntity<Camera2D>(new(Engine.WindowManager.ViewportSize / 2.0f));
 
             spriteBatch = AddEntity<SpriteBatch>();
-            spriteBatch.Add(AddEntity(ControlledPlayer = new Player.Player()
+            spriteBatch.Add(AddEntity(ControlledPlayer = new Player()
             {
                 Controller = new GamepadPlayerController(gamepadIndex, MoveList),
                 SpawnPosition = new(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
             }));
 
 
-            spriteBatch.Add(AddEntity(dummy = new Player.Player()
-            {
-                Controller = new DummyPlayerController(MoveList),
-                SpawnPosition = new(mapDefinition.SpawnPosition.X * map.TileSize.X + 196, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
-            }));
+            //spriteBatch.Add(AddEntity(dummy = new Player()
+            //{
+            //    Controller = new DummyPlayerController(MoveList),
+            //    SpawnPosition = new(mapDefinition.SpawnPosition.X * map.TileSize.X + 196, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
+            //}));
 
             camera.Position = new Vector3(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y, 0.0f);
 

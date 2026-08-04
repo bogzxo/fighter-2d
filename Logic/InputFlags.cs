@@ -5,7 +5,7 @@ using System.Text;
 namespace Fighter2D.Logic
 {
     [Flags]
-    internal enum InputFlags : byte
+    public enum InputFlags : byte
     {
         None = 0,
         A = 1,

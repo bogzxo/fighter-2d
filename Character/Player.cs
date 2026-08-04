@@ -7,7 +7,7 @@ using Box2D.NetStandard.Dynamics.Bodies;
 using Box2D.NetStandard.Dynamics.Fixtures;
 
 using Fighter2D.Logic;
-using Fighter2D.Player.Controllers;
+using Fighter2D.Character.Controllers;
 
 using Horizon.Core.Components.Physics2D;
 using Horizon.GameEntity.Components.Physics2D;
@@ -18,7 +18,7 @@ using Horizon.Rendering.Spriting;
 
 using ImGuiNET;
 
-namespace Fighter2D.Player;
+namespace Fighter2D.Character;
 
 internal class Player() : Sprite(SIZE)
 {
@@ -72,7 +72,7 @@ internal class Player() : Sprite(SIZE)
             // Display all relevant player information
 
             ImGui.Text("Player Information");
-            ImGui.Text($"Current Move: {Controller.CurrentMove.Name}");
+            ImGui.Text($"Current Move: {Controller.CurrentMove.Id}");
             ImGui.Text($"Current Stance: {Controller.StateTracker.CurrentStance}");
             ImGui.Text($"Is Grounded: {Controller.StateTracker.IsGrounded}");
         }

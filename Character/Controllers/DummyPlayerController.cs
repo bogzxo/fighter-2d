@@ -3,17 +3,14 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 using Fighter2D.Logic;
+using Fighter2D.Logic.Moves;
 using Fighter2D.Scenes;
+using Silk.NET.Input;
 
-namespace Fighter2D.Player.Controllers;
+namespace Fighter2D.Character.Controllers;
 
 internal class DummyPlayerController(MoveList moveList) : PlayerController(moveList)
 {
-    internal override bool IsMoveHeld(FightingMove candidate)
-    {
-        return false;
-    }
-
     public override void TryProcessNewInputs(float dt)
     {
         // Test our hitbox intersection with the controlled player, and if they are performing a kick, we will block it.
@@ -21,22 +18,27 @@ internal class DummyPlayerController(MoveList moveList) : PlayerController(moveL
         {
             if (CurrentMove != MoveList.Idle) return;
 
-            if (FightScene.ControlledPlayer.Controller.CurrentMove.Name == "kick")
+            if (FightScene.ControlledPlayer.Controller.CurrentMove is { Id: MoveId.KickLeft or MoveId.KickRight} )
             {
-                ChangeToMove(MoveList["block"]);
+                ChangeToMove(MoveId.Block);
             }
-            else if (FightScene.ControlledPlayer.Controller.CurrentMove.Name == "idle")
+            else if (FightScene.ControlledPlayer.Controller.CurrentMove.Id == MoveId.Idle)
             {
-                ChangeToMove(MoveList["counter_attack"]);
+                ChangeToMove(MoveId.CounterAttack);
             }
-            else if (FightScene.ControlledPlayer.Controller.CurrentMove.Name == "dodge_roll")
+            else if (FightScene.ControlledPlayer.Controller.CurrentMove.Id == MoveId.DodgeRoll)
             {
-                ChangeToMove(MoveList["jump"]);
+                ChangeToMove(MoveId.Jump);
             }
         }
     }
 
-    protected override void FixedUpdate()
+    public override bool IsButtonHeld(ButtonName btn)
+    {
+        return false;
+    }
+
+    public override void UpdatePhysics(float dt)
     {
         this.Player.Flipped = this.Player.Transform.Position.X > FightScene.ControlledPlayer.Transform.Position.X;
     }

@@ -1,11 +1,6 @@
-﻿namespace Fighter2D.Logic;
+﻿using System;
 
-using System;
-using System.Collections.Generic;
-
-using Horizon.HIDL.Runtime;
-
-using Silk.NET.Input;
+namespace Fighter2D.Logic;
 
 [Flags]
 public enum Stance
@@ -31,31 +26,9 @@ public enum Direction
 public enum PlayerStatusType
 {
     Normal,
+    Attacking,    // for move coroutines
+    Guarding,     // for block coroutine
+    Invulnerable, // for dodge roll coroutine
     Stunned,
     ComboTrapped
-}
-
-public struct MoveAnimation
-{
-    public string Name;
-    public int HitFrame;
-}
-
-internal class FightingMove
-{
-    public string Name { get; set; } = string.Empty;
-    public int Damage { get; set; }
-    public MoveAnimation Animation { get; set; }
-    public Stance Stances { get; set; }
-    public Direction Directions { get; set; }
-    //public ButtonName[] Bindings { get; set; } = [];
-    public InputFlags InputSignature { get; set; }
-    public bool UseAnyBindings { get; set; }
-    public bool Interuptable { get; set; }
-    public bool Loopable { get; set; }
-    public bool DoubleTap { get; set; }
-    public string? NextMove { get; set; }
-    public string? ReleaseMove { get; set; }
-    public Dictionary<Stance, string>? StanceReroutes { get; set; }
-    public AnonymousFunctionValue? Callback { get; set; }
 }
