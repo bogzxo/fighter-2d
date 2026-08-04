@@ -17,7 +17,6 @@ namespace Fighter2D.Player.Controllers
         private CircularBuffer<InputFlags> _circularInputFlags = new(MaxInputHistory);
         private IGamepad? _gamepad;
         public bool IsConnected => _gamepad != null && _gamepad.IsConnected;
-        private IntervalRunner _runner;
 
         private readonly List<ButtonName> _frameButtonPresses = new();
         private readonly List<(ButtonName Btn, float Time)> _inputHistory = new();
@@ -29,10 +28,9 @@ namespace Fighter2D.Player.Controllers
             {
                 RegisterButtonPress(args.Name);
             };
-            _runner = new IntervalRunner(1 / 60.0f, FixedUpdate);
         }
 
-        private void FixedUpdate()
+        protected override void FixedUpdate()
         {
             // (bool left, bool up, bool down, bool right, bool a_button, bool b_button, bool x_button, bool y_button
 
@@ -67,11 +65,30 @@ namespace Fighter2D.Player.Controllers
                 {
                     if ((move.InputSignature ^ inputState) == InputFlags.None)
                     {
-                        Console.WriteLine(name);
+                        //Console.WriteLine(name);
                         //controller.domove
 
                     }
                 }
+            }
+            _inputHistory.RemoveAll(x => GameEngine.Instance.TotalTime - x.Time > 0.5f);
+
+            var movementDir = GetMovementInput();
+
+            if (movementDir.X != 0)
+            {
+                Player.Flipped = movementDir.X < 0;
+            }
+
+            // Apply velocity-based movement with damping
+            if (movementDir.X != 0)
+            {
+                var targetVelocity = movementDir.X * PlayerConfig.WALK_SPEED;
+                var currentVelocityX = Player.PhysicsBody.Velocity.X;
+                var velocityDiff = targetVelocity - currentVelocityX;
+
+                // Apply force proportional to velocity difference for responsive control
+                Player.PhysicsBody.ApplyForce(new Vector2(velocityDiff * Player.PhysicsBody.Mass * 5f, 0));
             }
         }
 
@@ -135,30 +152,6 @@ namespace Fighter2D.Player.Controllers
             //        return;
             //    }
             //}
-        }
-
-        public override void Update(float dt)
-        {
-            _runner.UpdateState(dt);
-            _inputHistory.RemoveAll(x => GameEngine.Instance.TotalTime - x.Time > 0.5f);
-
-            var movementDir = GetMovementInput();
-
-            if (movementDir.X != 0)
-            {
-                Player.Flipped = movementDir.X < 0;
-            }
-
-            // Apply velocity-based movement with damping
-            if (movementDir.X != 0)
-            {
-                var targetVelocity = movementDir.X * PlayerConfig.WALK_SPEED;
-                var currentVelocityX = Player.PhysicsBody.Velocity.X;
-                var velocityDiff = targetVelocity - currentVelocityX;
-
-                // Apply force proportional to velocity difference for responsive control
-                Player.PhysicsBody.ApplyForce(new Vector2(velocityDiff * Player.PhysicsBody.Mass * 5f, 0));
-            }
         }
 
         private void RegisterButtonPress(ButtonName btn)

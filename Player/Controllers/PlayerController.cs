@@ -22,6 +22,7 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
     internal PlayerStateTracker StateTracker;
     public FightingMove CurrentMove { get; private set; }
     private readonly HIDLRuntime _runtime = new();
+    private IntervalRunner _runner;
 
     public ManualResetEventSlim MoveAnimationFinishedEvent { get; init; } = new();
 
@@ -32,7 +33,10 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
         StateTracker = new(Player);
 
         SetupHIDLRuntime();
+        _runner = new IntervalRunner(1 / 60.0f, FixedUpdate);
     }
+
+    protected abstract void FixedUpdate();
 
     private void SetupHIDLRuntime()
     {
@@ -103,10 +107,10 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
 
     public abstract void TryProcessNewInputs(float dt);
 
-    public abstract void Update(float dt);
 
     public void UpdateState(float dt)
     {
+        _runner.UpdateState(dt);
         if (StateTracker.CurrentStatus != PlayerStatusType.Normal)
         {
             ProcessAnimationFrames(dt);
@@ -147,7 +151,6 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
                 Player.SetAnimation(CurrentMove.Animation.Name);
                 break;
         }
-        Update(dt);
     }
 
     private void CheckHeavyLanding()

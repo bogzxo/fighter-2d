@@ -36,7 +36,7 @@ internal class DummyPlayerController(MoveList moveList) : PlayerController(moveL
         }
     }
 
-    public override void Update(float dt)
+    protected override void FixedUpdate()
     {
         this.Player.Flipped = this.Player.Transform.Position.X > FightScene.ControlledPlayer.Transform.Position.X;
     }
