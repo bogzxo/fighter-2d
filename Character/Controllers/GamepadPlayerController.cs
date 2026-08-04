@@ -1,23 +1,72 @@
-﻿using System.Linq;
-using System.Numerics;
-
-using Fighter2D.Character.Controllers;
+﻿using Fighter2D.Character.Controllers;
 using Fighter2D.Logic;
 using Fighter2D.Logic.Moves;
-
+using Fighter2D.Scenes;
+using Horizon.Core;
+using Horizon.Core.Collections;
 using Horizon.Engine;
-
 using Silk.NET.Input;
+using System.Linq;
+using System.Numerics;
 
 namespace Fighter2D.Character.Controllers;
 
 internal class GamepadPlayerController : PlayerController
 {
+    private const int MaxInputHistory = 16;
+    private CircularBuffer<InputFlags> _circularInputFlags = new(MaxInputHistory);
+    private IntervalRunner _runner;
+    public bool IsConnected => _gamepad != null && _gamepad.IsConnected;
+
     private readonly IGamepad? _gamepad;
 
     public GamepadPlayerController(int index, MoveList moveList) : base(moveList)
     {
         _gamepad = GameEngine.Instance.InputManager.NativeInputContext.Gamepads.ElementAtOrDefault(index);
+        _runner = new IntervalRunner(1 / 60.0f, FixedUpdate);
+    }
+
+    private void FixedUpdate()
+    {
+        // (bool left, bool up, bool down, bool right, bool a_button, bool b_button, bool x_button, bool y_button
+
+        // save current state of the player input
+        InputFlags current = (
+            (_gamepad?.DPadLeft().Pressed ?? false ? InputFlags.DPadLeft : InputFlags.None) |
+            (_gamepad?.DPadRight().Pressed ?? false ? InputFlags.DPadRight : InputFlags.None) |
+            (_gamepad?.DPadUp().Pressed ?? false ? InputFlags.DPadUp : InputFlags.None) |
+            (_gamepad?.DPadDown().Pressed ?? false ? InputFlags.DPadDown : InputFlags.None) |
+            ((_gamepad?.A().Pressed ?? false) ? InputFlags.A : InputFlags.None) |
+            ((_gamepad?.B().Pressed ?? false) ? InputFlags.B : InputFlags.None) |
+            ((_gamepad?.X().Pressed ?? false) ? InputFlags.X : InputFlags.None) |
+            ((_gamepad?.Y().Pressed ?? false) ? InputFlags.Y : InputFlags.None)
+        );
+
+        _circularInputFlags.Append(current);
+        Console.WriteLine(current);
+
+        // squash into just the diffs for that whole array
+        List<InputFlags> inputStates = new List<InputFlags>();
+        foreach (var inputState in _circularInputFlags.ToArray())
+        {
+            if (!inputStates.Contains(inputState))
+                inputStates.Add(inputState);
+        }
+
+        // match it to a move in an order of priority
+        foreach (var (name, move) in MoveList.AllMoves)
+        {
+            if (move.InputSignature == InputFlags.None) continue;
+            foreach (var inputState in inputStates)
+            {
+                if ((move.InputSignature ^ inputState) == InputFlags.None)
+                {
+                    Console.WriteLine(name);
+                    //controller.domove
+
+                }
+            }
+        }
     }
 
     public override void TryProcessNewInputs(float dt)
