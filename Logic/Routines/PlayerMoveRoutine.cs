@@ -29,6 +29,7 @@ internal class PlayerMoveRoutines
         yield return 10;
 
         _controller.ChangeToMove(MoveId.Idle);
+        _controller.StateTracker.CurrentStatus = PlayerStatusType.Normal;
     }
 
     public IEnumerator<int> JumpKick()
