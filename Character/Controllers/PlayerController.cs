@@ -57,12 +57,6 @@ internal abstract class PlayerController : IGameComponent
     public void PlayAnimation(string animName)
     {
         ActiveAnimation = animName;
-
-        if (Player.AnimationManager.Animations.ContainsKey(ActiveAnimation))
-        {
-            Player.AnimationManager.Animations[ActiveAnimation].ResetIndex();
-        }
-
         Player.SetAnimation(ActiveAnimation);
     }
 
@@ -90,8 +84,8 @@ internal abstract class PlayerController : IGameComponent
 
     public void UpdateState(float dt)
     {
-        _activeRoutine?.Tick();
-
+        ProcessAnimationFrames(dt);
+        //int frame = _activeRoutine?.Tick() ?? 0;
         if (_activeRoutine?.IsFinished == true && CurrentMove.Id != MoveId.Idle)
         {
             ChangeToMove(MoveId.Idle);
@@ -102,7 +96,6 @@ internal abstract class PlayerController : IGameComponent
         StateTracker.UpdateStatus(dt);
 
         CheckHeavyLanding();
-        ProcessAnimationFrames(dt);
 
         if (StateTracker.CurrentStatus == PlayerStatusType.Normal &&
            (CurrentMove.Interruptible || _activeRoutine == null))
@@ -114,14 +107,18 @@ internal abstract class PlayerController : IGameComponent
     private void ProcessAnimationFrames(float dt)
     {
         _frameStepTimer += dt;
-        float frameTime = 1.0f / 30f; // 30 FPS animations
+        float frameTime = 1.0f / 24f; // 24 FPS animations
 
-        while (_frameStepTimer >= frameTime)
+        //while (_frameStepTimer >= frameTime)
+        if (_frameStepTimer >= frameTime)
         {
-            _frameStepTimer -= frameTime;
+            int frame = _activeRoutine?.Tick() ?? 0;
+
+            _frameStepTimer = 0;
+            //_frameStepTimer -= frameTime;
 
             // Step the ACTIVE animation, not the move's default starting animation
-            var (finished, _) = Player.AnimationManager.IncrementFrame(ActiveAnimation);
+            var finished = Player.AnimationManager.SetFrame(ActiveAnimation, frame, true);
 
             if (finished)
             {
@@ -129,14 +126,14 @@ internal abstract class PlayerController : IGameComponent
                 // Resetting the index here causes the active animation to Loop continuously.
                 if (_activeRoutine != null)
                 {
-                    Player.AnimationManager.Animations[ActiveAnimation].ResetIndex();
-                    continue;
+                    //Player.AnimationManager.Animations[ActiveAnimation].ResetIndex();
+                    return;
                 }
 
                 if (StateTracker.CurrentStatus != PlayerStatusType.Normal)
                 {
-                    Player.AnimationManager.Animations[ActiveAnimation].ResetIndex();
-                    continue;
+                    //Player.AnimationManager.Animations[ActiveAnimation].ResetIndex();
+                    return;
                 }
 
                 if (CurrentMove.Id != MoveId.Idle)
@@ -145,7 +142,7 @@ internal abstract class PlayerController : IGameComponent
                 }
                 else
                 {
-                    Player.AnimationManager.Animations[ActiveAnimation].ResetIndex();
+                    //Player.AnimationManager.Animations[ActiveAnimation].ResetIndex();
                 }
             }
         }

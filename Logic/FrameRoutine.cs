@@ -17,14 +17,14 @@ public class FrameRoutine
     /// <summary>
     /// Steps the routine forward by one frame. Call this in FixedUpdate.
     /// </summary>
-    public void Tick()
+    public int Tick()
     {
-        if (IsFinished) return;
+        if (IsFinished) return 0;
 
         if (_waitFrames > 0)
         {
             _waitFrames--;
-            return;
+            return _waitFrames;
         }
 
         if (_routine.MoveNext())
@@ -36,5 +36,6 @@ public class FrameRoutine
         {
             IsFinished = true;
         }
+        return _waitFrames;
     }
 }

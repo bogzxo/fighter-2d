@@ -21,15 +21,22 @@ internal class PlayerMoveRoutines
 
     public IEnumerator<int> KickLeft()
     {
+        // Total animation length is 5 frames
+
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Attacking;
         _controller.PlayAnimation("kick");
 
-        yield return 7;
+        // Hit happens on frame 3
+        yield return 3;
+        
         // Active Hitbox here
-        yield return 10;
+
+
+        yield return 2;
 
         _controller.ChangeToMove(MoveId.Idle);
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Normal;
+
     }
 
     public IEnumerator<int> JumpKick()
@@ -83,23 +90,16 @@ internal class PlayerMoveRoutines
 
     public IEnumerator<int> Run()
     {
-        //_controller.PlayAnimation("run_start");
-
         // todo: sme way to find the animation lengths
-        yield return 4;
-
-
-        _controller.PlayAnimation("run_loop");
 
         while (_controller.IsButtonHeld(ButtonName.DPadLeft) || _controller.IsButtonHeld(ButtonName.DPadRight))
         {
-            yield return 1;
+            _controller.PlayAnimation("run_loop");
+            yield return 11;
         }
 
 
         _controller.PlayAnimation("run_stop");
-
-
         yield return 4;
 
         _controller.ChangeToMove(MoveId.Idle);
@@ -110,13 +110,12 @@ internal class PlayerMoveRoutines
         _controller.StateTracker.CurrentStance = Stance.Crouching;
 
         _controller.PlayAnimation("crouch_start");
-        yield return 3;
-
-        _controller.PlayAnimation("crouch_loop");
+        yield return 2;
 
         while (_controller.IsButtonHeld(ButtonName.DPadDown))
         {
-            yield return 1;
+            _controller.PlayAnimation("crouch_loop");
+            yield return 0;
         }
 
         _controller.StateTracker.CurrentStance = Stance.Standing;

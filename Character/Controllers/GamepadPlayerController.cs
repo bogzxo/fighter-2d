@@ -86,11 +86,29 @@ internal class GamepadPlayerController : PlayerController
         }
         else if (IsButtonHeld(ButtonName.DPadLeft) || IsButtonHeld(ButtonName.DPadRight))
         {
-            // Optional: You might want to restrict running in the air too
             if (StateTracker.IsGrounded)
             {
                 AttemptMove(MoveId.Run);
             }
+        }
+        else
+        {
+            TryAbortCurrentMove();
+        }
+    }
+
+    private void TryAbortCurrentMove(MoveId newMove=MoveId.Idle)
+    {
+        if (CurrentMove.Interruptible)
+        {
+            if (CurrentMove.StanceReroutes != null &&
+                CurrentMove.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out MoveId rerouteId))
+            {
+                ChangeToMove(rerouteId);
+                return;
+            }
+
+            ChangeToMove(newMove);
         }
     }
 
@@ -148,7 +166,7 @@ internal class GamepadPlayerController : PlayerController
             Player.Flipped = movementDir.X < 0;
         }
 
-        if (CurrentMove.Id == MoveId.Idle || CurrentMove.Id == MoveId.Run || CurrentMove.Id == MoveId.Jump)
+        if ((CurrentMove.Id == MoveId.Idle || CurrentMove.Id == MoveId.Run) && StateTracker.CurrentStance == Stance.Standing)
         {
             if (movementDir.X != 0)
             {
