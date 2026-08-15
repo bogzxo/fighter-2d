@@ -15,15 +15,17 @@ internal class GamepadPlayerController : PlayerController
 {
     private const int MaxInputHistory = 16;
     private CircularBuffer<InputFlags> _circularInputFlags = new(MaxInputHistory);
-    private IntervalRunner _runner;
-    public bool IsConnected => _gamepad != null && _gamepad.IsConnected;
+    
+    // @spd investigate if substepping the input buffer is a good idea
+    private IntervalRunnerSubStep runnerFixedStep;
 
+    public bool IsConnected => _gamepad != null && _gamepad.IsConnected;
     private readonly IGamepad? _gamepad;
 
     public GamepadPlayerController(int index, MoveList moveList) : base(moveList)
     {
-        _gamepad = GameEngine.Instance.InputManager.NativeInputContext.Gamepads.ElementAtOrDefault(index);
-        _runner = new IntervalRunner(1 / 60.0f, FixedUpdate);
+        _gamepad = GameEngine.Instance.InputManager.NativeInputContext?.Gamepads.ElementAtOrDefault(index);
+        runnerFixedStep = new(1 / 60.0f, FixedUpdate);
     }
 
     private void FixedUpdate()
@@ -43,10 +45,9 @@ internal class GamepadPlayerController : PlayerController
         );
 
         _circularInputFlags.Append(current);
-        Console.WriteLine(current);
 
         // squash into just the diffs for that whole array
-        List<InputFlags> inputStates = new List<InputFlags>();
+        List<InputFlags> inputStates = [];
         foreach (var inputState in _circularInputFlags.ToArray())
         {
             if (!inputStates.Contains(inputState))
@@ -57,20 +58,25 @@ internal class GamepadPlayerController : PlayerController
         foreach (var (name, move) in MoveList.AllMoves)
         {
             if (move.InputSignature == InputFlags.None) continue;
-            foreach (var inputState in inputStates)
+            foreach (var inputState in inputStates
+                         .Where(inputState => (move.InputSignature ^ inputState) == InputFlags.None))
             {
-                if ((move.InputSignature ^ inputState) == InputFlags.None)
-                {
-                    //Console.WriteLine(name);
-                    //controller.domove
-
-                }
+                /* @spd
+                 * This returns very many matches as it is decoupled from TryProcessNewInputs, i believe that you should
+                 * see how IntervalRunnerFixedStep or IntervalRunnerSubStep are implemented and copy that logic into the
+                 * TryProcessNewInputs method and move your code there, that way your code doesnt override the logic handling
+                 * when the player is stunned or combo trapped etc, but i also tagged you in PlayerController for a potential
+                 * logic error regarding how being trapped into doesnt factor in logic for parrying, but thats a problem for later
+                 */
+                Console.WriteLine(name);
             }
         }
     }
 
     public override void TryProcessNewInputs(float dt)
     {
+        // @spd
+
         // Attacks > Evasion > Jumping > Movement > Crouch
         if (IsButtonHeld(ButtonName.A))
         {
@@ -99,18 +105,15 @@ internal class GamepadPlayerController : PlayerController
 
     private void TryAbortCurrentMove(MoveId newMove=MoveId.Idle)
     {
-        if (CurrentMove.Interruptible)
-        {
-            if (CurrentMove.StanceReroutes != null &&
-                CurrentMove.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out MoveId rerouteId))
-            {
-                Console.WriteLine(rerouteId);
-                ChangeToMove(rerouteId);
-                return;
-            }
+        // Ignore if we cant abort this move #prolife
+        if (!CurrentMove.Interruptible) return;
 
-            ChangeToMove(newMove);
-        }
+        // Stance rerouting is handled in PlayerController
+        if (CurrentMove.StanceReroutes != null &&
+            CurrentMove.StanceReroutes.ContainsKey(StateTracker.CurrentStance)) return;
+
+        // Only when we can abort (or change the move)
+        ChangeToMove(newMove);
     }
 
     private void AttemptMove(MoveId candidateId)
@@ -118,23 +121,23 @@ internal class GamepadPlayerController : PlayerController
         // TODO: IMPORTANT BITCH we need to update this method to test for reroutes first, hence the attempt part of the name!
         // TODO: so that it can: AttemptMove(MoveId.Kick) but we're jumping, hence we do jumpkick!
 
-        if (MoveList.TryGetMove(candidateId, out var candidateMove))
-        {
-            // Check stance reroutes (hitting kick while in the air -> jumpkick)
-            if (candidateMove.StanceReroutes != null &&
-                candidateMove.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out MoveId rerouteId))
-            {
-                ChangeToMove(rerouteId);
-                return;
-            }
+        // Test if the move exists (future proofed for HIDL)
+        if (!MoveList.TryGetMove(candidateId, out var candidateMove)) return;
 
-            ChangeToMove(candidateId);
+        // Check stance reroutes (hitting kick while in the air -> jumpkick)
+        if (candidateMove.StanceReroutes != null &&
+            candidateMove.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out MoveId rerouteId))
+        {
+            ChangeToMove(rerouteId);
+            return;
         }
+
+        ChangeToMove(candidateId);
     }
 
     public override bool IsButtonHeld(ButtonName btn)
     {
-        if (_gamepad == null || !_gamepad.IsConnected) return false;
+        if (_gamepad is not { IsConnected: true }) return false;
 
         return btn switch
         {
@@ -161,25 +164,32 @@ internal class GamepadPlayerController : PlayerController
         );
     }
 
+    // Here we can use ImGUI to show debug info
+    public override void Render(float dt, object? obj = null)
+    {
+
+    }
+
     public override void UpdatePhysics(float dt)
     {
-        var movementDir = GetMovementInput();
+        runnerFixedStep.UpdateState(dt);
 
+        var movementDir = GetMovementInput();
         if (movementDir.X != 0)
         {
             Player.Flipped = movementDir.X < 0;
         }
 
-        if ((CurrentMove.Id == MoveId.Idle || CurrentMove.Id == MoveId.Run) && StateTracker.CurrentStance == Stance.Standing)
+        // rudementary temporary move logic
+        if (CurrentMove.Id is MoveId.Idle or MoveId.Run && StateTracker.CurrentStance == Stance.Standing)
         {
-            if (movementDir.X != 0)
-            {
-                var targetVelocity = movementDir.X * PlayerConfig.WALK_SPEED;
-                var currentVelocityX = Player.PhysicsBody.Velocity.X;
-                var velocityDiff = targetVelocity - currentVelocityX;
+            if (movementDir.X == 0) return;
 
-                Player.PhysicsBody.ApplyForce(new Vector2(velocityDiff * Player.PhysicsBody.Mass * 5f, 0));
-            }
+            var targetVelocity = movementDir.X * PlayerConfig.WALK_SPEED;
+            var currentVelocityX = Player.PhysicsBody.Velocity.X;
+            var velocityDiff = targetVelocity - currentVelocityX;
+
+            Player.PhysicsBody.ApplyForce(new Vector2(velocityDiff * Player.PhysicsBody.Mass * 5f, 0));
         }
     }
 }

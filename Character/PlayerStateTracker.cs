@@ -1,4 +1,5 @@
 ﻿using Fighter2D.Logic;
+using Fighter2D.Logic.Moves;
 
 namespace Fighter2D.Character;
 
@@ -24,32 +25,28 @@ internal class PlayerStateTracker
 		Player = player;
 	}
 
-	public void UpdatePhysicsState(float dt, bool isCrouchingMove)
+	public void UpdatePhysicsState(float dt)
 	{
 		DeltaOnGround = IsGrounded;
 		CheckGround();
-		UpdateStance(dt, isCrouchingMove);
+		UpdateStance(dt);
 	}
 
 	public void UpdateStatus(float dt)
 	{
 		// Only decrement timer for timed statuses like Stun or ComboTrap
 		// (Attacking, Guarding, etc., are managed manually by the Move Coroutines)
-		if (CurrentStatus == PlayerStatusType.Normal ||
-			CurrentStatus == PlayerStatusType.Attacking ||
-			CurrentStatus == PlayerStatusType.Guarding ||
-			CurrentStatus == PlayerStatusType.Invulnerable)
+		if (CurrentStatus is PlayerStatusType.Normal or PlayerStatusType.Attacking or PlayerStatusType.Guarding or PlayerStatusType.Invulnerable)
 		{
 			return;
 		}
 
 		_statusTimer -= dt;
-		if (_statusTimer <= 0)
-		{
-			CurrentStatus = PlayerStatusType.Normal;
-			_statusTimer = 0.0f;
-		}
-	}
+        if (!(_statusTimer <= 0)) return;
+        
+        CurrentStatus = PlayerStatusType.Normal;
+        _statusTimer = 0.0f;
+    }
 
 	public void ApplyStun(float duration)
 	{
@@ -71,26 +68,27 @@ internal class PlayerStateTracker
 		IsGrounded = feetFixture?.IsTouching ?? false;
 	}
 
-	private void UpdateStance(float dt, bool isCrouchingMove)
+	private void UpdateStance(float dt)
 	{
 		float verticalVelocity = Player.PhysicsBody.Velocity.Y;
 
 		if (IsGrounded)
 		{
-			CurrentStance = isCrouchingMove ? Stance.Crouching : Stance.Standing;
+			CurrentStance = (Player.Controller.CurrentMove.Id == MoveId.Crouch) ? Stance.Crouching : Stance.Standing;
 		}
 		else
-		{
-			if (verticalVelocity > 0.1f)
-			{
-				CurrentStance = Stance.Jumping;
-				FallDuration = 0f;
-			}
-			else if (verticalVelocity <= -0.1f)
-			{
-				CurrentStance = Stance.Falling;
-				FallDuration += dt;
-			}
-		}
+        {
+            switch (verticalVelocity)
+            {
+                case > 0.1f:
+                    CurrentStance = Stance.Jumping;
+                    FallDuration = 0f;
+                    break;
+                case <= -0.1f:
+                    CurrentStance = Stance.Falling;
+                    FallDuration += dt;
+                    break;
+            }
+        }
 	}
 }

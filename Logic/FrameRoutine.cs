@@ -2,20 +2,17 @@
 
 namespace Fighter2D.Logic;
 
-public class FrameRoutine
+/// <summary>
+/// Helper class providing a method to step through the move routines to facilitate pacing of frame perfect move logic.
+/// </summary>
+public class FrameRoutine(IEnumerator<int> routine)
 {
-    private readonly IEnumerator<int> _routine;
     private int _waitFrames = 0;
 
     public bool IsFinished { get; private set; }
 
-    public FrameRoutine(IEnumerator<int> routine)
-    {
-        _routine = routine;
-    }
-
     /// <summary>
-    /// Steps the routine forward by one frame. Call this in FixedUpdate.
+    /// Steps the routine forward by one frame.
     /// </summary>
     public int Tick()
     {
@@ -27,10 +24,10 @@ public class FrameRoutine
             return _waitFrames;
         }
 
-        if (_routine.MoveNext())
+        if (routine.MoveNext())
         {
             // The yielded integer is how many frames to wait before the next step
-            _waitFrames = _routine.Current;
+            _waitFrames = routine.Current;
         }
         else
         {

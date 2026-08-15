@@ -27,11 +27,10 @@ internal class PlayerMoveRoutines
         _controller.PlayAnimation("kick");
 
         // Hit happens on frame 3
-        yield return 3;
-        
+        yield return 2;
         // Active Hitbox here
 
-
+        // Continue
         yield return 2;
 
         _controller.ChangeToMove(MoveId.Idle);
@@ -44,8 +43,7 @@ internal class PlayerMoveRoutines
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Attacking;
         _controller.PlayAnimation("jump_kick");
 
-        yield return 5;
-        yield return 12;
+        yield return 7;
 
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Normal;
     }
@@ -74,8 +72,6 @@ internal class PlayerMoveRoutines
         yield return 3;
         while (_controller.StateTracker.CurrentStance == Stance.Jumping)
             yield return 0;
-
-        //_controller.ChangeToMove(MoveId.Idle);
     }
 
     public IEnumerator<int> DodgeRoll()
