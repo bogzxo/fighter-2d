@@ -34,7 +34,7 @@ internal class PlayerMoveRoutines
 
         _controller.ChangeToMove(MoveId.Idle);
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Normal;
-        _controller.CanInterupt = true;
+        _controller.CanInterrupt = true;
 
     }
 
@@ -46,7 +46,7 @@ internal class PlayerMoveRoutines
         yield return 7;
 
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Normal;
-        _controller.CanInterupt = true;
+        _controller.CanInterrupt = true;
     }
 
     public IEnumerator<int> Block()
@@ -61,7 +61,7 @@ internal class PlayerMoveRoutines
 
         _controller.ChangeToMove(MoveId.Idle);
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Normal;
-        _controller.CanInterupt = true;
+        _controller.CanInterrupt = true;
     }
 
     public IEnumerator<int> Jump()
@@ -72,7 +72,7 @@ internal class PlayerMoveRoutines
         _controller.StateTracker.ResetFallDuration();
         
         yield return 3;
-        _controller.CanInterupt = true;
+        _controller.CanInterrupt = true;
 
         while (_controller.StateTracker.CurrentStance == Stance.Jumping)
             yield return 0;
@@ -87,7 +87,7 @@ internal class PlayerMoveRoutines
         _player.PhysicsBody.ApplyImpulse(new Vector2(direction * PlayerConfig.WALK_SPEED * PlayerConfig.DASH_MULTIPLIER, 0));
 
         yield return 4;
-        _controller.CanInterupt = true;
+        _controller.CanInterrupt = true;
         yield return 4;
 
         _controller.ChangeToMove(MoveId.Idle);
@@ -98,7 +98,7 @@ internal class PlayerMoveRoutines
     {
         // todo: sme way to find the animation lengths
 
-        _controller.CanInterupt = true;
+        _controller.CanInterrupt = true;
         while (_controller.IsButtonHeld(ButtonName.DPadLeft) || _controller.IsButtonHeld(ButtonName.DPadRight))
         {
             _controller.PlayAnimation("run_loop");
@@ -113,7 +113,7 @@ internal class PlayerMoveRoutines
     }
     public IEnumerator<int> Fall()
     {
-        _controller.CanInterupt = true;
+        _controller.CanInterrupt = true;
         _controller.StateTracker.CurrentStance = Stance.Falling;
 
         _controller.PlayAnimation("fall");
@@ -141,7 +141,7 @@ internal class PlayerMoveRoutines
 
         _controller.PlayAnimation("crouch_start");
         yield return 2;
-        _controller.CanInterupt = true;
+        _controller.CanInterrupt = true;
 
         while (_controller.IsButtonHeld(ButtonName.DPadDown))
         {

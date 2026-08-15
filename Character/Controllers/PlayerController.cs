@@ -27,7 +27,7 @@ internal abstract class PlayerController : IGameComponent
     public Entity Parent { get; set; }
     protected Player Player { get; private set; }
 
-    public bool CanInterupt { get; internal set; }
+    public bool CanInterrupt { get; internal set; }
 
     protected FrameRoutine? ActiveRoutine;
     private PlayerMoveRoutines _moveRoutines;
@@ -72,7 +72,7 @@ internal abstract class PlayerController : IGameComponent
         if (!MoveList.TryGetMove(newMoveId, out var newMove)) return;
 
         // Set the new move.
-        CanInterupt = false;
+        CanInterrupt = false;
         CurrentMove = newMove;
         PlayAnimation(newMove.AnimationName);
 
@@ -133,7 +133,7 @@ internal abstract class PlayerController : IGameComponent
             {
                 ChangeToMove(rerouteId);
             }
-            else CanInterupt = true;
+            else CanInterrupt = true;
         }
     }
 
