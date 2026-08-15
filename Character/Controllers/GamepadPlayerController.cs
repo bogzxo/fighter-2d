@@ -47,7 +47,7 @@ internal class GamepadPlayerController : PlayerController
 
         // if current state is currently accepting inputs to be buffered, take in the button press
         // TODO: replace with flag that is true exactly when current move can be interrupted
-        if (CanInterupt) {
+        if (CanInterrupt) {
             current = current |
                 ((_gamepad?.A().Pressed ?? false) ? InputFlags.A : InputFlags.None) |
                 ((_gamepad?.B().Pressed ?? false) ? InputFlags.B : InputFlags.None) |
