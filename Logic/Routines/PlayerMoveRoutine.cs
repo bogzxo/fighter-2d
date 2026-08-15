@@ -128,6 +128,12 @@ internal class PlayerMoveRoutines
         _controller.StateTracker.CurrentStance = Stance.Standing;
         _controller.ChangeToMove(MoveId.Idle);
     }
+    public IEnumerator<int> Idle()
+    {
+        _controller.CanInterupt = true;
+        yield return 0;
+        _controller.StateTracker.CurrentStance = Stance.Standing;
+    }
 
     public IEnumerator<int> Crouch()
     {
@@ -139,10 +145,12 @@ internal class PlayerMoveRoutines
 
         while (_controller.IsButtonHeld(ButtonName.DPadDown))
         {
+            _controller.CanInterupt = false;
             _controller.PlayAnimation("crouch_loop");
             yield return 0;
         }
 
+        _controller.CanInterupt = true;
         _controller.StateTracker.CurrentStance = Stance.Standing;
         _controller.ChangeToMove(MoveId.Idle);
     }

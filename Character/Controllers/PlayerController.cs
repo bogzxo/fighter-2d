@@ -48,6 +48,7 @@ internal abstract class PlayerController : IGameComponent
         MoveList.AllMoves[MoveId.Block].RoutineFactory = _moveRoutines.Block;
         MoveList.AllMoves[MoveId.Crouch].RoutineFactory = _moveRoutines.Crouch;
         MoveList.AllMoves[MoveId.Fall].RoutineFactory = _moveRoutines.Fall;
+        MoveList.AllMoves[MoveId.Idle].RoutineFactory = _moveRoutines.Idle;
 
         CurrentMove = new FightingMove { Id = (MoveId)(-1) };
         ChangeToMove(MoveId.Idle);

@@ -77,6 +77,7 @@ internal class Player() : Sprite(SIZE)
             ImGui.Text($"Current Stance: {Controller.StateTracker.CurrentStance}");
             ImGui.Text($"Current Status: {Controller.StateTracker.CurrentStatus}");
             ImGui.Text($"Is Grounded: {Controller.StateTracker.IsGrounded}");
+            ImGui.Text($"CanInterrupt: {Controller.CanInterupt}");
         }
     }
 }
