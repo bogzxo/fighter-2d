@@ -20,7 +20,6 @@ internal abstract class PlayerController : IGameComponent
     public PlayerStateTracker StateTracker { get; private set; }
     public FightingMove CurrentMove { get; private set; }
 
-    // CRITICAL: Track the currently playing animation dynamically!
     public string ActiveAnimation { get; private set; } = "idle";
 
     public bool Enabled { get; set; } = true;
@@ -28,12 +27,14 @@ internal abstract class PlayerController : IGameComponent
     public Entity Parent { get; set; }
     protected Player Player { get; private set; }
 
-    private FrameRoutine? _activeRoutine;
+    public bool CanInterupt { get; internal set; }
+
+    protected FrameRoutine? ActiveRoutine;
     private PlayerMoveRoutines _moveRoutines;
     private float _frameStepTimer = 0.0f;
 
     public virtual void Initialize()
-    {
+    {   
         Player = (Parent as Player)!;
         MoveList = Player.MoveList;
         StateTracker = new PlayerStateTracker(Player);
@@ -70,11 +71,12 @@ internal abstract class PlayerController : IGameComponent
         if (!MoveList.TryGetMove(newMoveId, out var newMove)) return;
 
         // Set the new move.
+        CanInterupt = false;
         CurrentMove = newMove;
         PlayAnimation(newMove.AnimationName);
 
         // If the move has a routine, set it for execution.
-        _activeRoutine = newMove.RoutineFactory != null ? new FrameRoutine(newMove.RoutineFactory()) : null;
+        ActiveRoutine = newMove.RoutineFactory != null ? new FrameRoutine(newMove.RoutineFactory()) : null;
     }
 
     public void UpdateState(float dt)
@@ -94,7 +96,7 @@ internal abstract class PlayerController : IGameComponent
         // Only allow new inputs to be processed if we are 'normal' and currently in control
         // @spd this will definetly interfere with youe ability to implement pary moves etc as it halts your method
         if (StateTracker.CurrentStatus == PlayerStatusType.Normal &&
-           (CurrentMove.Interruptible || _activeRoutine == null))
+           (CurrentMove.Interruptible || ActiveRoutine == null))
         {
             TryProcessNewInputs(dt);
         }
@@ -112,7 +114,7 @@ internal abstract class PlayerController : IGameComponent
         while (_frameStepTimer >= frameTime)
         //if (_frameStepTimer >= frameTime)
         {
-            int frame = _activeRoutine?.Tick() ?? 0;
+            int frame = ActiveRoutine?.Tick() ?? 0;
 
             // Correctly handle fractions of a frame instead of snapping to the next frame between frames
             //_frameStepTimer = 0;
@@ -122,7 +124,7 @@ internal abstract class PlayerController : IGameComponent
             Player.AnimationManager.SetFrame(ActiveAnimation, frame, true);
 
             // Check if we need to automatically reroute to a different move depending on the stance transition
-            if (_activeRoutine is not { IsFinished: true }) return;
+            if (ActiveRoutine is not { IsFinished: true }) return;
 
             // Handle stance reroutes (Jumping -> falling)
             if (CurrentMove.StanceReroutes != null &&
@@ -130,6 +132,7 @@ internal abstract class PlayerController : IGameComponent
             {
                 ChangeToMove(rerouteId);
             }
+            else CanInterupt = true;
         }
     }
 

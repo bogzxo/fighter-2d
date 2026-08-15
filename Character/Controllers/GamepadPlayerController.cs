@@ -205,7 +205,7 @@ internal class GamepadPlayerController : PlayerController
         }
 
         // rudementary temporary move logic
-        if (CurrentMove.Id is MoveId.Idle or MoveId.Run && StateTracker.CurrentStance == Stance.Standing)
+        //if (StateTracker.CurrentStance == Stance.Standing)
         {
             if (movementDir.X == 0) return;
 
