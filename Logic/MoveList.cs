@@ -42,7 +42,11 @@ internal class MoveList
                 Id = MoveId.JumpKick,
                 Damage = 15,
                 Stances = Stance.Jumping | Stance.Falling,
-                Interruptible = false
+                Interruptible = false,
+                StanceReroutes = new Dictionary<Stance, MoveId>
+                {
+                    { Stance.Standing, MoveId.Idle},
+                }
             },
 
             [MoveId.Block] = new FightingMove
@@ -56,7 +60,7 @@ internal class MoveList
             {
                 Id = MoveId.Jump,
                 InputSignature = InputFlags.DPadUp,
-                Interruptible = false,
+                Interruptible = true,
                 Stances = Stance.Jumping,
                 StanceReroutes = new Dictionary<Stance, MoveId>
                 {

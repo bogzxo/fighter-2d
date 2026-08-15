@@ -14,9 +14,9 @@ namespace Fighter2D.Character.Controllers;
 /// <summary>
 /// Abstract implementation of a player controller which contains logic for executing and transitioning between move states.
 /// </summary>
-internal abstract class PlayerController(MoveList moveList) : IGameComponent
+internal abstract class PlayerController : IGameComponent
 {
-    public MoveList MoveList { get; private set; } = moveList;
+    public MoveList MoveList { get; private set; }
     public PlayerStateTracker StateTracker { get; private set; }
     public FightingMove CurrentMove { get; private set; }
 
@@ -35,6 +35,7 @@ internal abstract class PlayerController(MoveList moveList) : IGameComponent
     public virtual void Initialize()
     {
         Player = (Parent as Player)!;
+        MoveList = Player.MoveList;
         StateTracker = new PlayerStateTracker(Player);
         _moveRoutines = new PlayerMoveRoutines(Player, this);
 

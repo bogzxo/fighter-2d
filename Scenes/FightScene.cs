@@ -1,17 +1,115 @@
 ﻿using System.Numerics;
+using Bogz.Logging;
 using Fighter2D.Character;
 using Fighter2D.Logic;
 using Fighter2D.Character.Controllers;
-
+using Horizon.Core;
+using Horizon.Core.Components;
 using Horizon.Engine;
 using Horizon.Physics;
 using Horizon.Rendering.Spriting;
+using Riptide;
 
 namespace Fighter2D.Scenes
 {
+    internal class NetworkingManager : IGameComponent
+    {
+        public required Player MasterPlayer { get; init; }
+        public required Player SlavePlayer { get; init; }
+
+        private Server _server;
+        private Client _client;
+        private bool _isServer;
+
+        private IntervalRunnerFixedStep _intervalRunner;
+
+        public NetworkingManager(string addr)
+        {
+            _client = new Client();
+            if (!_client.Connect(addr, useMessageHandlers: false))
+            {
+                // TODO: fuck
+                Console.WriteLine("Couldnt fucking connect to server.");
+            }
+
+            _client.MessageReceived += messageReceived;
+        }
+
+        private void messageReceived(object? sender, MessageReceivedEventArgs e)
+        {
+            ReadPlayerData(e.Message);
+        }
+
+        public NetworkingManager()
+        {
+            _server = new Server();
+            _server.Start(7777, 1, useMessageHandlers:false);
+            _server.MessageReceived += messageReceived;
+            _isServer = true;
+        }
+
+        public void Initialize()
+        {
+            _intervalRunner = new IntervalRunnerFixedStep(1 / 60.0f, FixedUpdate);
+        }
+
+        private void FixedUpdate()
+        {
+            HandleNetworking();
+
+            if (_isServer) _server.Update();
+            else _client.Update();
+        }
+
+        private void HandleNetworking()
+        {
+            var msg = Message.Create(MessageSendMode.Reliable);
+
+            msg = GeneratePlayerData(msg);
+
+            if (_isServer) _server.SendToAll(msg);
+            else _client.Send(msg);
+        }
+
+        private Message GeneratePlayerData(Message msg)
+        {
+            msg.AddFloat(MasterPlayer.Transform.Position.X);
+            msg.AddFloat(MasterPlayer.Transform.Position.Y);
+
+            return msg;
+        }
+
+        private void ReadPlayerData(Message msg)
+        {
+            SlavePlayer.Transform.Position = new(msg.GetFloat(), msg.GetFloat());
+        }
+
+
+        public void Render(float dt, object? obj = null)
+        {
+
+        }
+
+        public void UpdateState(float dt)
+        {
+
+        }
+
+        public void UpdatePhysics(float dt)
+        {
+
+        }
+
+        public bool Enabled { get; set; }
+        public string Name { get; set; } = "NetMan";
+        public Entity Parent { get; set; }
+    }
+
     internal class FightScene : Scene
     {
         public override Camera ActiveCamera { get; protected set; }
+
+        private NetworkingManager networkingManager;
 
         // Sprite Rendering
         private SpriteBatch spriteBatch;
@@ -21,6 +119,7 @@ namespace Fighter2D.Scenes
         //private UIRectangle
 
         internal static Player ControlledPlayer;
+        internal static Player OtherPlayer;
 
         // General Rendering
         private Camera2D camera;
@@ -33,10 +132,11 @@ namespace Fighter2D.Scenes
         private MapLoader.MapDefinition mapDefinition;
         private readonly int gamepadIndex;
 
-        public FightScene(MapLoader.MapDefinition mapDefinition, int gamepadIndex)
+        public FightScene(MapLoader.MapDefinition mapDefinition, int gamepadIndex, Player? otherPlayer=null)
         {
             this.mapDefinition = mapDefinition;
             this.gamepadIndex = gamepadIndex;
+            OtherPlayer = otherPlayer;
         }
 
         public override void Initialize()
@@ -54,10 +154,38 @@ namespace Fighter2D.Scenes
             spriteBatch = AddEntity<SpriteBatch>();
             spriteBatch.Add(AddEntity(ControlledPlayer = new Player()
             {
-                Controller = new GamepadPlayerController(gamepadIndex, MoveList),
+                Controller = new GamepadPlayerController(gamepadIndex),
                 SpawnPosition = new(mapDefinition.SpawnPosition.X * map.TileSize.X, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
             }));
 
+            if (OtherPlayer is not null)
+            {
+                spriteBatch.Add(AddEntity(OtherPlayer));
+                if (OtherPlayer is NetworkPlayer netty)
+                {
+                    networkingManager = new NetworkingManager(netty.Address)
+                    {
+                        MasterPlayer = ControlledPlayer,
+                        SlavePlayer = OtherPlayer
+                    };
+                }
+            }
+            else
+            {
+                OtherPlayer = new Player()
+                {
+                    Controller = new DummyPlayerController(),
+                    SpawnPosition = new(mapDefinition.SpawnPosition.X * map.TileSize.X + 256, TileMapChunk.HEIGHT * map.TileSize.Y - mapDefinition.SpawnPosition.Y * map.TileSize.Y)
+                };
+
+                networkingManager = new NetworkingManager()
+                {
+                    MasterPlayer = ControlledPlayer,
+                    SlavePlayer = OtherPlayer
+                };
+            }
+
+            AddComponent(networkingManager);
 
             //spriteBatch.Add(AddEntity(dummy = new Player()
             //{

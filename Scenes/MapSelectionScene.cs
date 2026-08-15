@@ -5,7 +5,7 @@ using System.Text;
 
 using Horizon.Engine;
 using Horizon.Rendering.Text;
-
+using ImGuiNET;
 using Silk.NET.Input;
 
 namespace Fighter2D.Scenes;
@@ -36,6 +36,14 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
             Origin = Horizon.Rendering.Origin.Bottom,
             Transform = {
                 Position = new Vector2(0, Engine.WindowManager.WindowSize.Y / 2)
+            }
+        });
+        glyphRenderer.AddLabel("title_server", new TextLabel
+        {
+            Text = "Press  Y  To  Connect  To  A  Server",
+            Origin = Horizon.Rendering.Origin.Bottom,
+            Transform = {
+                Position = new Vector2(0, Engine.WindowManager.WindowSize.Y / 2 - 128)
             }
         });
 
@@ -70,10 +78,6 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
         if (_gamepad is null && GameEngine.Instance.InputManager.NativeInputContext?.Gamepads.Count > 0)
         {
             _gamepad = GameEngine.Instance.InputManager.NativeInputContext.Gamepads[0];
-            _gamepad.ButtonDown += (_, args) =>
-            {
-                HandleDpadNavigation(args.Name);
-            };
         }
 
         // Process Scene Transition on the MAIN THREAD safely
@@ -83,23 +87,29 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
             return;
         }
 
+        if (_gamepad is not null)
+        {
+            if (_gamepad.Y().Pressed)
+            {
+                Engine.SetScene(new JoinServerGameScreen(mapDefinitions[selectedIndex], gamepadIndex));
+            }
+
+            if (_gamepad.DPadDown().Pressed)
+            {
+                if (selectedIndex + 1 < mapDefinitions.Length)
+                    selectedIndex++;
+                UpdateLabelTexts();
+            }
+            else if (_gamepad.DPadUp().Pressed)
+            {
+                if (selectedIndex - 1 >= 0)
+                    selectedIndex--;
+                UpdateLabelTexts();
+            }
+
+        }
+
         base.UpdateState(dt);
-    }
-
-    private void HandleDpadNavigation(ButtonName name)
-    {
-        if (name == ButtonName.DPadDown)
-        {
-            if (selectedIndex + 1 < mapDefinitions.Length)
-                selectedIndex++;
-        }
-        else if (name == ButtonName.DPadUp)
-        {
-            if (selectedIndex - 1 >= 0)
-                selectedIndex--;
-        }
-
-        UpdateLabelTexts();
     }
 
     private void UpdateLabelTexts()

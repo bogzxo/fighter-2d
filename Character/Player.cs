@@ -8,7 +8,6 @@ using Box2D.NetStandard.Dynamics.Fixtures;
 
 using Fighter2D.Logic;
 using Fighter2D.Character.Controllers;
-
 using Horizon.Core.Components.Physics2D;
 using Horizon.GameEntity.Components.Physics2D;
 using Horizon.Physics;
@@ -23,9 +22,11 @@ namespace Fighter2D.Character;
 internal class Player() : Sprite(SIZE)
 {
     private static readonly Vector2 SIZE = new(128);
-    internal required PlayerController Controller { get; init; }
+    internal PlayerController Controller { get; init; }
     internal ParticleRenderer2D Particles { get; private set; }
     public Vector2 SpawnPosition { get; init; }
+
+    public readonly MoveList MoveList = new();
 
     private PhysicsWorld world;
     public PhysicsBodyComponent2D PhysicsBody { get; internal set; }
