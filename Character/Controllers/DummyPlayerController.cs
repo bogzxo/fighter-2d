@@ -9,7 +9,7 @@ using Silk.NET.Input;
 
 namespace Fighter2D.Character.Controllers;
 
-internal class DummyPlayerController(MoveList moveList) : PlayerController(moveList)
+internal class DummyPlayerController : PlayerController
 {
     public override void TryProcessNewInputs(float dt)
     {

@@ -7,8 +7,19 @@
   "targets": {
     ".NETCoreApp,Version=v10.0": {
       "Horizon.HIDL/1.0.0": {
+        "dependencies": {
+          "RiptideNetworking.Riptide": "2.2.1"
+        },
         "runtime": {
           "Horizon.HIDL.dll": {}
+        }
+      },
+      "RiptideNetworking.Riptide/2.2.1": {
+        "runtime": {
+          "lib/netstandard2.0/RiptideNetworking.dll": {
+            "assemblyVersion": "2.2.1.0",
+            "fileVersion": "2.2.1.0"
+          }
         }
       }
     }
@@ -18,6 +29,13 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "RiptideNetworking.Riptide/2.2.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-hTswUBlFzxxmX5BjX3rlSr2pcCmsFfR7Q9iTZThdwnT1ZysVUjLJzpklHvXnGpkr3qypqv7JecYyFeXQ2U/LuQ==",
+      "path": "riptidenetworking.riptide/2.2.1",
+      "hashPath": "riptidenetworking.riptide.2.2.1.nupkg.sha512"
     }
   }
 }

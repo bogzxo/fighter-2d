@@ -22,7 +22,7 @@ internal class GamepadPlayerController : PlayerController
     public bool IsConnected => _gamepad != null && _gamepad.IsConnected;
     private readonly IGamepad? _gamepad;
 
-    public GamepadPlayerController(int index, MoveList moveList) : base(moveList)
+    public GamepadPlayerController(int index)
     {
         _gamepad = GameEngine.Instance.InputManager.NativeInputContext?.Gamepads.ElementAtOrDefault(index);
         runnerFixedStep = new(1 / 60.0f, FixedUpdate);
@@ -101,6 +101,8 @@ internal class GamepadPlayerController : PlayerController
         {
             TryAbortCurrentMove();
         }
+
+
     }
 
     private void TryAbortCurrentMove(MoveId newMove=MoveId.Idle)
