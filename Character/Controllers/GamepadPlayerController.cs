@@ -26,23 +26,34 @@ internal class GamepadPlayerController : PlayerController
     {
         _gamepad = GameEngine.Instance.InputManager.NativeInputContext?.Gamepads.ElementAtOrDefault(index);
         runnerFixedStep = new(1 / 60.0f, FixedUpdate);
+
+
+        //GameEngine.Instance.EventManager.PreState
     }
 
     private void FixedUpdate()
     {
         // (bool left, bool up, bool down, bool right, bool a_button, bool b_button, bool x_button, bool y_button
 
+        bool canDoMove = CurrentMove.Interruptible;
+
         // save current state of the player input
         InputFlags current = (
             (_gamepad?.DPadLeft().Pressed ?? false ? InputFlags.DPadLeft : InputFlags.None) |
             (_gamepad?.DPadRight().Pressed ?? false ? InputFlags.DPadRight : InputFlags.None) |
             (_gamepad?.DPadUp().Pressed ?? false ? InputFlags.DPadUp : InputFlags.None) |
-            (_gamepad?.DPadDown().Pressed ?? false ? InputFlags.DPadDown : InputFlags.None) |
-            ((_gamepad?.A().Pressed ?? false) ? InputFlags.A : InputFlags.None) |
-            ((_gamepad?.B().Pressed ?? false) ? InputFlags.B : InputFlags.None) |
-            ((_gamepad?.X().Pressed ?? false) ? InputFlags.X : InputFlags.None) |
-            ((_gamepad?.Y().Pressed ?? false) ? InputFlags.Y : InputFlags.None)
+            (_gamepad?.DPadDown().Pressed ?? false ? InputFlags.DPadDown : InputFlags.None)
         );
+
+        // if current state is currently accepting inputs to be buffered, take in the button press
+        // TODO: replace with flag that is true exactly when current move can be interrupted
+        if (CurrentMove.Interruptible) {
+            current = current |
+                ((_gamepad?.A().Pressed ?? false) ? InputFlags.A : InputFlags.None) |
+                ((_gamepad?.B().Pressed ?? false) ? InputFlags.B : InputFlags.None) |
+                ((_gamepad?.X().Pressed ?? false) ? InputFlags.X : InputFlags.None) |
+                ((_gamepad?.Y().Pressed ?? false) ? InputFlags.Y : InputFlags.None);
+        }
 
         _circularInputFlags.Append(current);
 
@@ -50,14 +61,17 @@ internal class GamepadPlayerController : PlayerController
         List<InputFlags> inputStates = [];
         foreach (var inputState in _circularInputFlags.ToArray())
         {
+            //TODO: uh
             if (!inputStates.Contains(inputState))
                 inputStates.Add(inputState);
         }
 
         // match it to a move in an order of priority
+        bool moveMatched = false;
         foreach (var (name, move) in MoveList.AllMoves)
         {
             if (move.InputSignature == InputFlags.None) continue;
+
             foreach (var inputState in inputStates
                          .Where(inputState => (move.InputSignature ^ inputState) == InputFlags.None))
             {
@@ -68,8 +82,14 @@ internal class GamepadPlayerController : PlayerController
                  * when the player is stunned or combo trapped etc, but i also tagged you in PlayerController for a potential
                  * logic error regarding how being trapped into doesnt factor in logic for parrying, but thats a problem for later
                  */
+                // if the current move is finished/no move is being done, execute the move first matched and remove it from the buffer.
                 Console.WriteLine(name);
+                _circularInputFlags.Reset();
+                moveMatched = true;
+                break;
             }
+
+            if (moveMatched) break;
         }
     }
 
