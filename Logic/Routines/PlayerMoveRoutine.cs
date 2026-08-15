@@ -22,7 +22,6 @@ internal class PlayerMoveRoutines
     public IEnumerator<int> KickLeft()
     {
         // Total animation length is 5 frames
-
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Attacking;
         _controller.PlayAnimation("kick");
 
@@ -35,6 +34,7 @@ internal class PlayerMoveRoutines
 
         _controller.ChangeToMove(MoveId.Idle);
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Normal;
+        _controller.CanInterupt = true;
 
     }
 
@@ -46,6 +46,7 @@ internal class PlayerMoveRoutines
         yield return 7;
 
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Normal;
+        _controller.CanInterupt = true;
     }
 
     public IEnumerator<int> Block()
@@ -60,6 +61,7 @@ internal class PlayerMoveRoutines
 
         _controller.ChangeToMove(MoveId.Idle);
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Normal;
+        _controller.CanInterupt = true;
     }
 
     public IEnumerator<int> Jump()
@@ -70,6 +72,8 @@ internal class PlayerMoveRoutines
         _controller.StateTracker.ResetFallDuration();
         
         yield return 3;
+        _controller.CanInterupt = true;
+
         while (_controller.StateTracker.CurrentStance == Stance.Jumping)
             yield return 0;
     }
@@ -82,7 +86,9 @@ internal class PlayerMoveRoutines
         float direction = _player.Flipped ? -1.0f : 1.0f;
         _player.PhysicsBody.ApplyImpulse(new Vector2(direction * PlayerConfig.WALK_SPEED * PlayerConfig.DASH_MULTIPLIER, 0));
 
-        yield return 15;
+        yield return 4;
+        _controller.CanInterupt = true;
+        yield return 4;
 
         _controller.ChangeToMove(MoveId.Idle);
         _controller.StateTracker.CurrentStatus = PlayerStatusType.Normal;
@@ -92,6 +98,7 @@ internal class PlayerMoveRoutines
     {
         // todo: sme way to find the animation lengths
 
+        _controller.CanInterupt = true;
         while (_controller.IsButtonHeld(ButtonName.DPadLeft) || _controller.IsButtonHeld(ButtonName.DPadRight))
         {
             _controller.PlayAnimation("run_loop");
@@ -106,6 +113,7 @@ internal class PlayerMoveRoutines
     }
     public IEnumerator<int> Fall()
     {
+        _controller.CanInterupt = true;
         _controller.StateTracker.CurrentStance = Stance.Falling;
 
         _controller.PlayAnimation("fall");
@@ -127,6 +135,7 @@ internal class PlayerMoveRoutines
 
         _controller.PlayAnimation("crouch_start");
         yield return 2;
+        _controller.CanInterupt = true;
 
         while (_controller.IsButtonHeld(ButtonName.DPadDown))
         {
