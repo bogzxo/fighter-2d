@@ -70,8 +70,12 @@ internal class PlayerMoveRoutines
 
         _player.PhysicsBody.ApplyImpulse(new Vector2(0, PlayerConfig.JUMP_IMPULSE));
         _controller.StateTracker.ResetFallDuration();
+        
+        yield return 3;
+        while (_controller.StateTracker.CurrentStance == Stance.Jumping)
+            yield return 0;
 
-        yield return 4;
+        //_controller.ChangeToMove(MoveId.Idle);
     }
 
     public IEnumerator<int> DodgeRoll()
@@ -102,6 +106,22 @@ internal class PlayerMoveRoutines
         _controller.PlayAnimation("run_stop");
         yield return 4;
 
+        _controller.ChangeToMove(MoveId.Idle);
+    }
+    public IEnumerator<int> Fall()
+    {
+        _controller.StateTracker.CurrentStance = Stance.Falling;
+
+        _controller.PlayAnimation("fall");
+        yield return 0;
+
+        while (_controller.StateTracker.FallDuration > 0)
+        {
+            _controller.PlayAnimation("fall");
+            yield return 0;
+        }
+
+        _controller.StateTracker.CurrentStance = Stance.Standing;
         _controller.ChangeToMove(MoveId.Idle);
     }
 

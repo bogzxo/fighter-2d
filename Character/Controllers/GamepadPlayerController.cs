@@ -61,7 +61,7 @@ internal class GamepadPlayerController : PlayerController
             {
                 if ((move.InputSignature ^ inputState) == InputFlags.None)
                 {
-                    Console.WriteLine(name);
+                    //Console.WriteLine(name);
                     //controller.domove
 
                 }
@@ -88,7 +88,7 @@ internal class GamepadPlayerController : PlayerController
         {
             if (StateTracker.IsGrounded)
             {
-                AttemptMove(MoveId.Run);
+                ChangeToMove(MoveId.Run);
             }
         }
         else
@@ -104,6 +104,7 @@ internal class GamepadPlayerController : PlayerController
             if (CurrentMove.StanceReroutes != null &&
                 CurrentMove.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out MoveId rerouteId))
             {
+                Console.WriteLine(rerouteId);
                 ChangeToMove(rerouteId);
                 return;
             }
@@ -114,6 +115,9 @@ internal class GamepadPlayerController : PlayerController
 
     private void AttemptMove(MoveId candidateId)
     {
+        // TODO: IMPORTANT BITCH we need to update this method to test for reroutes first, hence the attempt part of the name!
+        // TODO: so that it can: AttemptMove(MoveId.Kick) but we're jumping, hence we do jumpkick!
+
         if (MoveList.TryGetMove(candidateId, out var candidateMove))
         {
             // Check stance reroutes (hitting kick while in the air -> jumpkick)

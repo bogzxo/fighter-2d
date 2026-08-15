@@ -14,7 +14,6 @@ internal class MoveList
 
     public MoveList()
     {
-        // 1. Define the moves
         AllMoves = new Dictionary<MoveId, FightingMove>
         {
             [MoveId.Idle] = new FightingMove
@@ -57,13 +56,29 @@ internal class MoveList
             {
                 Id = MoveId.Jump,
                 InputSignature = InputFlags.DPadUp,
-                Interruptible = true
+                Interruptible = false,
+                Stances = Stance.Jumping,
+                StanceReroutes = new Dictionary<Stance, MoveId>
+                {
+                    { Stance.Falling, MoveId.Fall}
+                }
             },
 
             [MoveId.Run] = new FightingMove
             {
                 Id = MoveId.Run,
-                Interruptible = true
+                Interruptible = true,
+                Stances = Stance.Standing,
+                StanceReroutes = new Dictionary<Stance, MoveId>
+                {
+                    { Stance.Standing, MoveId.Idle}
+                }
+            },
+            [MoveId.Fall] = new FightingMove
+            {
+                Id = MoveId.Fall,
+                Stances = Stance.Falling,
+                Interruptible = false,
             },
 
             [MoveId.Crouch] = new FightingMove

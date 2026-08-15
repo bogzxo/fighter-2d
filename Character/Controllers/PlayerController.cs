@@ -48,6 +48,7 @@ internal abstract class PlayerController : IGameComponent
         MoveList.AllMoves[MoveId.Run].RoutineFactory = _moveRoutines.Run;
         MoveList.AllMoves[MoveId.Block].RoutineFactory = _moveRoutines.Block;
         MoveList.AllMoves[MoveId.Crouch].RoutineFactory = _moveRoutines.Crouch;
+        MoveList.AllMoves[MoveId.Fall].RoutineFactory = _moveRoutines.Fall;
 
         CurrentMove = new FightingMove { Id = (MoveId)(-1) };
         ChangeToMove(MoveId.Idle);
@@ -86,10 +87,10 @@ internal abstract class PlayerController : IGameComponent
     {
         ProcessAnimationFrames(dt);
         //int frame = _activeRoutine?.Tick() ?? 0;
-        if (_activeRoutine?.IsFinished == true && CurrentMove.Id != MoveId.Idle)
-        {
-            ChangeToMove(MoveId.Idle);
-        }
+        //if (_activeRoutine?.IsFinished == true && CurrentMove.Id != MoveId.Idle)
+        //{
+        //    ChangeToMove(MoveId.Idle);
+        //}
 
         bool isCrouching = CurrentMove.Id == MoveId.Crouch;
         StateTracker.UpdatePhysicsState(dt, isCrouching);
@@ -114,35 +115,20 @@ internal abstract class PlayerController : IGameComponent
         {
             int frame = _activeRoutine?.Tick() ?? 0;
 
-            _frameStepTimer = 0;
-            //_frameStepTimer -= frameTime;
+            // Correctly handle fractions of a frame instead of snapping to the next frame between frames
+            //_frameStepTimer = 0;
+            _frameStepTimer -= frameTime;
 
             // Step the ACTIVE animation, not the move's default starting animation
-            var finished = Player.AnimationManager.SetFrame(ActiveAnimation, frame, true);
+            Player.AnimationManager.SetFrame(ActiveAnimation, frame, true);
 
-            if (finished)
+            if (_activeRoutine is { IsFinished: true })
             {
-                // If a routine is actively controlling the player, let it finish on its own time.
-                // Resetting the index here causes the active animation to Loop continuously.
-                if (_activeRoutine != null)
+                // Handle stance reroutes (Jumping -> falling)
+                if (CurrentMove.StanceReroutes != null &&
+                    CurrentMove.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out MoveId rerouteId))
                 {
-                    //Player.AnimationManager.Animations[ActiveAnimation].ResetIndex();
-                    return;
-                }
-
-                if (StateTracker.CurrentStatus != PlayerStatusType.Normal)
-                {
-                    //Player.AnimationManager.Animations[ActiveAnimation].ResetIndex();
-                    return;
-                }
-
-                if (CurrentMove.Id != MoveId.Idle)
-                {
-                    ChangeToMove(MoveId.Idle);
-                }
-                else
-                {
-                    //Player.AnimationManager.Animations[ActiveAnimation].ResetIndex();
+                    ChangeToMove(rerouteId);
                 }
             }
         }

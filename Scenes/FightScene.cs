@@ -105,21 +105,21 @@ namespace Fighter2D.Scenes
 
         public override void UpdateState(float dt)
         {
-            //if (Vector3.DistanceSquared(camera.Position, new Vector3(ControlledPlayer.Transform.Position, camera.Position.Z)) > 1000.0f)
-            //{
-            //    Vector3 targetPosition = new Vector3(ControlledPlayer.Transform.Position, 0.0f);
+            if (Vector3.DistanceSquared(camera.Position, new Vector3(ControlledPlayer.Transform.Position, camera.Position.Z)) > 1000.0f)
+            {
+                Vector3 targetPosition = new Vector3(ControlledPlayer.Transform.Position, 0.0f);
 
-            //    float smoothFactor = 1.0f - MathF.Exp(-_cameraFollowSpeed * dt);
+                float smoothFactor = 1.0f - MathF.Exp(-_cameraFollowSpeed * dt);
 
-            //    _exactCameraPosition = Vector3.Lerp(_exactCameraPosition, targetPosition, smoothFactor);
+                _exactCameraPosition = Vector3.Lerp(_exactCameraPosition, targetPosition, smoothFactor);
 
-            //    camera.Position = new Vector3(
-            //        MathF.Round(_exactCameraPosition.X),
-            //        MathF.Round(_exactCameraPosition.Y),
-            //        _exactCameraPosition.Z // Usually keep Z as-is depending on your depth buffer
-            //    );
-            //}
-            camera.Position = new Vector3(ControlledPlayer.Transform.Position, 0.0f);
+                camera.Position = new Vector3(
+                    MathF.Round(_exactCameraPosition.X),
+                    MathF.Round(_exactCameraPosition.Y),
+                    _exactCameraPosition.Z // Usually keep Z as-is depending on your depth buffer
+                );
+            }
+            //camera.Position = new Vector3(ControlledPlayer.Transform.Position, 0.0f);
             base.UpdateState(dt);
         }
     }

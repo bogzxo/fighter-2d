@@ -13,5 +13,6 @@ public enum MoveId
     HeavyLand,
     Crouch,
     Run,
-    HitStun
+    HitStun,
+    Fall
 }
