@@ -482,3 +482,8 @@ FodyWeavers.xsd
 /bin/Release/net10.0/win-x64/Horizon.Webhost.dll
 /bin/Release/net10.0/win-x64/Horizon.Webhost.pdb
 /bin/Release/net10.0/win-x64/test.hor
+
+
+**/*.sync-conflict*
+/bin/x64/Debug/net10.0/Assets/backgrounds/menu.png
+/bin/x64/Debug/net10.0/Assets/ui/logo.png
