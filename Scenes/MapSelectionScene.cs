@@ -5,7 +5,6 @@ using System.Text;
 
 using Horizon.Engine;
 using Horizon.Rendering.Text;
-using ImGuiNET;
 using Silk.NET.Input;
 
 namespace Fighter2D.Scenes;

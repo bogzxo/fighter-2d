@@ -19,7 +19,7 @@ internal class GamepadPlayerController : PlayerController
     // @spd investigate if substepping the input buffer is a good idea
     private IntervalRunnerSubStep runnerFixedStep;
 
-    public bool IsConnected => _gamepad != null && _gamepad.IsConnected;
+    public bool IsConnected => _gamepad is { IsConnected: true };
     private readonly IGamepad? _gamepad;
 
     public GamepadPlayerController(int index)
@@ -188,7 +188,7 @@ internal class GamepadPlayerController : PlayerController
         );
     }
 
-    // Here we can use ImGUI to show debug info
+    // Here we can use EGUI to show debug info
     public override void Render(float dt, object? obj = null)
     {
 

@@ -6,16 +6,19 @@ using Box2D.NetStandard.Collision.Shapes;
 using Box2D.NetStandard.Dynamics.Bodies;
 using Box2D.NetStandard.Dynamics.Fixtures;
 
-using Fighter2D.Logic;
+using Egui;
+using Egui.Containers;
+using Egui.Widgets;
+
 using Fighter2D.Character.Controllers;
+using Fighter2D.Logic;
+
 using Horizon.Core.Components.Physics2D;
 using Horizon.GameEntity.Components.Physics2D;
 using Horizon.Physics;
 using Horizon.Physics.Fixtures;
 using Horizon.Rendering.Particles;
 using Horizon.Rendering.Spriting;
-
-using ImGuiNET;
 
 namespace Fighter2D.Character;
 
@@ -64,20 +67,19 @@ internal class Player() : Sprite(SIZE)
         Particles = AddEntity(new ParticleRenderer2D(32768) { EndColor = new Vector3(0, 0, 0.6f) });
     }
 
-    public override void Render(float dt, object? obj = null)
+    public override void RenderUi(Ui root)
     {
-        base.Render(dt, obj);
+        new Window("Player")
+            .Show(root.Ctx, ui =>
+            {
+                ui.Heading("Player Information");
+                ui.Label($"Current Move: {Controller.CurrentMove.Id}");
+                ui.Label($"Current Stance: {Controller.StateTracker.CurrentStance}");
+                ui.Label($"Current Status: {Controller.StateTracker.CurrentStatus}");
+                ui.Label($"Is Grounded: {Controller.StateTracker.IsGrounded}");
+                ui.Label($"CanInterrupt: {Controller.CanInterrupt}");
+            });
 
-        if (ImGui.Begin("Player"))
-        {
-            // Display all relevant player information
-
-            ImGui.Text("Player Information");
-            ImGui.Text($"Current Move: {Controller.CurrentMove.Id}");
-            ImGui.Text($"Current Stance: {Controller.StateTracker.CurrentStance}");
-            ImGui.Text($"Current Status: {Controller.StateTracker.CurrentStatus}");
-            ImGui.Text($"Is Grounded: {Controller.StateTracker.IsGrounded}");
-            ImGui.Text($"CanInterrupt: {Controller.CanInterrupt}");
-        }
+        base.RenderUi(root);
     }
 }

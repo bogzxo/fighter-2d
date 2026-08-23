@@ -1,5 +1,8 @@
 using System.Numerics;
 using Bogz.Logging.Loggers;
+using Egui;
+using Egui.Containers;
+using Egui.Widgets;
 using Fighter2D.Character.Controllers;
 using Fighter2D.Logic;
 using Fighter2D.Scenes;
@@ -7,10 +10,12 @@ using Horizon.Physics;
 using Horizon.Physics.Fixtures;
 using Horizon.Rendering.Particles;
 using Horizon.Rendering.Spriting;
-using ImGuiNET;
 
 namespace Fighter2D.Character;
 
+/// <summary>
+/// Representation of a remote player connected via Riptide network.
+/// </summary>
 internal class NetworkPlayer : Player
 {
     public readonly string Address;
@@ -18,23 +23,22 @@ internal class NetworkPlayer : Player
     public NetworkPlayer(string address)
     {
         this.Address = address;
-        Controller = AddComponent(new NetworkedPlayerController());
+        Controller = new NetworkedPlayerController();
     }
 
-    public override void Render(float dt, object? obj = null)
+    public override void RenderUi(Ui root)
     {
-        this.PhysicsBody.Enabled = false;
-        base.Render(dt, obj);
+        base.RenderUi(root);
 
-        if (ImGui.Begin("Network Player"))
-        {
-            // Display all relevant player information
-
-            ImGui.Text("Player Information");
-            ImGui.Text($"Current Move: {Controller.CurrentMove.Id}");
-            ImGui.Text($"Current Stance: {Controller.StateTracker.CurrentStance}");
-            ImGui.Text($"Current Status: {Controller.StateTracker.CurrentStatus}");
-            ImGui.Text($"Is Grounded: {Controller.StateTracker.IsGrounded}");
-        }
+        new Window("Network Player")
+            .Show(root.Ctx, ui =>
+            {
+                ui.Heading("Player Information");
+                ui.Label($"Address: {Address}");
+                ui.Label($"Current Move: {Controller.CurrentMove.Id}");
+                ui.Label($"Current Stance: {Controller.StateTracker.CurrentStance}");
+                ui.Label($"Current Status: {Controller.StateTracker.CurrentStatus}");
+                ui.Label($"Is Grounded: {Controller.StateTracker.IsGrounded}");
+            });
     }
 }
