@@ -37,7 +37,7 @@ internal class MainMenuScene : Scene
 
             logo = spriteBatch.AddEntity(new Sprite(new System.Numerics.Vector2(result_logo.Asset.Width * logoScalar, result_logo.Asset.Height * logoScalar)));
 
-            //logo.Transform.SetPositionRelativeToOrigin(new System.Numerics.Vector2(0));
+            //logo.RenderTransform.SetPositionRelativeToOrigin(new System.Numerics.Vector2(0));
             logo.Transform.Position = new Vector2(0, 265);
             logo.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_logo.Asset, new System.Numerics.Vector2(result_logo.Asset.Width, result_logo.Asset.Height)), "logo");
 

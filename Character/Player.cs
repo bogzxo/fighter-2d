@@ -1,5 +1,5 @@
 using System.Numerics;
-
+using System.Runtime.CompilerServices;
 using Bogz.Logging.Loggers;
 
 using Box2D.NetStandard.Collision.Shapes;
@@ -40,10 +40,16 @@ internal class Player() : Sprite(SIZE)
     {
         base.Initialize();
 
-        if (!LoadSpriteSheetFromDirectory("Assets/sprites/player"))
+        
+        var (success, sheet, manager) = SpriteSheet.LoadSpriteSheetFromDirectory("Assets/sprites/player");
+
+        if (!success)
         {
             ConcurrentLogger.Instance.Log(Bogz.Logging.LogLevel.Error, "Failed to load player sprite!");
         }
+
+        this.Spritesheet = sheet;
+        this.AnimationManager = manager;
 
         AnimationManager.AnimateFrames = false;
 

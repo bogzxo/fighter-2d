@@ -8,6 +8,7 @@ using Fighter2D.Logic;
 using Horizon.Engine;
 using Horizon.Physics;
 using Horizon.Rendering.Spriting;
+using Silk.NET.OpenGL;
 
 namespace Fighter2D.Scenes;
 
@@ -22,7 +23,6 @@ internal class FightScene : Scene
     private SpriteBatch _sceneSb = null!, _viewportSb = null!;
     private PhysicsWorld _world = null!;
 
-    private VersusOverlay _overlay = null!;
 
     internal static Player ControlledPlayer = null!;
     internal static Player OtherPlayer = null!;
@@ -46,10 +46,11 @@ internal class FightScene : Scene
     public override void Initialize()
     {
         Engine.GL.ClearColor(System.Drawing.Color.Black);
+        Engine.GL.Disable(EnableCap.DepthTest);
 
         // Spin up physics world with heavy gravity so players wont float around like fuckin astronauts
         _world = AddComponent<PhysicsWorld>();
-        _world.RenderDebug = false;
+        _world.RenderDebug = true;
         _world.Gravity = new Vector2(0, -4000);
 
         LoadMap();
@@ -60,7 +61,7 @@ internal class FightScene : Scene
         );
 
         ActiveCamera = _sceneCamera = AddEntity<Camera2D>(new(Engine.WindowManager.ViewportSize / 2.0f));
-        _viewportCamera = AddEntity<Camera2D>(new(VersusOverlay.ViewportSize));
+        _viewportCamera = AddEntity<Camera2D>(new(Engine.WindowManager.ViewportSize));
 
         _sceneSb = AddEntity<SpriteBatch>();
 
@@ -73,7 +74,6 @@ internal class FightScene : Scene
         _sceneSb.Add(AddEntity(ControlledPlayer));
 
         _viewportSb = AddEntity<SpriteBatch>();
-        _overlay = AddEntity(new VersusOverlay(_viewportSb));
         _viewportSb.CustomCamera = _viewportCamera;
 
         // Spawn P2 (Network Slave or Local Dummy)

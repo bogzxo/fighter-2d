@@ -18,7 +18,8 @@
         "runtime": {
           "lib/netstandard2.0/RiptideNetworking.dll": {
             "assemblyVersion": "2.2.1.0",
-            "fileVersion": "2.2.1.0"
+            "fileVersion": "2.2.1.0",
+            "localPath": "RiptideNetworking.dll"
           }
         }
       }
