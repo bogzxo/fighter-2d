@@ -1,13 +1,20 @@
 ﻿using System;
 using System.Numerics;
+
 using Bogz.Logging;
+
 using Fighter2D.Character;
 using Fighter2D.Character.Controllers;
+using Fighter2D.Effects;
 using Fighter2D.HUD;
 using Fighter2D.Logic;
+
 using Horizon.Engine;
 using Horizon.Physics;
+using Horizon.Rendering.Particles;
+using Horizon.Rendering.Particles.Simulation;
 using Horizon.Rendering.Spriting;
+
 using Silk.NET.OpenGL;
 
 namespace Fighter2D.Scenes;
@@ -22,17 +29,17 @@ internal class FightScene : Scene
     private NetworkingManager? _networkingManager;
     private SpriteBatch _sceneSb = null!, _viewportSb = null!;
     private PhysicsWorld _world = null!;
-
+    private HUDManager _hudManager;
 
     internal static Player ControlledPlayer = null!;
     internal static Player OtherPlayer = null!;
+    internal static FightEffects Effects = null!;
 
     private Camera2D _sceneCamera = null!, _viewportCamera = null!;
     internal readonly MoveList MoveList = new();
     private TileMap? _map;
     private readonly MapLoader.MapDefinition _mapDefinition;
     private readonly int _gamepadIndex;
-
     private Vector3 _exactCameraPosition;
     private readonly float _cameraFollowSpeed = 2.0f;
 
@@ -45,12 +52,9 @@ internal class FightScene : Scene
 
     public override void Initialize()
     {
-        Engine.GL.ClearColor(System.Drawing.Color.Black);
-        Engine.GL.Disable(EnableCap.DepthTest);
-
         // Spin up physics world with heavy gravity so players wont float around like fuckin astronauts
         _world = AddComponent<PhysicsWorld>();
-        _world.RenderDebug = true;
+        //_world.RenderDebug = true;
         _world.Gravity = new Vector2(0, -4000);
 
         LoadMap();
@@ -68,13 +72,17 @@ internal class FightScene : Scene
         // Spawn P1 (Master/Controlled Player)
         ControlledPlayer = new Player()
         {
-            Controller = new GamepadPlayerController(_gamepadIndex),
+            Controller = new LocalPlayerController(new GamepadPlayerInput(_gamepadIndex)),
             SpawnPosition = spawnPos
         };
         _sceneSb.Add(AddEntity(ControlledPlayer));
 
+        // Sparks, dust and whatever drifts through the air of this map
+        Effects = AddEntity(new FightEffects(_sceneCamera, _mapDefinition.Ambience));
+
         _viewportSb = AddEntity<SpriteBatch>();
         _viewportSb.CustomCamera = _viewportCamera;
+
 
         // Spawn P2 (Network Slave or Local Dummy)
         if (OtherPlayer is not null)
@@ -104,7 +112,7 @@ internal class FightScene : Scene
             // Host server mode with local dummy opponent
             OtherPlayer = new Player()
             {
-                Controller = new DummyPlayerController(),
+                Controller = new LocalPlayerController(new DummyPlayerInput()),
                 SpawnPosition = new(spawnPos.X + 256, spawnPos.Y)
             };
             _sceneSb.Add(AddEntity(OtherPlayer));
@@ -123,6 +131,8 @@ internal class FightScene : Scene
 
         _sceneCamera.Position = new Vector3(spawnPos.X, spawnPos.Y, 0.0f);
         _exactCameraPosition = _sceneCamera.Position;
+
+        _hudManager = AddComponent<HUDManager>();
 
         base.Initialize();
     }

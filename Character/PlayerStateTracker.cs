@@ -20,6 +20,9 @@ internal class PlayerStateTracker
 
 	private float _statusTimer = 0.0f;
 
+	// Looked up once rather than on every update
+	private Horizon.Physics.Fixtures.IPhysicsFixture? _feetFixture;
+
 	public PlayerStateTracker(Player player)
 	{
 		Player = player;
@@ -64,8 +67,8 @@ internal class PlayerStateTracker
 
 	private void CheckGround()
 	{
-		var feetFixture = Player.PhysicsBody.KinematicFixtures.Find(f => f.Tag == "feet");
-		IsGrounded = feetFixture?.IsTouching ?? false;
+		_feetFixture ??= Player.PhysicsBody.KinematicFixtures.Find(f => f.Tag == "feet");
+		IsGrounded = _feetFixture?.IsTouching ?? false;
 	}
 
 	private void UpdateStance(float dt)

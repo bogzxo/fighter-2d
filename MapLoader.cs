@@ -15,6 +15,7 @@ internal static class MapLoader
         public readonly string FileName { get; init; }
         public readonly string Description { get; init; }
         public readonly Vector2 SpawnPosition { get; init; }
+        public readonly string Ambience { get; init; }
     }
 
     public static IEnumerable<MapDefinition> LoadDefinitions(string mapDefinition)
@@ -41,12 +42,18 @@ internal static class MapLoader
                     float x = ((NumberValue)spawnPos.Properties["x"]).Value;
                     float y = ((NumberValue)spawnPos.Properties["y"]).Value;
 
+                    // Optional, what drifts through the air of the map ("petals" or "embers")
+                    string ambience = map.Properties.TryGetValue("ambience", out var ambienceValue) && ambienceValue is StringValue ambienceName
+                        ? ambienceName.Value
+                        : "petals";
+
                     yield return new MapDefinition
                     {
                         FileName = fileName,
                         PrettyName = prettyName,
                         Description = description,
                         SpawnPosition = new Vector2(x, y),
+                        Ambience = ambience,
                     };
                 }
             }

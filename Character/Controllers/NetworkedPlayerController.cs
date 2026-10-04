@@ -3,7 +3,6 @@ using System.Numerics;
 using Fighter2D.Logic;
 using Fighter2D.Logic.Moves;
 using Fighter2D.Scenes;
-using Silk.NET.Input;
 
 namespace Fighter2D.Character.Controllers;
 
@@ -72,13 +71,5 @@ internal class NetworkedPlayerController : PlayerController
         }
     }
 
-    public override void TryProcessNewInputs(float dt)
-    {
-        // Remote player inputs are processed over the network stream, nothing to do locally!
-    }
-
-    public override bool IsButtonHeld(ButtonName btn)
-    {
-        return false;
-    }
+    // Remote player inputs are processed over the network stream, nothing to do locally!
 }

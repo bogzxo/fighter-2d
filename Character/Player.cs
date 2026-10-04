@@ -28,13 +28,26 @@ internal class Player() : Sprite(SIZE)
     internal PlayerController Controller { get; init; }
     internal ParticleRenderer2D Particles { get; private set; }
     public Vector2 SpawnPosition { get; init; }
-
+    /// <summary>
+    /// This is the player health out of 100, 0 being dead.
+    /// </summary>
+    public byte Health = 100;
     public readonly MoveList MoveList = new();
 
     private PhysicsWorld world;
     public PhysicsBodyComponent2D PhysicsBody { get; internal set; }
 
     public CirclePhysicsFixture HitboxFixture { get; private set; }
+
+    /// <summary>
+    /// Where the player touches the ground, this is where dust comes from.
+    /// </summary>
+    public Vector2 FeetPosition => Transform.Position + Vector2.UnitY * -64;
+
+    /// <summary>
+    /// Where the head of the player is, this is where the haze of a stun hangs.
+    /// </summary>
+    public Vector2 HeadPosition => Transform.Position + Vector2.UnitY * 2;
 
     public override void Initialize()
     {
@@ -75,16 +88,7 @@ internal class Player() : Sprite(SIZE)
 
     public override void RenderUi(Ui root)
     {
-        new Window("Player")
-            .Show(root.Ctx, ui =>
-            {
-                ui.Heading("Player Information");
-                ui.Label($"Current Move: {Controller.CurrentMove.Id}");
-                ui.Label($"Current Stance: {Controller.StateTracker.CurrentStance}");
-                ui.Label($"Current Status: {Controller.StateTracker.CurrentStatus}");
-                ui.Label($"Is Grounded: {Controller.StateTracker.IsGrounded}");
-                ui.Label($"CanInterrupt: {Controller.CanInterrupt}");
-            });
+        Controller.RenderUi(root);
 
         base.RenderUi(root);
     }

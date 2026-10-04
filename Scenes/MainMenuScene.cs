@@ -31,28 +31,31 @@ internal class MainMenuScene : Scene
         Engine.GL.Enable(Silk.NET.OpenGL.EnableCap.Blend);
         Engine.GL.BlendFunc(Silk.NET.OpenGL.BlendingFactor.SrcAlpha, Silk.NET.OpenGL.BlendingFactor.OneMinusSrcAlpha);
 
+        ActiveCamera = camera = AddEntity<Camera2D>(new(new System.Numerics.Vector2(Engine.WindowManager.WindowSize.X, Engine.WindowManager.WindowSize.Y)));
+
         if (Engine.ObjectManager.Textures.TryCreateOrGet("main_logo", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/ui/logo.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_logo))
         {
-            const uint logoScalar = 4;
+            const uint logoScalar = 3;
 
             logo = spriteBatch.AddEntity(new Sprite(new System.Numerics.Vector2(result_logo.Asset.Width * logoScalar, result_logo.Asset.Height * logoScalar)));
-
-            //logo.RenderTransform.SetPositionRelativeToOrigin(new System.Numerics.Vector2(0));
-            logo.Transform.Position = new Vector2(0, 265);
+            logo.Transform.Origin = Origin.TopLeft;
+            logo.Transform.Position = new Vector2(Engine.WindowManager.WindowSize.X/-2, Engine.WindowManager.WindowSize.Y/2);
+            //logo.Transform.Position = new Vector2(0, 265);
             logo.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_logo.Asset, new System.Numerics.Vector2(result_logo.Asset.Width, result_logo.Asset.Height)), "logo");
 
             spriteBatch.Add(logo);
         }
-        if (Engine.ObjectManager.Textures.TryCreateOrGet("main_bg", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/backgrounds/menu.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_bg))
+        if (Engine.ObjectManager.Textures.TryCreateOrGet("main_bg", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/backgrounds/menu_sheet.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_bg))
         {
             bg = spriteBatch.AddEntity(new Sprite(Engine.WindowManager.WindowSize));
             bg.Transform.SetPositionRelativeToOrigin(new System.Numerics.Vector2(-Engine.WindowManager.WindowSize.X / 2, Engine.WindowManager.WindowSize.Y / 2));
-            bg.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_bg.Asset, new Vector2(result_bg.Asset.Width, result_bg.Asset.Height)), "bg");
+            bg.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_bg.Asset, new Vector2(result_bg.Asset.Width / 3, result_bg.Asset.Height)), "bg");
+            bg.AddAnimation("loop", Vector2.Zero, 3, 0.25f);
+            bg.SetAnimation("loop");
 
             spriteBatch.Add(bg);
         }
 
-        ActiveCamera = camera = AddEntity<Camera2D>(new(new System.Numerics.Vector2(Engine.WindowManager.WindowSize.X, Engine.WindowManager.WindowSize.Y)));
 
         glyphRenderer = AddEntity(new GlyphRenderer("Assets/Fonts/Born2bSporty", "Born2bSporty.fnt"));
 

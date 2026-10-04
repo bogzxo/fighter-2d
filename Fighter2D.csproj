@@ -15,6 +15,9 @@
     <None Update="Assets\backgrounds\menu.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Assets\backgrounds\menu_sheet.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Assets\backgrounds\player_select_bg.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -131,6 +134,7 @@
     <ProjectReference Include="..\horizon\Horizon.Input\Horizon.Input.csproj" />
     <ProjectReference Include="..\horizon\Horizon.OpenGL\Horizon.OpenGL.csproj" />
     <ProjectReference Include="..\horizon\Horizon.Physics\Horizon.Physics.csproj" />
+    <ProjectReference Include="..\horizon\Horizon.Rendering.UIX\Horizon.Rendering.UIX.csproj" />
     <ProjectReference Include="..\horizon\Horizon.Rendering\Horizon.Rendering.csproj" />
     <ProjectReference Include="..\horizon\Horizon.Webhost\Horizon.Webhost.csproj" />
   </ItemGroup>
