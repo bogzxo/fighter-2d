@@ -85,11 +85,4 @@ internal class Player() : Sprite(SIZE)
 
         Particles = AddEntity(new ParticleRenderer2D(32768) { EndColor = new Vector3(0, 0, 0.6f) });
     }
-
-    public override void RenderUi(Ui root)
-    {
-        Controller.RenderUi(root);
-
-        base.RenderUi(root);
-    }
 }

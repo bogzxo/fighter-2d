@@ -65,7 +65,8 @@ internal class PlayerMoveRoutines
         // The AnimationManager's modulo math (%) will safely loop the 7 frames
         while (_controller.IsHeld(InputFlags.RightBumper))
         {
-            yield return 1;
+            _controller.PlayAnimation("block");
+            yield return 7;
         }
     }
 
@@ -74,8 +75,9 @@ internal class PlayerMoveRoutines
         // Total animation length is 4 frames
         _controller.PlayAnimation("jump");
 
-        _player.PhysicsBody.ApplyImpulse(new Vector2(0, PlayerConfig.JUMP_IMPULSE));
         FightScene.Effects.Dust(_player.FeetPosition, 0);
+        FightScene.Effects.Shockwave(_player.FeetPosition, 45, 110);
+        _player.PhysicsBody.ApplyImpulse(new Vector2(0, PlayerConfig.JUMP_IMPULSE));
         _controller.StateTracker.ResetFallDuration();
 
         yield return 4;
@@ -100,6 +102,9 @@ internal class PlayerMoveRoutines
         for (int frame = 0; frame < 5; frame++)
         {
             FightScene.Effects.Dust(_player.FeetPosition, -direction, 8);
+
+            // Every frame of it, so what stays underfoot gets all of them: each one has to be gentle
+            FightScene.Effects.Shockwave(_player.FeetPosition, 70, 45);
             yield return 1;
         }
 

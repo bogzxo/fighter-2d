@@ -1,14 +1,17 @@
 ﻿using System;
+using System.Numerics;
+
 using Egui;
+
 using Fighter2D.Character;
 using Fighter2D.Logic;
 using Fighter2D.Logic.Moves;
 using Fighter2D.Logic.Routines;
 using Fighter2D.Scenes;
+
 using Horizon.Core;
 using Horizon.Core.Components;
-
-using System.Numerics;
+using Horizon.Rendering.Particles;
 
 namespace Fighter2D.Character.Controllers;
 /// <summary>

@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 
 using Horizon.Engine;
 using Horizon.Rendering;
+using Horizon.Rendering.Particles;
+using Horizon.Rendering.Particles.Simulation;
 using Horizon.Rendering.Spriting;
 using Horizon.Rendering.Text;
 
@@ -23,6 +25,7 @@ internal class MainMenuScene : Scene
 
     private Sprite logo = null!, bg = null!;
     private GlyphRenderer glyphRenderer = null!;
+    private ParticleRenderer2D particlesSmoke, particlesFlame;
 
     public override void Initialize()
     {
@@ -45,17 +48,20 @@ internal class MainMenuScene : Scene
 
             spriteBatch.Add(logo);
         }
-        if (Engine.ObjectManager.Textures.TryCreateOrGet("main_bg", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/backgrounds/menu_sheet.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_bg))
+        particlesSmoke = AddEntity(new ParticleRenderer2D(32768 * 2, new ComputeParticleSimulator2D()) {
+            ParticleSize = 4
+        });
+        particlesFlame = AddEntity(new ParticleRenderer2D(32768 * 2, new ComputeParticleSimulator2D())
         {
-            bg = spriteBatch.AddEntity(new Sprite(Engine.WindowManager.WindowSize));
-            bg.Transform.SetPositionRelativeToOrigin(new System.Numerics.Vector2(-Engine.WindowManager.WindowSize.X / 2, Engine.WindowManager.WindowSize.Y / 2));
-            bg.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_bg.Asset, new Vector2(result_bg.Asset.Width / 3, result_bg.Asset.Height)), "bg");
-            bg.AddAnimation("loop", Vector2.Zero, 3, 0.25f);
-            bg.SetAnimation("loop");
+            ParticleSize = 4
+        });
 
-            spriteBatch.Add(bg);
-        }
+        
 
+        particlesSmoke.EndColor = new Vector3(0, 0, 0);
+
+        particlesFlame.StartColor = new Vector3(255 / 255.0f, 64 / 255.0f, 0);
+        particlesFlame.EndColor = new Vector3(54 / 255.0f, 31 / 255.0f, 0);
 
         glyphRenderer = AddEntity(new GlyphRenderer("Assets/Fonts/Born2bSporty", "Born2bSporty.fnt"));
 
@@ -80,9 +86,26 @@ internal class MainMenuScene : Scene
         base.Initialize();
     }
 
+
+    float timer = 0;
     public override void UpdatePhysics(float dt)
     {
         base.UpdatePhysics(dt);
+
+        timer += dt;
+        if (timer > 0.05)
+        {
+            timer = 0;
+
+            for (int i = 0; i < 10; i++)
+            {
+                float x = -Engine.WindowManager.WindowSize.X / 2 + (Engine.WindowManager.WindowSize.X) * (i / 10.0f) + 32;
+                
+
+                particlesSmoke.AddCone(new Vector2(x, -Engine.WindowManager.WindowSize.Y + Random.Shared.NextSingle() * (Engine.WindowManager.WindowSize.Y / 2)), Vector2.UnitY + new Vector2((MathF.PI / 6.0f) * Random.Shared.NextSingle(), 0), MathF.PI / 6.0f, (int)(Random.Shared.NextSingle() * 100), 200 + 200 * Random.Shared.NextSingle());
+                particlesFlame.AddCone(new Vector2(x, -Engine.WindowManager.WindowSize.Y * 0.6f - Random.Shared.NextSingle() * (Engine.WindowManager.WindowSize.Y / 2)), Vector2.UnitY + new Vector2((MathF.PI / 6.0f) * Random.Shared.NextSingle(), 0), MathF.PI / 12.0f, (int)(Random.Shared.NextSingle() * 100), 200 + 200 * Random.Shared.NextSingle());
+            }
+        }
 
         if (Engine.InputManager.IsPressed(Horizon.Input.VirtualAction.Interact))
         {
