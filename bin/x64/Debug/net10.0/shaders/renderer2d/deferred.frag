@@ -10,6 +10,9 @@ uniform sampler2D uTexAlbedo;
 // rg: the normal (0.5 being none), b: how emissive it is.
 uniform sampler2D uTexSurface;
 
+// r: how shiny it is.
+uniform sampler2D uTexMaterial;
+
 // What blocks the lights: a texel for every cell of a grid over the world, see OcclusionMap2D.
 uniform sampler2D uTexOcclusion;
 uniform vec2 uOcclusionOrigin;
@@ -22,6 +25,10 @@ uniform vec3 uAmbient;
 
 // The size of the squares of the world that are lit as a whole, 0 for every pixel by itself.
 uniform float uPixelSize;
+
+// How tight the highlights on what is shiny are, and how bright.
+uniform float uShininess;
+uniform float uSpecularIntensity;
 uniform int uLightCount;
 
 // Must match DeferredRenderer2D.LightData (48 bytes).
@@ -134,6 +141,7 @@ void main() {
   vec3 albedo = texture(uTexAlbedo, texCoords).rgb;
   vec4 surface = texture(uTexSurface, texCoords);
   float emissive = surface.b;
+  float shine = texture(uTexMaterial, texCoords).r * uSpecularIntensity;
 
   // Where on screen we are is where in the world we are, as far as the camera goes.
   vec2 position = (uInverseViewProjection * vec4(texCoords * 2.0 - 1.0, 0.0, 1.0)).xy;
@@ -148,6 +156,7 @@ void main() {
 
   vec3 light = uAmbient;
   vec3 glow = vec3(0.0);
+  vec3 highlights = vec3(0.0);
 
   for (int i = 0; i < uLightCount; i++) {
     vec2 toLight = lights[i].position - position;
@@ -166,19 +175,24 @@ void main() {
       if (reach <= 0.0) continue;
     }
 
+    vec3 direction = normalize(vec3(toLight, lights[i].height));
+
     // A surface turned towards the light catches more of it than a flat one, one turned away less.
-    float facing = 1.0;
-    if (hasNormal) {
-      vec3 direction = normalize(vec3(toLight, lights[i].height));
-      facing = clamp(dot(normal, direction) / max(direction.z, 0.05), 0.0, 2.0);
-    }
+    float facing = hasNormal ? clamp(dot(normal, direction) / max(direction.z, 0.05), 0.0, 2.0) : 1.0;
 
     light += lights[i].color * (reach * facing);
     glow += lights[i].color * (reach * falloff * lights[i].glow);
+
+    if (shine > 0.0) {
+      // What is shiny mirrors the light itself, in its own colour rather than that of the surface. We are looking
+      // straight at the world, so it shows wherever the surface is turned halfway between us and the light.
+      vec3 halfway = normalize(direction + vec3(0.0, 0.0, 1.0));
+      highlights += lights[i].color * (reach * shine * pow(max(dot(normal, halfway), 0.0), uShininess));
+    }
   }
 
   // What is emissive shows as it was drawn no matter the light.
-  vec3 color = albedo * mix(light, vec3(1.0), emissive) + glow;
+  vec3 color = albedo * mix(light, vec3(1.0), emissive) + highlights + glow;
 
   FragColor = vec4(rollOff(color), 1.0);
 }

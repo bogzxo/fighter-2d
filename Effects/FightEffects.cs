@@ -84,17 +84,17 @@ internal class FightEffects : GameObject
         // The liquids collide with themselves too, so they pool where they land and overflow once that is full.
         // Runny, it levels out quickly
         var waterSimulator = new PhysicsFluidParticleSimulator2D(world);
-        waterSimulator.Particles.Radius = 1.0f;
+        waterSimulator.Particles.Radius = 2.5f;
         waterSimulator.Particles.Friction = 1.0f;
         waterSimulator.MaxLife = 15;
 
         // Enough for a splash when someone drops into it, wading through only parts it
-        waterSimulator.Particles.BodyPush = 0.15f;
+        waterSimulator.Particles.BodyPush = 0.05f;
         waterSimulator.Particles.BodyPushLimit = 110.0f;
 
         // Thick, it heaps up and only creeps outwards once it is down
         var lavaSimulator = new PhysicsFluidParticleSimulator2D(world);
-        lavaSimulator.Particles.Radius = 1.5f;
+        lavaSimulator.Particles.Radius = 2.5f;
         lavaSimulator.Particles.Friction = 14.0f;
         lavaSimulator.Particles.LinearDrag = 1.5f;
         lavaSimulator.Particles.Mass = 3.0f;
@@ -122,7 +122,7 @@ internal class FightEffects : GameObject
             Gravity = new Vector2(0, -180),
 
             // It is its own light, until it has cooled into a crust
-            StartEmissive = 1.0f,
+            StartEmissive = 0.45f,
             EndEmissive = 0.15f
         });
 
@@ -134,7 +134,7 @@ internal class FightEffects : GameObject
             {
                 Color = new Vector3(1.0f, 0.45f, 0.12f),
                 Radius = 150.0f,
-                Intensity = 1.6f,
+                Intensity = 0.6f,
                 Glow = 0.22f,
                 Flicker = 0.25f,
                 Size = 8.0f

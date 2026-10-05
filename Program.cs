@@ -25,6 +25,9 @@ internal class Program
             }
         });
 
+        // Every scene reads its gamepads from here, so it has to be there before the first one
+        GameInput.Attach(eng);
+
         if (TryGetMap(args, out var map))
         {
             eng.SetScene(new FightScene(map, 0));

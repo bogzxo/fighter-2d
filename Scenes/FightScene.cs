@@ -196,7 +196,8 @@ internal class FightScene : Scene
         // Build static collision boxes for map tiles
         PhysicsBodyComponent2D worldBody = _world.CreateBody(PhysicsBodySimulationType.Static);
 
-        // What a player can't get through light can't either: the same tiles are what casts the shadows
+        // What casts the shadows is up to the layers of the map (CastsShadows): the platforms do, whether or not
+        // there is anything to stand on. A layer that doesn't say is taken at whether it is collidable.
         _renderer.Occlusion = _occlusion = new OcclusionMap2D(
             _map.Width * TileMapChunk.WIDTH, _map.Height * TileMapChunk.HEIGHT, -_map.TileSize / 2, _map.TileSize);
 
@@ -216,6 +217,10 @@ internal class FightScene : Scene
                     if (tile.PhysicsData.IsCollidable == true)
                     {
                         worldBody.CreateRectangularFixture(tile.GlobalPosition - _map.TileSize / 2, _map.TileSize);
+                    }
+
+                    if (tile.RenderingData.CastsShadows)
+                    {
                         _occlusion.Set(tile.GlobalPosition, true);
                     }
                 }

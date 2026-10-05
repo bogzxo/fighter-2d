@@ -1,41 +1,22 @@
 ﻿using Fighter2D.Logic;
-using Horizon.Engine;
-using Silk.NET.Input;
-using System.Linq;
+using Horizon.Input2;
 
 namespace Fighter2D.Character.Controllers;
 
 /// <summary>
-/// Input for players driven by a gamepad, all it does is read the buttons.
+/// Input for players driven by a gamepad, all it does is read what the gamepad in a slot holds.
+/// Which button is which action is up to the bindings of that gamepad, see <see cref="GameInput"/>.
 /// </summary>
-internal class GamepadPlayerInput : IPlayerInput
+internal class GamepadPlayerInput(int slot) : IPlayerInput
 {
-    public string Name => "Player";
-    public bool IsConnected => _gamepad is { IsConnected: true };
-    private readonly IGamepad? _gamepad;
-
-    public GamepadPlayerInput(int index)
-    {
-        _gamepad = GameEngine.Instance.InputManager.NativeInputContext?.Gamepads.ElementAtOrDefault(index);
-    }
+    public string Name => $"Player {slot + 1}";
+    public bool IsConnected => GameInput.Manager.TryGet(slot, out Gamepad gamepad) && gamepad.IsConnected;
 
     public InputFlags Read()
     {
-        // An unplugged gamepad simply holds nothing
-        if (_gamepad is not { IsConnected: true }) return InputFlags.None;
+        // An unplugged gamepad simply holds nothing, and carries on once it is back in its slot
+        if (!GameInput.Manager.TryGet(slot, out Gamepad gamepad)) return InputFlags.None;
 
-        return (
-            Flag(_gamepad.DPadLeft(), InputFlags.DPadLeft) |
-            Flag(_gamepad.DPadRight(), InputFlags.DPadRight) |
-            Flag(_gamepad.DPadUp(), InputFlags.DPadUp) |
-            Flag(_gamepad.DPadDown(), InputFlags.DPadDown) |
-            Flag(_gamepad.A(), InputFlags.A) |
-            Flag(_gamepad.B(), InputFlags.B) |
-            Flag(_gamepad.X(), InputFlags.X) |
-            Flag(_gamepad.Y(), InputFlags.Y) |
-            Flag(_gamepad.RightBumper(), InputFlags.RightBumper)
-        );
+        return GameInput.ReadFight(gamepad);
     }
-
-    private static InputFlags Flag(Button button, InputFlags flag) => button.Pressed ? flag : InputFlags.None;
 }

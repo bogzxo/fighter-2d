@@ -5,12 +5,13 @@ using System.Numerics;
 using System.Text;
 
 using Fighter2D.Character;
+using Fighter2D.Character.Controllers;
 using Horizon.Engine;
+using Horizon.Input2;
 using Horizon.Rendering;
 using Horizon.Rendering.Spriting;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
-using Silk.NET.Input;
 
 using Button = Horizon.Rendering.UIX.Components.Button;
 
@@ -20,11 +21,19 @@ namespace Fighter2D.Scenes;
 /// Scene where the map of the fight is picked, either with the gamepad or by clicking.
 /// Joining a server happens here too, on a second page where its address is typed in with an on-screen keyboard.
 /// </summary>
-internal class MapSelectionScene(int gamepadIndex) : Scene
+internal class MapSelectionScene(MatchSetup setup) : Scene
 {
+    // Player one drives the menus
+    private int gamepadIndex => setup.Slots.Count > 0 ? setup.Slots[0] : 0;
+
     private const int DescriptionLineLength = 34;
+
+    // Hints are dimmed by their colour rather than by being see-through, that would fade the icons in them as well
+    private static readonly Vector4 HintColor = new(0.58f, 0.6f, 0.66f, 1.0f);
     private const string KEY_BACK = "BACK";
     private const string KEY_CONNECT = "CONNECT";
+    private const string HINT_MAP = "[icon:dpad] choose a map    [icon:pad_a] fight    [icon:pad_y] join a server    [icon:pad_b] back";
+    private const string HINT_JOIN = "[icon:dpad] move    [icon:pad_a] press    [icon:pad_b] delete    [icon:pad_y] connect";
 
     [Flags]
     private enum PadButtons
@@ -44,12 +53,12 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
 
     private MapLoader.MapDefinition[] mapDefinitions;
     private readonly List<Button> mapButtons = [];
-    private Label title, description, addressError;
+    private Label title, description, addressError, mapHint, joinHint;
     private StackPanel mapPage, joinPage;
     private TextBox addressBox;
     private OnScreenKeyboard keyboard;
     private int selectedIndex = 0;
-    private IGamepad? _gamepad;
+    private Gamepad? _gamepad;
     private PadButtons heldButtons;
     private float totalEngineTime = 0;
 
@@ -85,11 +94,11 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
 
     private void CompositeUi()
     {
-        var compositor = AddComponent(new UICompositor(camera));
+        var compositor = AddComponent(new UICompositor(camera, Constants.UI_THEME));
         var panel = compositor.CreateModule().AddComponent(new StackPanel
         {
-            Color = new Vector4(0.1f, 0.12f, 0.17f, 0.92f),
-            Padding = new UIEdges(32),
+            Background = "panel",
+            Padding = new UIEdges(40, 34),
             Spacing = 24
         });
 
@@ -101,6 +110,8 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
 
         CompositeMapPage();
         CompositeJoinPage();
+
+        panel.PopIn(0.4f);
     }
 
     private void CompositeMapPage()
@@ -112,10 +123,11 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
         for (int i = 0; i < mapDefinitions.Length; i++)
         {
             // Clicking a map selects it, the buttons underneath (or the gamepad) start the fight
+            // A height of zero leaves the buttons as tall as the skin draws them
             int index = i;
             mapButtons.Add(maps.Add(new Button(mapDefinitions[i].PrettyName)
             {
-                Size = new Vector2(280, 56),
+                Size = new Vector2(280, 0),
                 OnPressed = () => SelectMap(index)
             }));
         }
@@ -129,13 +141,14 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
         });
 
         var actions = mapPage.Add(new StackPanel { Direction = UIDirection.Horizontal, Spacing = 16 });
-        actions.Add(new Button("Fight") { Size = new Vector2(200, 52), OnPressed = StartFight });
-        actions.Add(new Button("Join Server") { Size = new Vector2(280, 52), OnPressed = () => ShowJoinPage(true) });
+        actions.Add(new Button("Fight") { Size = new Vector2(200, 0), OnPressed = StartFight });
+        actions.Add(new Button("Join Server") { Size = new Vector2(280, 0), OnPressed = () => ShowJoinPage(true) });
 
-        mapPage.Add(new Label("D-Pad  choose a map      A  fight      Y  join a server")
+        // The skin draws the buttons of the gamepad where the text asks for them
+        mapHint = mapPage.Add(new Label(HINT_MAP)
         {
             TextScale = 0.25f,
-            Color = new Vector4(0.93f, 0.95f, 1.0f, 0.6f)
+            Color = HintColor
         });
     }
 
@@ -168,10 +181,10 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
             OnKey = OnJoinKey
         });
 
-        joinPage.Add(new Label("D-Pad  move      A  press      B  delete      Y  connect")
+        joinHint = joinPage.Add(new Label(HINT_JOIN)
         {
             TextScale = 0.25f,
-            Color = new Vector4(0.93f, 0.95f, 1.0f, 0.6f)
+            Color = HintColor
         });
     }
 
@@ -179,11 +192,15 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
     {
         totalEngineTime += dt;
 
-        // Attach a gamepad
-        if (_gamepad is null && GameEngine.Instance.InputManager.NativeInputContext?.Gamepads.Count > 0)
+        // Attach the gamepad that was picked on the screen before this one
+        if (_gamepad is null)
         {
-            _gamepad = GameEngine.Instance.InputManager.NativeInputContext.Gamepads[0];
+            GameInput.Manager.TryGet(gamepadIndex, out _gamepad);
         }
+
+        // The hints show the buttons the way they are printed on that gamepad
+        mapHint.Text = GameInput.Localize(HINT_MAP, _gamepad);
+        joinHint.Text = GameInput.Localize(HINT_JOIN, _gamepad);
 
         // Only act on the press itself, otherwise holding a button repeats it on every update
         PadButtons held = ReadGamepad();
@@ -213,14 +230,15 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
     {
         if (_gamepad is null) return PadButtons.None;
 
+        // Menus stay on the buttons they are drawn with, whatever the gamepad is bound to in a fight
         return (
-            (_gamepad.DPadUp().Pressed ? PadButtons.Up : PadButtons.None) |
-            (_gamepad.DPadDown().Pressed ? PadButtons.Down : PadButtons.None) |
-            (_gamepad.DPadLeft().Pressed ? PadButtons.Left : PadButtons.None) |
-            (_gamepad.DPadRight().Pressed ? PadButtons.Right : PadButtons.None) |
-            (_gamepad.A().Pressed ? PadButtons.A : PadButtons.None) |
-            (_gamepad.B().Pressed ? PadButtons.B : PadButtons.None) |
-            (_gamepad.Y().Pressed ? PadButtons.Y : PadButtons.None)
+            (GameInput.MenuUp(_gamepad) ? PadButtons.Up : PadButtons.None) |
+            (GameInput.MenuDown(_gamepad) ? PadButtons.Down : PadButtons.None) |
+            (GameInput.MenuLeft(_gamepad) ? PadButtons.Left : PadButtons.None) |
+            (GameInput.MenuRight(_gamepad) ? PadButtons.Right : PadButtons.None) |
+            (_gamepad.IsDown(GamepadInput.A) ? PadButtons.A : PadButtons.None) |
+            (_gamepad.IsDown(GamepadInput.B) ? PadButtons.B : PadButtons.None) |
+            (_gamepad.IsDown(GamepadInput.Y) ? PadButtons.Y : PadButtons.None)
         );
     }
 
@@ -229,6 +247,11 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
         if (pressed.HasFlag(PadButtons.Y))
         {
             ShowJoinPage(true);
+        }
+        else if (pressed.HasFlag(PadButtons.B))
+        {
+            // Back to picking a gamepad, which is also where its bindings are changed
+            Engine.SetScene(new GamepadSelectorScene(setup));
         }
         else if (pressed.HasFlag(PadButtons.Down))
         {
@@ -283,6 +306,9 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
     {
         mapPage.Visible = !show;
         joinPage.Visible = show;
+
+        // The page that takes over slides in from the side it lives on
+        (show ? joinPage : mapPage).SlideIn(new Vector2(show ? 220 : -220, 0), 0.3f);
         title.Text = show ? "Join Server" : "Select Map";
         addressError.Text = string.Empty;
 
@@ -303,7 +329,20 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
 
     private void StartFight()
     {
-        Engine.SetScene(new FightScene(mapDefinitions[selectedIndex], gamepadIndex));
+        var mapDefinition = mapDefinitions[selectedIndex];
+
+        if (setup.Mode == MatchMode.Pvp && setup.Slots.Count > 1)
+        {
+            // Player two is just another local player on the second gamepad
+            Engine.SetScene(new FightScene(mapDefinition, gamepadIndex, new Player()
+            {
+                Controller = new LocalPlayerController(new GamepadPlayerInput(setup.Slots[1])),
+                SpawnPosition = new(mapDefinition.SpawnPosition.X * 16 + 256, TileMapChunk.HEIGHT * 16 - mapDefinition.SpawnPosition.Y * 16),
+            }));
+            return;
+        }
+
+        Engine.SetScene(new FightScene(mapDefinition, gamepadIndex));
     }
 
     private void Connect()
@@ -314,6 +353,7 @@ internal class MapSelectionScene(int gamepadIndex) : Scene
         if (!IPAddress.TryParse(text, out _))
         {
             addressError.Text = "dude cmon.";
+            addressBox.Shake(10.0f);
             return;
         }
 
