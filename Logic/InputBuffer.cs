@@ -1,10 +1,12 @@
-﻿using Fighter2D.Logic.Moves;
+using System;
+
+using Fighter2D.Logic.Moves;
 
 namespace Fighter2D.Logic;
 
 /// <summary>
-/// Helper class which remembers the last few ticks of player input, this allows moves to be matched against
-/// button presses (even ones made slightly too early) and double taps, rather than only what is held right now.
+/// Helper class which remembers the last few ticks of player input.
+/// This is what lets a move come out when the button was pressed slightly too early, and what makes double taps possible.
 /// </summary>
 public class InputBuffer
 {
@@ -30,12 +32,12 @@ public class InputBuffer
     }
 
     /// <summary>
-    /// Saves the state of the player input for this tick/frame.
+    /// Saves what the player is holding on this tick.
     /// </summary>
     public void Push(InputFlags held)
     {
-        // A press is anything that is held now but wasn't on the last tick, the diff, whatever is already
-        // held on the very first tick doesn't count (the button used to confirm the menu etc.)
+        // A press is whatever is held now but wasn't on the last tick.
+        // The very first tick doesn't count, that would be the button that confirmed the menu
         InputFlags pressed = _count > 0 ? held & ~Held : InputFlags.None;
 
         _newest = (_newest + 1) % _ticks.Length;
@@ -54,7 +56,7 @@ public class InputBuffer
     public bool WasPressed(InputFlags signature) => FindPress(signature, 0, _bufferTicks) >= 0;
 
     /// <summary>
-    /// Tests if the signature was pressed twice in a row, the latest press being recent enough to still count.
+    /// Tests if the signature was pressed twice in a row, with the second press recent enough to still count.
     /// </summary>
     public bool WasDoubleTapped(InputFlags signature)
     {
@@ -63,7 +65,7 @@ public class InputBuffer
     }
 
     /// <summary>
-    /// Tests the input against a move, as per the trigger of the move.
+    /// Tests the input against a move, the way the trigger of the move wants it entered.
     /// </summary>
     /// <param name="signature">The input signature of the move which matched.</param>
     public bool TryMatch(FightingMove move, out InputFlags signature)
@@ -92,7 +94,7 @@ public class InputBuffer
     }
 
     /// <summary>
-    /// Forgets the presses of a signature, called once they have started a move so they can't start another.
+    /// Forgets the presses of a signature. Called once they have started a move so one press can't start two.
     /// </summary>
     public void Consume(InputFlags signature)
     {

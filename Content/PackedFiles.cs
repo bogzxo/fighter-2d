@@ -1,18 +1,22 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Reflection;
 
 namespace Fighter2D.Content;
 
-
+/// <summary>
+/// A published build is one exe and its Assets folder.
+/// Everything else it needs as a file (native libraries, shaders, fonts) is packed into the exe and gets unpacked next to it the first time it runs.
+/// See the PackEngineFiles target in Fighter2D.csproj for the packing half.
+/// </summary>
 internal static class PackedFiles
 {
-    // What the name of every packed file starts with, the rest is where it goes
+    // What the name of every packed file starts with, the rest of the name is where it goes
     private const string PREFIX = "packed/";
 
     /// <summary>
-    /// Helper method to unpack whatever the exe carries, and to have the game look for its files where the exe is
-    /// whatever it was started from. Has to be called before anything else is.
+    /// Helper method to unpack whatever the exe carries, and to make the game look for its files next to the exe wherever it was started from.
+    /// Has to be called before anything else is.
     /// </summary>
     public static void Unpack()
     {
@@ -31,7 +35,7 @@ internal static class PackedFiles
             using Stream? packed = assembly.GetManifestResourceStream(name);
             if (packed is null) continue;
 
-            // There from an earlier run
+            // Already there from an earlier run
             if (File.Exists(target) && new FileInfo(target).Length == packed.Length) continue;
 
             try
@@ -43,7 +47,7 @@ internal static class PackedFiles
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
-                // Somewhere we can't write to. Whatever needs the file will say so better than we can
+                // Somewhere we can't write to. Whatever needs the file will complain about it better than we can
                 Console.Error.WriteLine($"'{target}' couldn't be unpacked: {exception.Message}");
             }
         }

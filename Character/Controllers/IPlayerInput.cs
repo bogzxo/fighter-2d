@@ -1,24 +1,29 @@
 using Fighter2D.Logic;
 
+using Horizon.Input2;
+
 namespace Fighter2D.Character.Controllers;
 
 /// <summary>
-/// Where the buttons of a <see cref="PlayerController"/> come from (a gamepad, the AI, another machine etc.)
-/// An input only says which buttons are held down, the matching of them to moves is the same for everyone.
+/// Where the buttons of a <see cref="PlayerController"/> come from (a gamepad, the dummy, another machine etc.)
+/// An input only says which buttons are held down, matching them to moves is the same for everybody.
 /// </summary>
 internal interface IPlayerInput
 {
-    // The title of the debug window, has to be different for every player on screen
+    // What the player is called in logs and debug output
     string Name { get; }
 
-    // How fast the player walks compared to the walk speed of their character, slower opponents are easier to get away from
+    // How fast the player walks compared to the walk speed of their character, a slow opponent is easier to get away from
     float WalkSpeedScale => 1.0f;
 
-    // Whether the buttons are pressed on another machine, which is then also where what happens to the player is decided
+    // The gamepad the buttons come from, so the HUD can show the right button icons. Null for anybody who isn't holding one
+    Gamepad? Gamepad => null;
+
+    // Whether the buttons are pressed on another machine, in which case that machine also decides what happens to the player
     bool IsRemote => false;
 
     /// <summary>
-    /// Called once the controller is ready, for inputs that need to look at the fight (the AI)
+    /// Called once the controller is ready, for inputs that need to look at the fight (the dummy)
     /// </summary>
     void Attach(PlayerController controller) { }
 

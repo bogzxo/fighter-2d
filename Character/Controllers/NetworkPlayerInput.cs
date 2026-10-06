@@ -6,17 +6,18 @@ using Fighter2D.Logic;
 namespace Fighter2D.Character.Controllers;
 
 /// <summary>
-/// Input for a player of another machine: the buttons they held on every tick of their fight, pressed here in the order
-/// they were pressed there. The controller makes of them what it makes of anybody's buttons.
+/// Input for a network player. It plays back the buttons they held on every tick of their fight, in the order they held them.
+/// The controller makes of those buttons what it makes of anybody's.
 /// </summary>
 internal class NetworkPlayerInput : IPlayerInput
 {
-    // How many ticks may be waiting before the ones that say nothing new are skipped to catch up, and how many before
-    // the lot is thrown out (the other machine stood still for a moment and sent it all at once)
+    // How many ticks can be waiting before we start skipping the boring ones to catch up
     private const int MAX_BACKLOG = 3;
+
+    // More than this waiting means the other machine hung for a moment and then sent the lot, so most of it gets binned
     private const int MAX_QUEUE = 30;
 
-    // What has come in and hasn't been pressed yet, oldest first
+    // What has come in and hasn't been played yet, oldest first
     private readonly List<(uint Tick, InputFlags Held)> _queue = [];
 
     private InputFlags _held;
@@ -27,22 +28,21 @@ internal class NetworkPlayerInput : IPlayerInput
     public bool IsRemote => true;
 
     /// <summary>
-    /// The tick of the other machine whose buttons were pressed last.
+    /// The tick of the other machine whose buttons were played last.
     /// </summary>
     public uint Tick { get; private set; }
 
     /// <summary>
-    /// This method is called for every message of buttons the other machine sends. Each of them repeats the last few
-    /// ticks, so one that gets lost is made up for by the next.
+    /// Called for every input message of the other machine. Each one repeats the last few ticks, so a lost message is covered by the next.
     /// </summary>
-    /// <param name="newestTick">The tick the first of the buttons were held on, each one after it is a tick older.</param>
+    /// <param name="newestTick">The tick the first entry was held on, each entry after it is one tick older.</param>
     public void Receive(uint newestTick, ReadOnlySpan<InputFlags> newestFirst)
     {
         for (int i = newestFirst.Length - 1; i >= 0; i--)
         {
             uint tick = newestTick - (uint)i;
 
-            // Only what we haven't heard yet (the difference is taken as a signed one so it survives the counter wrapping)
+            // Only take what we haven't heard yet. The difference is signed so it survives the counter wrapping around
             if (_started && (int)(tick - _newest) <= 0) continue;
 
             _queue.Add((tick, newestFirst[i]));
@@ -55,13 +55,13 @@ internal class NetworkPlayerInput : IPlayerInput
 
     public InputFlags Read()
     {
-        // Behind: a tick on which nothing changed can go without anything being lost, a press is a change
+        // Running behind. A tick where nothing changed can be skipped without losing a press, since a press is a change
         while (_queue.Count > MAX_BACKLOG && _queue[0].Held == _queue[1].Held)
         {
             _queue.RemoveAt(0);
         }
 
-        // With nothing new to go by they carry on holding what they held
+        // Nothing new to go by, so they keep holding whatever they held
         if (_queue.Count == 0) return _held;
 
         (Tick, _held) = _queue[0];

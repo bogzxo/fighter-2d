@@ -3,7 +3,7 @@ using System.Numerics;
 
 using Fighter2D.Character;
 using Fighter2D.Character.Controllers;
-using Fighter2D.Logic;
+using Fighter2D.Combat;
 using Fighter2D.Match;
 
 using Horizon.Core;
@@ -14,20 +14,20 @@ using Riptide;
 namespace Fighter2D.Networking;
 
 /// <summary>
-/// The networking of an online fight. Both machines play their own player and tell the other one which buttons they held
-/// on every tick of it, so the player of the other machine is played here the same way ours is: by their buttons.
-/// A few times a second each also says how its player is really doing, and wherever that has come apart from what the
-/// other one made of the buttons it is put right (see <see cref="PlayerController.Reconcile"/>).
+/// The netcode of an online fight. Both machines play their own player and send the buttons they held on every tick.
+/// The other machine plays those buttons back, so the network player runs through the exact same code as a local one.
+/// A few times a second each side also sends a snapshot of how its player is really doing, and whatever drifted gets fixed (see PlayerReconciler).
+/// It isn't rollback, but it isn't the old "send everything 60 times a second and pray" either.
 /// </summary>
 internal sealed class FightNetwork(NetSession session, RoundDirector round) : IGameComponent, IDisposable
 {
-    // How many ticks of the fight go by between two states of our player, the buttons go out on every one of them
-    private const uint STATE_INTERVAL = 6;
+    // How many ticks go by between two snapshots of our player, the inputs go out on every single one
+    private const uint SNAPSHOT_INTERVAL = 6;
 
-    // How long (in seconds) a state waits for the other player to get to the tick it is from before it is gone by regardless
-    private const float STATE_PATIENCE = 0.25f;
+    // How long (in seconds) a snapshot waits for our copy to catch up to its tick before we apply it anyway
+    private const float SNAPSHOT_PATIENCE = 0.25f;
 
-    // How often (in seconds) the host says how the match stands without anything having changed, which keeps the clocks together
+    // How often (in seconds) the host repeats how the match stands without anything having changed, which keeps the clocks together
     private const float ROUND_INTERVAL = 1.0f;
 
     /// <summary>
@@ -38,18 +38,19 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
 
     private float _roundTimer;
 
-    // The ticks of our player the other machine was last told the buttons and the state of
-    private uint _inputTick, _stateTick;
+    // The ticks of our player the other machine was last sent the inputs and the snapshot of
+    private uint _inputTick, _snapshotTick;
 
-    // How many of our blows the other machine was told of, and how many of theirs we have heard of
+    // How many of our hits the other machine was told about, and how many of theirs we have heard about
     private byte _hitsSent, _hitsSeen;
 
-    // What the other machine last said about its player, kept until that player has got to the tick it is from
+    // The last snapshot of the network player, held back until our copy of them has reached the tick it is from
     private PlayerSnapshot? _pending;
     private float _pendingTime;
 
     public bool IsConnected => session.IsConnected;
 
+    // Messages can show up before the scene has set the players up, a controller has no player until then
     private PlayerController? Local => LocalPlayer?.Controller is { Player: not null, StateTracker: not null } controller ? controller : null;
     private PlayerController? Remote => RemotePlayer?.Controller is { Player: not null, StateTracker: not null } controller ? controller : null;
 
@@ -71,27 +72,29 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
         if (session.IsHost) SendRound(dt);
     }
 
+    /* Sending */
+
     private void SendPlayer()
     {
         if (Local is not { } controller || controller.Tick == _inputTick) return;
         _inputTick = controller.Tick;
 
-        // Unreliable on purpose, every one of these repeats what the last few said
+        // Unreliable on purpose, every one of these repeats what the last few said anyway
         var message = NetSession.Unreliable(NetMessage.PlayerInput);
         InputReport.Of(controller).Write(message);
         session.Send(message);
 
-        if (controller.Tick - _stateTick >= STATE_INTERVAL) SendState(reliable: false);
+        if (controller.Tick - _snapshotTick >= SNAPSHOT_INTERVAL) SendSnapshot(reliable: false);
     }
 
     /// <summary>
-    /// Helper method to say how our player is doing.
+    /// Helper method to send how our player is really doing.
     /// </summary>
-    /// <param name="reliable">Whether it has to get there: what a blow did to us does, where we are a moment later is old news by the time it could be sent again.</param>
-    private void SendState(bool reliable)
+    /// <param name="reliable">Whether it has to arrive. What a hit did to us has to, a routine one is old news by the time it could be resent.</param>
+    private void SendSnapshot(bool reliable)
     {
         if (Local is not { } controller) return;
-        _stateTick = controller.Tick;
+        _snapshotTick = controller.Tick;
 
         var message = reliable ? NetSession.Reliable(NetMessage.PlayerState) : NetSession.Unreliable(NetMessage.PlayerState);
         PlayerSnapshot.Of(LocalPlayer, _hitsSeen).Write(message);
@@ -109,7 +112,7 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
     /// <summary>
     /// Helper method for the host to say how the match stands.
     /// </summary>
-    /// <param name="reliable">Whether it has to get there: a turn the match took does, a reminder of where it stands doesn't.</param>
+    /// <param name="reliable">Whether it has to arrive. A phase change has to, a reminder doesn't.</param>
     private void SendRound(bool reliable)
     {
         _roundTimer = 0;
@@ -122,7 +125,7 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
     private void OnPhaseChanged(RoundPhase phase) => SendRound(reliable: true);
 
     /// <summary>
-    /// Called when our player lands a move on the player of the other machine, what comes of it is up to the machine that plays them.
+    /// Called when our player lands a hit on the network player. What comes of it is up to the machine that plays them.
     /// </summary>
     /// <param name="direction">The way the hit was going, -1 for left and 1 for right.</param>
     /// <param name="impact">Where it landed.</param>
@@ -132,10 +135,12 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
         new HitReport(move, direction, impact).Write(message);
         session.Send(message);
 
-        // Whatever they said about themselves before they hear of this is out of date, see ApplyPlayer
+        // Any snapshot of theirs from before they hear about this hit is stale now, see ReceiveSnapshot
         _hitsSent++;
         _pending = null;
     }
+
+    /* Receiving */
 
     private void OnMessageReceived(NetMessage id, Message message)
     {
@@ -147,7 +152,7 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
                 break;
 
             case NetMessage.PlayerState:
-                ApplyPlayer(PlayerSnapshot.Read(message));
+                ReceiveSnapshot(PlayerSnapshot.Read(message));
                 break;
 
             case NetMessage.Hit:
@@ -162,34 +167,33 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
     }
 
     /// <summary>
-    /// Called when the player of the other machine says they landed a move on us, whether it counts is ours to decide.
+    /// Called when the network player says they landed a hit on us. Whether it counts is ours to decide.
     /// </summary>
     private void ReceiveHit(in HitReport hit)
     {
         _hitsSeen++;
 
-        // The move is one of theirs, which with another character isn't one of ours
+        // The move is one of theirs, which with a different character isn't one of ours
         if (Local is { } victim && Remote is { } attacker && attacker.MoveList.TryGetMove(hit.Move, out var move))
         {
-            Combat.Resolve(attacker, victim, move, hit.Direction, hit.Impact, predicted: false);
+            HitResolver.Resolve(attacker, victim, move, hit.Direction, hit.Impact, predicted: false);
         }
 
-        // They made a guess at what it did to us, this is what it did
-        SendState(reliable: true);
+        // They took a guess at what it did to us, this is what it actually did
+        SendSnapshot(reliable: true);
     }
 
-    private void ApplyPlayer(in PlayerSnapshot snapshot)
+    private void ReceiveSnapshot(in PlayerSnapshot snapshot)
     {
-        // Messages can beat the player to it, the controller has no player until the scene has set it up
         if (Remote is null) return;
 
         // Their health is theirs to keep track of, we only show it
         RemotePlayer.Health = snapshot.Health;
 
-        // From before they heard of our last blow: by this they are still standing there as if nothing had happened
+        // From before they heard about our last hit. Going by this one would have them stand there as if nothing happened
         if (snapshot.HitsSeen != _hitsSent) return;
 
-        // One at a time, each waits for the player to get to where it was taken down
+        // One at a time, each waits for our copy to get to the tick it was taken on
         if (_pending is not null) return;
 
         _pending = snapshot;
@@ -197,8 +201,8 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
     }
 
     /// <summary>
-    /// Helper method to hold what the other machine said about its player against what we made of their buttons, once
-    /// we have pressed the ones of the tick it is from. Any sooner and it would be put right for what it hasn't done yet.
+    /// Helper method to apply the waiting snapshot once our copy has played the inputs of the tick it is from.
+    /// Any sooner and they would be corrected for something they haven't done yet.
     /// </summary>
     private void ApplyPending(float dt)
     {
@@ -206,11 +210,11 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
 
         _pendingTime += dt;
 
-        // The difference is taken as a signed one so it survives the counter wrapping
+        // The difference is signed so it survives the counter wrapping around
         bool caughtUp = RemotePlayer is NetworkPlayer player && (int)(player.Input.Tick - snapshot.Tick) >= 0;
-        if (!caughtUp && _pendingTime < STATE_PATIENCE) return;
+        if (!caughtUp && _pendingTime < SNAPSHOT_PATIENCE) return;
 
-        controller.Reconcile(snapshot);
+        PlayerReconciler.Apply(controller, snapshot);
         _pending = null;
     }
 

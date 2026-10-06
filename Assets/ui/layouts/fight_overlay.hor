@@ -1,6 +1,6 @@
 // fight_overlay, laid out with Horizon.Hex.
-// Three things are laid over each other in here, each on a layer of its own so the others can be put out of the way
-// while one is worked on: the hud (bars, clock, names), the banner that calls the rounds, and the versus display.
+// Everything that is drawn over a fight. It is split over three layers so each can be hidden while another one is worked on.
+// "hud" is the bars, the clock, the names, the input display and the hit callouts. "banner" calls out the rounds. "versus" is the versus screen.
 // Load it with UILayout.Load, every component is there under the name it has here.
 
 let player1_health = compositor.progress_bar({
@@ -75,6 +75,74 @@ let player2_info = compositor.label({
     intro_offset: vec(640, 0),
     text: "PLAYER TWO",
     text_scale: 0.32
+});
+
+// The input display down both sides. What each player held lately with the newest on top, written by the game (InputDisplay.cs)
+let player1_inputs = compositor.label({
+    layer: "hud",
+    pos: vec(48, -150),
+    size: vec(300, 430),
+    anchor: "top_left",
+    pivot: "top_left",
+    align: "top_left",
+    text: "",
+    text_scale: 0.3
+});
+
+let player2_inputs = compositor.label({
+    layer: "hud",
+    pos: vec(-48, -150),
+    size: vec(300, 430),
+    anchor: "top_right",
+    pivot: "top_right",
+    align: "top_right",
+    text: "",
+    text_scale: 0.3
+});
+
+// What the last attack of each player came to (HIT, COUNTER HIT, WHIFF...) and the combo count under it, see HitCalloutDisplay.cs
+let player1_callout = compositor.label({
+    layer: "hud",
+    pos: vec(330, -160),
+    size: vec(420, 56),
+    anchor: "top_left",
+    pivot: "top_left",
+    align: "left",
+    text: "",
+    text_scale: 0.6
+});
+
+let player1_combo = compositor.label({
+    layer: "hud",
+    pos: vec(330, -222),
+    size: vec(420, 40),
+    anchor: "top_left",
+    pivot: "top_left",
+    align: "left",
+    text: "",
+    text_scale: 0.42
+});
+
+let player2_callout = compositor.label({
+    layer: "hud",
+    pos: vec(-330, -160),
+    size: vec(420, 56),
+    anchor: "top_right",
+    pivot: "top_right",
+    align: "right",
+    text: "",
+    text_scale: 0.6
+});
+
+let player2_combo = compositor.label({
+    layer: "hud",
+    pos: vec(-330, -222),
+    size: vec(420, 40),
+    anchor: "top_right",
+    pivot: "top_right",
+    align: "right",
+    text: "",
+    text_scale: 0.42
 });
 
 // What is called out across the screen (ROUND 1, FIGHT!, K.O.) and the line under it, see RoundDisplay.cs

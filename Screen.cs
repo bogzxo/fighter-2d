@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 
 using Horizon.Engine;
 using Horizon.Rendering;
@@ -8,67 +8,67 @@ using Horizon.Rendering.UIX;
 namespace Fighter2D;
 
 /// <summary>
-/// The glass the whole game is seen through: every scene puts what it shows into a renderer made here rather than
-/// straight onto the window, which is what has the backdrops of the menus and the fights look like they are on the
-/// same old screen. What is UI is not behind it but laid over it: the buttons of the menus (see MenuLayouts) and the HUD.
-/// What the options will one day switch on and off is here as well.
+/// The post processing every scene shares, so the menus and the fights all look like they are on the same crusty old CRT.
+/// Scenes draw into a renderer made here instead of straight onto the window. UI is laid on top of that and stays sharp.
+/// The switches in here are what an options screen would flip, once there is one.
 /// </summary>
 internal static class Screen
 {
     /// <summary>
-    /// Whether the game looks like it is shown on a picture tube.
+    /// Whether the game is drawn with the CRT effect.
     /// </summary>
-    public static bool Tube = true;
+    public static bool CrtEnabled = true;
 
     /// <summary>
-    /// Whether what moves is blurred along the way it moves: in a fight that hides that pixel art moves in steps,
-    /// in the menus it is what slides and pops into place.
+    /// Whether moving things get motion blur. In a fight it hides that pixel art moves in steps, in the menus it smooths the slides and pops.
     /// </summary>
-    public static bool MotionBlur = true;
+    public static bool MotionBlurEnabled = true;
 
-    // The art is drawn at twice its size, so that is how big a dot of the tube is
-    private const float TUBE_PIXEL_SIZE = 2.0f;
+    // The art is drawn at twice its size, so that is how big one dot of the CRT is
+    private const float CRT_PIXEL_SIZE = 2.0f;
 
-    // Gentle, the menus are laid over the glass and their buttons have to stay near what is drawn behind them
-    private static readonly Vector2 TubeWarp = new(1.0f / 64.0f, 1.0f / 48.0f);
+    // Kept gentle, the menu buttons are laid over the screen and have to stay lined up with what is drawn behind them
+    private static readonly Vector2 CrtWarp = new(1.0f / 64.0f, 1.0f / 48.0f);
 
-    public static Renderer2D For(Scene scene)
+    /// <summary>
+    /// Helper method to give a scene a renderer with the CRT effect on it.
+    /// </summary>
+    public static Renderer2D CreateRenderer(Scene scene)
     {
         Vector2 size = GameEngine.Instance.WindowManager.ViewportSize;
 
-        var screen = scene.AddEntity(new Renderer2D((uint)size.X, (uint)size.Y));
-        Glass(screen);
+        var renderer = scene.AddEntity(new Renderer2D((uint)size.X, (uint)size.Y));
+        AddCrt(renderer);
 
-        return screen;
+        return renderer;
     }
 
     /// <summary>
-    /// Helper method to put a renderer behind the glass by itself, for a scene that shows nothing else behind it:
-    /// that saves drawing its picture into a glass of its own first. Goes after <see cref="Blur(DeferredRenderer2D)"/>.
+    /// Helper method to put the CRT effect on a renderer. If the renderer gets motion blur too, add that first.
     /// </summary>
-    public static void Glass(Renderer2D renderer)
+    public static void AddCrt(Renderer2D renderer)
     {
         renderer.PostProcessing.Add(new CrtEffect
         {
-            Enabled = Tube,
-            PixelSize = TUBE_PIXEL_SIZE,
-            Warp = TubeWarp
+            Enabled = CrtEnabled,
+            PixelSize = CRT_PIXEL_SIZE,
+            Warp = CrtWarp
         });
     }
 
     /// <summary>
-    /// Helper method to blur what moves in a world, see <see cref="MotionBlur"/>.
+    /// Helper method to put motion blur on the world of a fight.
     /// </summary>
-    public static void Blur(DeferredRenderer2D world)
+    public static void AddMotionBlur(DeferredRenderer2D world)
     {
-        world.PostProcessing.Add(new MotionBlurEffect { Enabled = MotionBlur });
+        world.PostProcessing.Add(new MotionBlurEffect { Enabled = MotionBlurEnabled });
     }
 
     /// <summary>
-    /// Helper method to blur what moves in a UI, see <see cref="MotionBlur"/>. Only the UI is, whatever is behind it is left alone.
+    /// Helper method to put motion blur on a UI. Only the UI gets blurred, whatever is behind it is left alone.
     /// </summary>
-    public static void Blur(UICompositor ui)
+    public static void AddMotionBlur(UICompositor ui)
     {
-        ui.PostProcessing.Add(new MotionBlurEffect { Enabled = MotionBlur });
+        ui.PostProcessing.Add(new MotionBlurEffect { Enabled = MotionBlurEnabled });
     }
 }

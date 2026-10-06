@@ -105,6 +105,9 @@
 </data>
  </layer>
  <layer id="1" name="ground" width="96" height="96">
+  <properties>
+   <property name="CastsShadows" type="bool" value="true"/>
+  </properties>
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -308,15 +311,15 @@
 </data>
  </layer>
  <objectgroup id="4" name="lights">
-  <object id="1" name="lamp" template="objects/lamp.tx" x="252" y="1018"/>
-  <object id="2" name="lamp" template="objects/lamp.tx" x="540" y="1018"/>
-  <object id="3" name="lamp" template="objects/lamp.tx" x="828" y="1018"/>
-  <object id="4" name="lamp" template="objects/lamp.tx" x="1728" y="850"/>
-  <object id="5" name="lamp" template="objects/lamp.tx" x="2016" y="850"/>
+  <object id="1" template="objects/lamp.tx" name="lamp" x="252" y="1018"/>
+  <object id="2" template="objects/lamp.tx" name="lamp" x="540" y="1018"/>
+  <object id="3" template="objects/lamp.tx" name="lamp" x="828" y="1018"/>
+  <object id="4" template="objects/lamp.tx" name="lamp" x="1728" y="850"/>
+  <object id="5" template="objects/lamp.tx" name="lamp" x="2016" y="850"/>
  </objectgroup>
  <objectgroup id="5" name="spawns">
-  <object id="6" name="player 1" template="objects/spawn.tx" x="492" y="948"/>
-  <object id="7" name="player 2" template="objects/spawn.tx" x="748" y="948">
+  <object id="6" template="objects/spawn.tx" name="player 1" x="492" y="948"/>
+  <object id="7" template="objects/spawn.tx" name="player 2" x="748" y="948">
    <properties>
     <property name="player" type="int" value="2"/>
    </properties>

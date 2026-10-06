@@ -1,19 +1,17 @@
-﻿// What Cammy does differently. She gets around like everybody else (movement_moves.hor) and starts from the same
-// fighting moves (fighting_moves.hor, which is also where what all of this means is written down): the ones here
-// replace the ones of the same name in there and add her own, see characters.hor.
+// What Cammy does differently. She gets around like everybody else (movement_moves.hor) and starts from the same attacks (fighting_moves.hor,
+// which is also where all of this is explained). The moves in here replace the ones of the same name in there and add her own, see characters.hor.
 //
-// Her animations have fewer frames than those of The Man and play at half the rate, so every frame number in a
-// phase is hers alone. And where he has one kick and one punch on two buttons each, she has a light and a heavy
-// one of both, which turn into other moves when she is crouching or in the air:
+// Her animations have fewer frames than The Man's and play at half the rate, so every frame number in here is hers alone.
+// Where he has one kick and one punch on two buttons each, she has a light and a heavy one of both, and they turn into other moves when she is crouching or in the air.
 //
 //                 standing        crouching             in the air
 //   A             kick            crouch_kick           jump_light_kick
 //   B             heavy kick      sweep                 jump_kick
 //   X             light punch     crouch_punch          jump_light_punch
 //   Y             heavy punch     crouch_heavy_punch    jump_punch
-//   A + B         cannon_drill, she throws herself at the other player feet first, spinning
-//   X + Y         cannon_spike, a kick straight up that takes whoever it meets along
-//   LeftBumper    spinning_knuckle, a turn on the spot into a backfist that carries her forwards
+//   A + B         cannon_drill, she throws herself at the other player feet first
+//   X + Y         cannon_spike, a kick straight up that launches whoever it meets
+//   LeftBumper    spinning_knuckle, a spin on the spot into a backfist that carries her forwards
 
 let moves = {
     block: {
@@ -21,24 +19,24 @@ let moves = {
         trigger: "held",
         priority: 40,
         stances: "standing | crouching",
-        interruptible: true,
+        cancellable: true,
         steering: false,
         phases: {
-            raise: { animation: "block_start", interrupt: 0, lock: 1, status: "guarding", status_frame: 1 },
-            hold: { animation: "block_loop", loop_while: "held", lock: 0 }
+            raise: { animation: "block_start", cancel: 0, commit: 1, status: "blocking", status_frame: 1 },
+            hold: { animation: "block_loop", loop_while: "held", commit: 0 }
         }
     },
 
     hit_stun: {
         stances: "standing | crouching | jumping | falling",
-        interruptible: false,
+        cancellable: false,
         steering: false,
         finish_reroutes: {
             jumping: "fall",
             falling: "fall"
         },
         phases: {
-            dazed: { animation: "hit", loop_while: "stunned", effect: "haze", effect_frames: 0 }
+            dazed: { animation: "hit", loop_while: "hitstun", effect: "haze", effect_frames: 0 }
         }
     },
 
@@ -48,7 +46,7 @@ let moves = {
         priority: 20,
         stances: "standing | falling | jumping | crouching",
         damage: 6,
-        interruptible: false,
+        cancellable: false,
         status: "attacking",
         stance_reroutes: {
             jumping: "jump_light_kick",
@@ -67,7 +65,7 @@ let moves = {
         stances: "standing | falling | jumping | crouching",
         damage: 8,
         knockback: vec(700, 600),
-        interruptible: false,
+        cancellable: false,
         status: "attacking",
         stance_reroutes: {
             jumping: "jump_kick",
@@ -85,7 +83,7 @@ let moves = {
         priority: 24,
         stances: "standing | falling | jumping | crouching",
         damage: 4,
-        interruptible: false,
+        cancellable: false,
         status: "attacking",
         stance_reroutes: {
             jumping: "jump_light_punch",
@@ -103,7 +101,7 @@ let moves = {
         priority: 34,
         stances: "standing | falling | jumping | crouching",
         damage: 7,
-        interruptible: false,
+        cancellable: false,
         status: "attacking",
         stance_reroutes: {
             jumping: "jump_punch",
@@ -118,7 +116,7 @@ let moves = {
     crouch_kick: {
         stances: "crouching",
         damage: 5,
-        interruptible: false,
+        cancellable: false,
         steering: false,
         status: "attacking",
         stance: "crouching",
@@ -134,8 +132,8 @@ let moves = {
         stances: "crouching",
         damage: 7,
         knockback: vec(500, 1500),
-        stun: 12,
-        interruptible: false,
+        hitstun: 12,
+        cancellable: false,
         steering: false,
         status: "attacking",
         stance: "crouching",
@@ -150,7 +148,7 @@ let moves = {
     crouch_punch: {
         stances: "crouching",
         damage: 4,
-        interruptible: false,
+        cancellable: false,
         steering: false,
         status: "attacking",
         stance: "crouching",
@@ -166,7 +164,7 @@ let moves = {
         stances: "crouching",
         damage: 7,
         knockback: vec(300, 8000),
-        interruptible: false,
+        cancellable: false,
         steering: false,
         status: "attacking",
         stance: "crouching",
@@ -182,8 +180,8 @@ let moves = {
         stances: "jumping | falling",
         damage: 8,
         knockback: vec(900, 1900),
-        stun: 6,
-        interruptible: false,
+        hitstun: 6,
+        cancellable: false,
         status: "attacking",
         finish_reroutes: {
             standing: "idle",
@@ -197,7 +195,7 @@ let moves = {
     jump_light_kick: {
         stances: "jumping | falling",
         damage: 5,
-        interruptible: false,
+        cancellable: false,
         status: "attacking",
         finish_reroutes: {
             standing: "idle",
@@ -212,7 +210,7 @@ let moves = {
         stances: "jumping | falling",
         damage: 7,
         knockback: vec(600, 300),
-        interruptible: false,
+        cancellable: false,
         status: "attacking",
         finish_reroutes: {
             standing: "idle",
@@ -226,7 +224,7 @@ let moves = {
     jump_light_punch: {
         stances: "jumping | falling",
         damage: 4,
-        interruptible: false,
+        cancellable: false,
         status: "attacking",
         finish_reroutes: {
             standing: "idle",
@@ -244,8 +242,8 @@ let moves = {
         stances: "standing | crouching",
         damage: 10,
         knockback: vec(1300, 900),
-        stun: 12,
-        interruptible: false,
+        hitstun: 12,
+        cancellable: false,
         steering: false,
         status: "attacking",
         finish_reroutes: {
@@ -266,8 +264,8 @@ let moves = {
         stances: "standing | crouching",
         damage: 11,
         knockback: vec(500, 2800),
-        stun: 24,
-        interruptible: false,
+        hitstun: 24,
+        cancellable: false,
         steering: false,
         status: "attacking",
         finish_reroutes: {
@@ -287,7 +285,7 @@ let moves = {
         stances: "standing",
         damage: 12,
         knockback: vec(1100, 400),
-        interruptible: false,
+        cancellable: false,
         steering: false,
         status: "attacking",
         phases: {

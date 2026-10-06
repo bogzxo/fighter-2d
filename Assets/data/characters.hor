@@ -1,17 +1,16 @@
-﻿// The characters of the game, in the order the screen they are picked on shows them.
-// Each has a folder of its own in Assets/sprites/characters with its sprite sheet and the definition of its animations
-// in it. What a sheet was made from (the art itself, a sheet somebody else laid out) is in Art/characters, which
-// isn't part of what the game loads or sends to whoever joins.
-//   pretty_name:  what the character is called on screen
-//   sprites:      the folder its sprite sheet and the definition of its animations are in
-//   moves:        the files its moves come from. A move of a later file replaces the one of the same name from an
-//                 earlier one, so a character can share most of its moves with another and change a few
-//   walk_speed:   the speed it walks up to
-//   frame_rate:   how many frames of animation a second its moves play at
-//   scale:        how big the character is against the others, 1 if left out. All of it scales: the sprite, the body
-//                 that stands on the map and what it hits and is hit by (which is read off the sprite, see CharacterBoxes)
-//   stats:        what the screen the character is picked on says about it, each from 0 to 100. They are only
-//                 for show: how a character really plays is up to its moves and the numbers above
+// The characters of the game, in the order the character select screen shows them.
+// Each one has a folder in Assets/sprites/characters with its sprite sheet and the definition of its animations.
+// The source art of a sheet is in Art/characters, which the game doesn't load and doesn't send to whoever joins.
+//
+//   pretty_name   what the character is called on screen
+//   sprites       the folder its sprite sheet and animation definition are in
+//   moves         the files its moves come from. A move in a later file replaces the one of the same name from an earlier one,
+//                 so a character can share most of its moves with another and only change a few
+//   walk_speed    the speed it walks up to
+//   frame_rate    how many frames of animation a second its moves play at
+//   scale         how big the character is against the others, 1 if left out. Everything scales with it, the sprite, the body and the hitboxes
+//   stats         the bars on the character select screen, each from 0 to 100. They are only for show,
+//                 how a character really plays is up to its moves and the numbers above
 
 let characters = {
     the_man: {

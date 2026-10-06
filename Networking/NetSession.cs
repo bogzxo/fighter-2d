@@ -1,23 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
+
+using Fighter2D.Content;
 
 using Riptide;
 
 namespace Fighter2D.Networking;
 
 /// <summary>
-/// The connection between the two machines of an online fight, either end of it: the host listens and the other player joins.
+/// The connection between the two machines of an online fight. Either end of it, the host listens and the other player joins.
 /// It is made on the way into the lobby and lives until the players part ways, the scenes in between only borrow it.
 /// </summary>
 internal sealed class NetSession : IDisposable
 {
     public const ushort PORT = 7777;
 
-    // The session that is open right now, this is the one that gets pumped
+    // The session that is open right now, this is the one that gets pumped (see NetPump)
     public static NetSession? Active { get; private set; }
 
     private Server? _server;
@@ -31,7 +31,7 @@ internal sealed class NetSession : IDisposable
     public bool IsConnected => IsHost ? _server!.ClientCount > 0 : _client!.IsConnected;
 
     /// <summary>
-    /// Whether the session never got off the ground: the port was taken (host) or nobody answered (join).
+    /// Whether the session never got off the ground. The port was taken (host) or nobody answered (join).
     /// </summary>
     public bool HasFailed { get; private set; }
 
@@ -84,7 +84,7 @@ internal sealed class NetSession : IDisposable
     }
 
     /// <summary>
-    /// Helper method to go looking for a host, <see cref="IsConnected"/> or <see cref="HasFailed"/> says how that went a moment later.
+    /// Helper method to go looking for a host. <see cref="IsConnected"/> or <see cref="HasFailed"/> says how that went a moment later.
     /// </summary>
     public static NetSession Join(string address)
     {
@@ -123,14 +123,8 @@ internal sealed class NetSession : IDisposable
     {
         if (IsClosed || !IsConnected) return;
 
-        if (IsHost)
-        {
-            _server!.SendToAll(message);
-        }
-        else
-        {
-            _client!.Send(message);
-        }
+        if (IsHost) _server!.SendToAll(message);
+        else _client!.Send(message);
     }
 
     /// <summary>
@@ -185,6 +179,6 @@ internal sealed class NetSession : IDisposable
         if (Active == this) Active = null;
 
         // Whatever content the other machine brought goes with it
-        Fighter2D.Content.GameContent.UseLocal();
+        GameContent.UseLocal();
     }
 }

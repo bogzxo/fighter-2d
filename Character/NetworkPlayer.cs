@@ -3,8 +3,8 @@ using Fighter2D.Character.Controllers;
 namespace Fighter2D.Character;
 
 /// <summary>
-/// Representation of a remote player connected via Riptide network. It is played like any other player, by the buttons
-/// the other machine says were pressed, and put right by FightNetwork wherever that comes apart from how they are doing over there.
+/// A player who sits at another machine. They are played like anybody else, just with the buttons their machine says they pressed.
+/// FightNetwork feeds those buttons in and fixes things up whenever our copy drifts away from theirs.
 /// </summary>
 internal class NetworkPlayer : Player
 {

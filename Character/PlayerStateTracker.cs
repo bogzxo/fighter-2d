@@ -1,119 +1,127 @@
+using System;
+
 using Fighter2D.Logic;
-using Fighter2D.Logic.Moves;
+
+using Horizon.Physics.Fixtures;
 
 namespace Fighter2D.Character;
 
 /// <summary>
-/// Handles Physics groundedness, Stance calculation, and Status Effect locks.
+/// Handles Physics groundedness, Stance calculation, and the hitstun timer.
 /// </summary>
-internal class PlayerStateTracker
+internal class PlayerStateTracker(Player player)
 {
-	public Player Player { get; }
-	public bool IsGrounded { get; private set; }
+    // How fast (up or down) a player has to be going in the air for it to count as jumping or falling
+    private const float AIR_SPEED_THRESHOLD = 0.1f;
 
-	// Default Stance/Status
-	public Stance CurrentStance { get; set; } = Stance.Standing;
-	public PlayerStatusType CurrentStatus { get; set; } = PlayerStatusType.Normal;
+    public Player Player { get; } = player;
+    public bool IsGrounded { get; private set; }
 
-	public float FallDuration { get; private set; }
-	public bool DeltaOnGround { get; private set; }
+    // Whether we were on the ground on the tick before, for spotting the tick we land on
+    public bool WasGrounded { get; private set; }
 
-	/// <summary>
-	/// How many ticks of the fight the stun we are in has left, 0 when we aren't in one.
-	/// </summary>
-	public int StunTicks { get; private set; }
+    public Stance CurrentStance { get; set; } = Stance.Standing;
+    public PlayerStatusType CurrentStatus { get; set; } = PlayerStatusType.Normal;
 
-	/// <summary>
-	/// How many blows have landed on us since we were last free to do anything about it, 0 when we are.
-	/// </summary>
-	public int ComboHits { get; private set; }
+    // How long (in seconds) we have been falling for
+    public float FallDuration { get; private set; }
 
-	public bool IsStunned => CurrentStatus == PlayerStatusType.Stunned;
+    /// <summary>
+    /// How many ticks of hitstun are left, 0 when we aren't in it.
+    /// </summary>
+    public int HitstunTicks { get; private set; }
 
-	// Looked up once rather than on every update
-	private Horizon.Physics.Fixtures.IPhysicsFixture? _feetFixture;
+    /// <summary>
+    /// How many hits have landed on us since we last had the controls, 0 when we do.
+    /// </summary>
+    public int ComboCount { get; private set; }
 
-	public PlayerStateTracker(Player player)
-	{
-		Player = player;
-	}
+    public bool IsInHitstun => CurrentStatus == PlayerStatusType.Hitstun;
 
-	public void UpdatePhysicsState(float dt)
-	{
-		DeltaOnGround = IsGrounded;
-		CheckGround();
-		UpdateStance(dt);
-	}
+    /// <summary>
+    /// Whether this is the tick we touched down on.
+    /// </summary>
+    public bool JustLanded => IsGrounded && !WasGrounded;
 
-	/// <summary>
-	/// Counts a tick off the stun, the other statuses are managed by the moves that set them.
-	/// </summary>
-	/// <returns>True on the tick the stun runs out.</returns>
-	public bool TickStun()
-	{
-		if (!IsStunned || --StunTicks > 0) return false;
+    // Looked up once rather than on every update
+    private IPhysicsFixture? _feetFixture;
 
-		ClearStun();
-		return true;
-	}
+    public void UpdatePhysicsState(float dt)
+    {
+        WasGrounded = IsGrounded;
+        CheckGround();
+        UpdateStance(dt);
+    }
 
-	/// <summary>
-	/// Stuns us for a number of ticks from now, which counts as one more blow of the combo we are in.
-	/// </summary>
-	public void ApplyStun(int ticks)
-	{
-		CurrentStatus = PlayerStatusType.Stunned;
-		StunTicks = Math.Max(1, ticks);
-		ComboHits++;
-	}
+    /// <summary>
+    /// Counts one tick off the hitstun. The other statuses are managed by the moves that set them.
+    /// </summary>
+    /// <returns>True on the tick the hitstun runs out.</returns>
+    public bool TickHitstun()
+    {
+        if (!IsInHitstun || --HitstunTicks > 0) return false;
 
-	/// <summary>
-	/// Puts the status where the machine that plays this player says it is.
-	/// </summary>
-	public void Restore(PlayerStatusType status, int stunTicks, int comboHits)
-	{
-		CurrentStatus = status;
-		StunTicks = status == PlayerStatusType.Stunned ? Math.Max(1, stunTicks) : 0;
-		ComboHits = status == PlayerStatusType.Stunned ? comboHits : 0;
-	}
+        ClearHitstun();
+        return true;
+    }
 
-	private void ClearStun()
-	{
-		CurrentStatus = PlayerStatusType.Normal;
-		StunTicks = 0;
-		ComboHits = 0;
-	}
+    /// <summary>
+    /// Puts us in hitstun for a number of ticks from now, which counts as one more hit of the combo we are eating.
+    /// </summary>
+    public void ApplyHitstun(int ticks)
+    {
+        CurrentStatus = PlayerStatusType.Hitstun;
+        HitstunTicks = Math.Max(1, ticks);
+        ComboCount++;
+    }
 
-	public void ResetFallDuration() => FallDuration = 0f;
+    /// <summary>
+    /// Sets the status to whatever the machine that plays this player says it is.
+    /// </summary>
+    public void Restore(PlayerStatusType status, int hitstunTicks, int comboCount)
+    {
+        bool hitstun = status == PlayerStatusType.Hitstun;
 
-	private void CheckGround()
-	{
-		_feetFixture ??= Player.PhysicsBody.KinematicFixtures.Find(f => f.Tag == "feet");
-		IsGrounded = _feetFixture?.IsTouching ?? false;
-	}
+        CurrentStatus = status;
+        HitstunTicks = hitstun ? Math.Max(1, hitstunTicks) : 0;
+        ComboCount = hitstun ? comboCount : 0;
+    }
 
-	private void UpdateStance(float dt)
-	{
-		float verticalVelocity = Player.PhysicsBody.Velocity.Y;
+    private void ClearHitstun()
+    {
+        CurrentStatus = PlayerStatusType.Normal;
+        HitstunTicks = 0;
+        ComboCount = 0;
+    }
 
-		if (IsGrounded)
-		{
-			// A move that puts us in a stance (crouching) keeps us in it for as long as we are on the ground
-			CurrentStance = Player.Controller.CurrentMove.Stance == Stance.Crouching ? Stance.Crouching : Stance.Standing;
-		}
-		else
+    public void ResetFallDuration() => FallDuration = 0f;
+
+    private void CheckGround()
+    {
+        _feetFixture ??= Player.PhysicsBody.KinematicFixtures.Find(f => f.Tag == Player.FEET_TAG);
+        IsGrounded = _feetFixture?.IsTouching ?? false;
+    }
+
+    private void UpdateStance(float dt)
+    {
+        if (IsGrounded)
         {
-            switch (verticalVelocity)
-            {
-                case > 0.1f:
-                    CurrentStance = Stance.Jumping;
-                    FallDuration = 0f;
-                    break;
-                case <= -0.1f:
-                    CurrentStance = Stance.Falling;
-                    FallDuration += dt;
-                    break;
-            }
+            // A move that puts us in a crouch keeps us in it for as long as we are on the ground
+            CurrentStance = Player.Controller.CurrentMove.Stance == Stance.Crouching ? Stance.Crouching : Stance.Standing;
+            return;
         }
-	}
+
+        float verticalVelocity = Player.PhysicsBody.Velocity.Y;
+
+        if (verticalVelocity > AIR_SPEED_THRESHOLD)
+        {
+            CurrentStance = Stance.Jumping;
+            FallDuration = 0f;
+        }
+        else if (verticalVelocity <= -AIR_SPEED_THRESHOLD)
+        {
+            CurrentStance = Stance.Falling;
+            FallDuration += dt;
+        }
+    }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using Fighter2D.Match;
 
@@ -8,12 +8,15 @@ using Horizon.Rendering.UIX.Components;
 namespace Fighter2D.HUD;
 
 /// <summary>
-/// The clock of the round and whatever is called out across the middle of the screen: the round, the start of the fight, how it ended and who won the match.
+/// The clock of the round and whatever is called out across the middle of the screen. That is the round, FIGHT!, how it ended and who won the match.
 /// </summary>
 internal sealed class RoundDisplay : IHudDisplay
 {
     // How long (in seconds) FIGHT! stays up once the round is on
     private const float FIGHT_CALL_TIME = 0.9f;
+
+    // From how many seconds left the clock starts thumping
+    private const int COUNTDOWN_SECONDS = 10;
 
     private const string NO_TIME_LIMIT = "--";
     private const string CONTINUE_HINT = "[icon:pad_a] continue";
@@ -59,7 +62,7 @@ internal sealed class RoundDisplay : IHudDisplay
         _timer.Text = seconds.ToString();
 
         // The last ten seconds are counted down with a bit of a thump
-        if (seconds <= 10 && _round.Phase == RoundPhase.Fight) _timer.Punch(0.2f, 0.25f);
+        if (seconds <= COUNTDOWN_SECONDS && _round.Phase == RoundPhase.Fight) _timer.Punch(0.2f, 0.25f);
     }
 
     /// <summary>
@@ -73,7 +76,8 @@ internal sealed class RoundDisplay : IHudDisplay
         {
             case RoundPhase.Ready:
                 // Whoever takes this one takes the match
-                bool decider = score.Wins(0) == _round.Rules.RoundsToWin - 1 && score.Wins(1) == _round.Rules.RoundsToWin - 1 && _round.Rules.Rounds > 1;
+                int matchPoint = _round.Rules.RoundsToWin - 1;
+                bool decider = score.Wins(0) == matchPoint && score.Wins(1) == matchPoint && _round.Rules.Rounds > 1;
                 return (decider ? "FINAL ROUND" : $"ROUND {score.Round}", string.Empty);
 
             case RoundPhase.Fight:
@@ -90,7 +94,7 @@ internal sealed class RoundDisplay : IHudDisplay
                 };
 
             case RoundPhase.MatchOver:
-                string result = $"{score.Wins(0)} - {score.Wins(1)}    {GameInput.Localize(CONTINUE_HINT, GameInput.Manager.LastUsed)}";
+                string result = $"{score.Wins(0)} - {score.Wins(1)}    {ButtonGlyphs.Localize(CONTINUE_HINT, GameInput.Manager.LastUsed)}";
 
                 return score.Winner is int winner
                     ? ($"{NameOf(winner).ToUpperInvariant()} WINS", result)

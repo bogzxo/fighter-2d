@@ -1,12 +1,12 @@
-﻿// The moves for getting around. See fighting_moves.hor for how a move is written down.
+// The moves for getting around. See fighting_moves.hor for what all of this means.
 
 let moves = {
     idle: {
         stances: "standing",
-        interruptible: true,
+        cancellable: true,
         stance: "standing",
         phases: {
-            stand: { animation: "idle", loop_while: "always", interrupt: 0 }
+            stand: { animation: "idle", loop_while: "always", cancel: 0 }
         }
     },
 
@@ -15,23 +15,23 @@ let moves = {
         trigger: "held",
         priority: 60,
         stances: "crouching | standing",
-        interruptible: true,
+        cancellable: true,
         steering: false,
         stance: "crouching",
         stance_after: "standing",
         phases: {
             duck: { animation: "crouch_start" },
-            stay: { animation: "crouch_loop", loop_while: "held", interrupt: 0 }
+            stay: { animation: "crouch_loop", loop_while: "held", cancel: 0 }
         }
     },
 
     fall: {
         stances: "falling",
-        interruptible: true,
+        cancellable: true,
         stance: "falling",
         stance_after: "standing",
         phases: {
-            drop: { animation: "fall", loop_while: "falling", interrupt: 0 }
+            drop: { animation: "fall", loop_while: "falling", cancel: 0 }
         }
     },
 
@@ -40,14 +40,14 @@ let moves = {
         trigger: "held",
         priority: 70,
         stances: "standing",
-        interruptible: true,
+        cancellable: true,
         repeat: "held",
         finish_reroutes: {
             standing: "idle"
         },
         phases: {
-            stride: { animation: "run_loop", loop_while: "held", interrupt: 0 },
-            stop: { animation: "run_stop", until: "held", interrupt: 0 }
+            stride: { animation: "run_loop", loop_while: "held", cancel: 0 },
+            stop: { animation: "run_stop", until: "held", cancel: 0 }
         }
     },
 
@@ -56,13 +56,13 @@ let moves = {
         trigger: "held",
         priority: 50,
         stances: "standing | crouching",
-        interruptible: true,
+        cancellable: true,
         finish_reroutes: {
             falling: "fall"
         },
         phases: {
             launch: { animation: "jump", impulse: vec(0, 3500), effect: "jump" },
-            rise: { loop_while: "jumping", interrupt: 0 }
+            rise: { loop_while: "jumping", cancel: 0 }
         }
     },
 
@@ -71,12 +71,12 @@ let moves = {
         trigger: "double_tap",
         priority: 10,
         stances: "standing | crouching",
-        interruptible: true,
+        cancellable: true,
         steering: false,
         status: "invulnerable",
         phases: {
             dive: { animation: "roll", frames: 5, impulse: vec(3500, 0), effect: "roll", effect_frames: 5 },
-            recover: { frames: 4, interrupt: 0 }
+            recover: { frames: 4, cancel: 0 }
         }
     }
 }

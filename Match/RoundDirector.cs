@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using Fighter2D.Character;
 using Fighter2D.Networking;
@@ -8,28 +8,10 @@ using Horizon.Core.Components;
 
 namespace Fighter2D.Match;
 
-internal enum RoundPhase
-{
-    // The two fighters are shown off against each other, once before the first round
-    Versus,
-
-    // The round is called out, nobody can move yet
-    Ready,
-
-    // The round is on
-    Fight,
-
-    // Somebody went down or the time ran out, the round is being called
-    RoundOver,
-
-    // The match is decided, whoever won is shown until the players have seen enough
-    MatchOver
-}
-
 /// <summary>
-/// Runs a match round by round: when the players may move, when a round is over and who took it, and when the match is.
-/// It decides and keeps the score, showing any of it is up to whoever looks at it (the HUD), and what happens after the match is up to <see cref="Finished"/>.
-/// In an online fight only the host decides (see <see cref="IsAuthority"/>), the other machine is told how the match stands and goes by that.
+/// Runs a match round by round. It decides when the players may move, when a round is over and who took it, and when the match is.
+/// It only decides and keeps the score, showing any of it is up to the HUD and what happens after the match is up to <see cref="Finished"/>.
+/// Online only the host decides (see <see cref="IsAuthority"/>), the other machine is told how the match stands and goes along with it.
 /// </summary>
 internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player playerTwo) : IGameComponent
 {
@@ -38,7 +20,7 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
     private const float READY_TIME = 1.5f;
     private const float ROUND_OVER_TIME = 3.0f;
 
-    // How long the result of the match is up at the most, and how soon a button can skip the rest of it
+    // How long the result of the match stays up at the most, and how soon a button can skip the rest of it
     private const float MATCH_OVER_TIME = 8.0f;
     private const float MATCH_OVER_SKIP = 1.5f;
 
@@ -46,8 +28,7 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
     public MatchScore Score { get; } = new(rules);
 
     /// <summary>
-    /// Whether this machine decides how the match goes. The one that doesn't only keeps its clocks running between
-    /// what it is told by the one that does, see <see cref="Apply"/>.
+    /// Whether this machine decides how the match goes. The one that doesn't only keeps its clock running between what the host tells it.
     /// </summary>
     public bool IsAuthority { get; init; } = true;
 
@@ -59,7 +40,7 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
     public float PhaseTime { get; private set; }
 
     /// <summary>
-    /// How much of the round is left in seconds, which only counts down while the fight is on. Stays where it is for a round without a time limit.
+    /// How much of the round is left in seconds, which only counts down while the fight is on.
     /// </summary>
     public float TimeLeft { get; private set; } = rules.RoundSeconds;
 
@@ -69,12 +50,12 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
     public RoundOutcome? LastOutcome { get; private set; }
 
     /// <summary>
-    /// Whether the round that was just called ended on the clock rather than with somebody going down.
+    /// Whether the round that was just called ended on the clock rather than with a K.O.
     /// </summary>
     public bool TimedOut { get; private set; }
 
     /// <summary>
-    /// Whether the players are held where they are: before a round, and once it has been called.
+    /// Whether the players are held still, which is before a round and once it has been called.
     /// </summary>
     public bool PlayersFrozen => Phase != RoundPhase.Fight;
 
@@ -130,14 +111,8 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
             case RoundPhase.RoundOver:
                 if (PhaseTime < ROUND_OVER_TIME) break;
 
-                if (Score.IsOver)
-                {
-                    Enter(RoundPhase.MatchOver);
-                }
-                else
-                {
-                    StartRound();
-                }
+                if (Score.IsOver) Enter(RoundPhase.MatchOver);
+                else StartRound();
                 break;
 
             case RoundPhase.MatchOver:
@@ -146,102 +121,22 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
         }
     }
 
-    /// <summary>
-    /// Helper method for the machine that doesn't decide anything: the clock runs on by itself between two messages of the host,
-    /// and leaving once the match is over is everybodys own business.
-    /// </summary>
-    private void Follow(float dt)
-    {
-        if (Phase == RoundPhase.Fight && Rules.IsTimed)
-        {
-            TimeLeft = MathF.Max(0.0f, TimeLeft - dt);
-        }
-        else if (Phase == RoundPhase.MatchOver)
-        {
-            UpdateMatchOver();
-        }
-    }
-
-    private void UpdateMatchOver()
-    {
-        if (_finished) return;
-
-        if (PhaseTime >= MATCH_OVER_TIME || (PhaseTime >= MATCH_OVER_SKIP && SkipRequested?.Invoke() == true))
-        {
-            _finished = true;
-            Finished?.Invoke();
-        }
-    }
-
-    /// <summary>
-    /// Helper method to take down how the match stands, for telling the other machine.
-    /// </summary>
-    public RoundSnapshot Capture() => new(Phase, PhaseTime, TimeLeft, [.. Score.Rounds], LastOutcome, TimedOut, Score.ForfeitedTo ?? -1);
-
-    /// <summary>
-    /// This method is called on the machine that follows the match for everything the host says about it, already turned round so that player one is ours.
-    /// </summary>
-    public void Apply(in RoundSnapshot snapshot)
-    {
-        // Something that was said before what we already know, reminders are not sent in a way that keeps them in order
-        if (Progress(snapshot.Phase, snapshot.Rounds.Length) < Progress(Phase, Score.Rounds.Count)) return;
-
-        Score.Restore(snapshot.Rounds, snapshot.Forfeit);
-        LastOutcome = snapshot.LastOutcome;
-        TimedOut = snapshot.TimedOut;
-        TimeLeft = snapshot.TimeLeft;
-
-        if (snapshot.Phase == Phase) return;
-
-        // A round after the first starts with everybody back where they began
-        if (snapshot.Phase == RoundPhase.Ready && snapshot.Rounds.Length > 0) ResetPlayers();
-
-        Phase = snapshot.Phase;
-        PhaseTime = snapshot.PhaseTime;
-        PhaseChanged?.Invoke(Phase);
-    }
-
-    /// <summary>
-    /// Helper method to say how far into a match a phase is, the later the higher: a round is called (which adds it to the ones that were played),
-    /// then the next one is got ready for and fought.
-    /// </summary>
-    private static int Progress(RoundPhase phase, int roundsPlayed) => phase switch
-    {
-        RoundPhase.Versus => -1,
-        RoundPhase.MatchOver => int.MaxValue,
-        RoundPhase.RoundOver => roundsPlayed * 4,
-        RoundPhase.Ready => roundsPlayed * 4 + 1,
-        _ => roundsPlayed * 4 + 2
-    };
-
-    /// <summary>
-    /// Called when a player leaves in the middle of the match, it is over there and then and goes to whoever stayed.
-    /// </summary>
-    public void Forfeit(int winner)
-    {
-        if (Phase == RoundPhase.MatchOver) return;
-
-        Score.Forfeit(winner);
-        Enter(RoundPhase.MatchOver);
-    }
+    /* The machine that decides */
 
     private void UpdateFight(float dt)
     {
-        if (Rules.IsTimed)
-        {
-            TimeLeft = MathF.Max(0.0f, TimeLeft - dt);
-        }
+        if (Rules.IsTimed) TimeLeft = MathF.Max(0.0f, TimeLeft - dt);
 
         bool oneDown = playerOne.Health == 0, twoDown = playerTwo.Health == 0;
 
         if (oneDown || twoDown)
         {
-            // Both of them on the same blow is nobody's round
+            // Both of them going down on the same hit is nobody's round
             EndRound(oneDown && twoDown ? RoundOutcome.Draw : oneDown ? RoundOutcome.PlayerTwo : RoundOutcome.PlayerOne, timedOut: false);
         }
         else if (Rules.IsTimed && TimeLeft <= 0.0f)
         {
-            // On the clock it goes to whoever has more left in them
+            // On the clock it goes to whoever has more health left
             EndRound(
                 playerOne.Health == playerTwo.Health ? RoundOutcome.Draw
                 : playerOne.Health > playerTwo.Health ? RoundOutcome.PlayerOne
@@ -260,7 +155,7 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
     }
 
     /// <summary>
-    /// Helper method to put both players back where they started, on their feet and in one piece, and call the next round.
+    /// Helper method to put both players back where they started and call the next round.
     /// </summary>
     private void StartRound()
     {
@@ -270,10 +165,15 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
         Enter(RoundPhase.Ready);
     }
 
-    private void ResetPlayers()
+    /// <summary>
+    /// Called when a player leaves in the middle of the match. It is over there and then and goes to whoever stayed.
+    /// </summary>
+    public void Forfeit(int winner)
     {
-        playerOne.ResetForRound();
-        playerTwo.ResetForRound();
+        if (Phase == RoundPhase.MatchOver) return;
+
+        Score.Forfeit(winner);
+        Enter(RoundPhase.MatchOver);
     }
 
     private void Enter(RoundPhase phase)
@@ -281,6 +181,84 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
         Phase = phase;
         PhaseTime = 0.0f;
         PhaseChanged?.Invoke(phase);
+    }
+
+    /* The machine that follows */
+
+    /// <summary>
+    /// Helper method for the machine that doesn't decide anything. The clock runs on by itself between two messages of the host,
+    /// and leaving once the match is over is everybodys own business.
+    /// </summary>
+    private void Follow(float dt)
+    {
+        if (Phase == RoundPhase.Fight && Rules.IsTimed)
+        {
+            TimeLeft = MathF.Max(0.0f, TimeLeft - dt);
+        }
+        else if (Phase == RoundPhase.MatchOver)
+        {
+            UpdateMatchOver();
+        }
+    }
+
+    /// <summary>
+    /// Helper method to take down how the match stands, for telling the other machine.
+    /// </summary>
+    public RoundSnapshot Capture() => new(Phase, PhaseTime, TimeLeft, [.. Score.Rounds], LastOutcome, TimedOut, Score.ForfeitedTo ?? -1);
+
+    /// <summary>
+    /// Called on the machine that follows the match for everything the host says about it, already flipped so that player one is us.
+    /// </summary>
+    public void Apply(in RoundSnapshot snapshot)
+    {
+        // Older news than what we already know, reminders don't arrive in any particular order
+        if (Progress(snapshot.Phase, snapshot.Rounds.Length) < Progress(Phase, Score.Rounds.Count)) return;
+
+        Score.Restore(snapshot.Rounds, snapshot.Forfeit);
+        LastOutcome = snapshot.LastOutcome;
+        TimedOut = snapshot.TimedOut;
+        TimeLeft = snapshot.TimeLeft;
+
+        if (snapshot.Phase == Phase) return;
+
+        // A round after the first starts with everybody back where they began
+        if (snapshot.Phase == RoundPhase.Ready && snapshot.Rounds.Length > 0) ResetPlayers();
+
+        Phase = snapshot.Phase;
+        PhaseTime = snapshot.PhaseTime;
+        PhaseChanged?.Invoke(Phase);
+    }
+
+    /// <summary>
+    /// Helper method to say how far into a match a phase is, the later the higher.
+    /// A round is called (which adds it to the ones that were played), then the next one is got ready for and fought.
+    /// </summary>
+    private static int Progress(RoundPhase phase, int roundsPlayed) => phase switch
+    {
+        RoundPhase.Versus => -1,
+        RoundPhase.MatchOver => int.MaxValue,
+        RoundPhase.RoundOver => roundsPlayed * 4,
+        RoundPhase.Ready => roundsPlayed * 4 + 1,
+        _ => roundsPlayed * 4 + 2
+    };
+
+    /* Both */
+
+    private void UpdateMatchOver()
+    {
+        if (_finished) return;
+
+        if (PhaseTime >= MATCH_OVER_TIME || (PhaseTime >= MATCH_OVER_SKIP && SkipRequested?.Invoke() == true))
+        {
+            _finished = true;
+            Finished?.Invoke();
+        }
+    }
+
+    private void ResetPlayers()
+    {
+        playerOne.ResetForRound();
+        playerTwo.ResetForRound();
     }
 
     public void UpdatePhysics(float dt) { }

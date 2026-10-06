@@ -1,9 +1,9 @@
-﻿using Horizon.Engine;
+using Horizon.Engine;
 
 namespace Fighter2D.Networking;
 
 /// <summary>
-/// Keeps the open session going whatever scene is up, the engine updates this once per update.
+/// Keeps the open session ticking whatever scene is up. The engine updates this once per update.
 /// </summary>
 internal sealed class NetPump : GameObject
 {

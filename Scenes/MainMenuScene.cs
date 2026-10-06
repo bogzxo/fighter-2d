@@ -1,22 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+using System;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 using Fighter2D.Effects;
+using Fighter2D.Match;
 using Fighter2D.Networking;
-using Horizon.Core.Tweening;
-using Horizon.Engine;
-using Horizon.Input2;
+
 using Horizon.Rendering;
+using Horizon.Input2;
+using Horizon.OpenGL.Assets;
 using Horizon.Rendering.Spriting;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
 
+using Silk.NET.OpenGL;
+
 using Button = Horizon.Rendering.UIX.Components.Button;
+using Texture = Horizon.OpenGL.Assets.Texture;
 
 namespace Fighter2D.Scenes;
 
@@ -24,109 +23,81 @@ namespace Fighter2D.Scenes;
 /// The first scene of the game, where the kind of fight is picked (or the options, once there are any).
 /// Behind the menu two fighters go at each other forever, see <see cref="MenuDuel"/>.
 /// </summary>
-internal class MainMenuScene : Scene
+internal class MainMenuScene : MenuScene
 {
-    private const float INPUT_DELAY = 0.25f;
     private const string HINT = "[icon:dpad] choose    [icon:pad_a] pick";
+    private const uint LOGO_SCALE = 2;
 
-    // Where the fighters of the background meet and the ground they stand on, in the units of the camera (pixels of the window)
+    // Where the fighters of the background meet and the ground they stand on, in pixels of the window
     private static readonly Vector2 DuelCenter = new(330, -330);
 
-    private static readonly Vector4 HintColor = new(0.58f, 0.6f, 0.66f, 1.0f);
+    protected override string LayoutFile => MenuLayouts.MAIN_MENU;
+    protected override Vector2 CameraSize => Engine.WindowManager.ViewportSize;
+    protected override System.Drawing.Color ClearColor => System.Drawing.Color.Black;
 
-    public override Camera ActiveCamera { get; protected set; } = null!;
-    private Camera2D camera = null!;
-
-    // The glass everything is seen through
-    private Renderer2D screen = null!;
-
-    // Background
-    private SpriteBatch spriteBatch = null!;
-    private Sprite logo = null!;
-
-    // UI Elements
-    private readonly List<Button> buttons = [];
-    private Label hint;
+    private readonly ButtonList _buttons = new();
+    private Label _hint = null!;
 
     // Whether the hint is busy saying something else than which buttons to press
-    private bool hintIsMessage;
-    private int selectedIndex = 0;
-    private float _delayTimer = 0;
+    private bool _hintIsMessage;
 
-    public override void Initialize()
+    protected override void BuildBackdrop()
     {
-        Engine.GL.Enable(Silk.NET.OpenGL.EnableCap.Blend);
-        Engine.GL.BlendFunc(Silk.NET.OpenGL.BlendingFactor.SrcAlpha, Silk.NET.OpenGL.BlendingFactor.OneMinusSrcAlpha);
+        Engine.GL.Enable(EnableCap.Blend);
+        Engine.GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-        // Other scenes leave their own clear colour behind
-        Engine.GL.ClearColor(System.Drawing.Color.Black);
+        // The picture goes in a batch of its own so it ends up behind everything else
+        var backdropBatch = Canvas.AddEntity<SpriteBatch>();
 
-        ActiveCamera = camera = AddEntity<Camera2D>(new(Engine.WindowManager.ViewportSize));
-
-        screen = Screen.For(this);
-
-        CompositeBackground();
-        CompositeUi();
-
-        Select(0);
-
-        base.Initialize();
-    }
-
-    private void CompositeBackground()
-    {
-        // The backdrop goes in a batch of its own so it ends up behind everything else
-        var backdropBatch = screen.AddEntity<SpriteBatch>();
-
-        if (Engine.ObjectManager.Textures.TryCreateOrGet("main_menu_bg", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/backgrounds/background_layer_albedo.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_bg))
+        if (TryLoadTexture("main_menu_bg", "Assets/backgrounds/background_layer_albedo.png", out Texture background))
         {
             // Scaled up until it covers the window whatever its shape, whatever sticks out is simply off screen
             Vector2 window = Engine.WindowManager.WindowSize;
-            float scale = MathF.Max(window.X / result_bg.Asset.Width, window.Y / result_bg.Asset.Height);
+            Vector2 size = new(background.Width, background.Height);
+            float scale = MathF.Max(window.X / size.X, window.Y / size.Y);
 
-            var bg = backdropBatch.AddEntity(new Sprite(new Vector2(result_bg.Asset.Width, result_bg.Asset.Height) * scale));
-            bg.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_bg.Asset, new Vector2(result_bg.Asset.Width, result_bg.Asset.Height)), "bg");
-
-            backdropBatch.Add(bg);
+            var sprite = backdropBatch.AddEntity(new Sprite(size * scale));
+            sprite.ConfigureSpriteSheet(SpriteSheet.FromTexture(background, size), "bg");
+            backdropBatch.Add(sprite);
         }
 
         // The right of the screen belongs to the duel, which looks after itself
-        var duel = screen.AddEntity(new MenuDuel(DuelCenter));
+        var duel = Canvas.AddEntity(new MenuDuel(DuelCenter));
 
-        spriteBatch = screen.AddEntity<SpriteBatch>();
-
-        if (Engine.ObjectManager.Textures.TryCreateOrGet("main_logo", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/ui/new_logo.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_logo))
-        {
-            const uint logoScalar = 2;
-
-            logo = spriteBatch.AddEntity(new Sprite(new System.Numerics.Vector2(result_logo.Asset.Width * logoScalar, result_logo.Asset.Height * logoScalar)));
-            logo.Transform.Origin = Origin.TopLeft;
-            logo.Transform.Position = new Vector2(Engine.WindowManager.WindowSize.X / -2, Engine.WindowManager.WindowSize.Y / 2);
-            logo.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_logo.Asset, new System.Numerics.Vector2(result_logo.Asset.Width, result_logo.Asset.Height)), "logo");
-
-            spriteBatch.Add(logo);
-
-            // The logo grows out of its corner, and takes every hit of the duel along with whoever blocked it
-            logo.PopIn(0.7f, 0.15f);
-            duel.Struck += () => logo.Shake(8.0f, 0.35f);
-        }
+        AddLogo(duel);
     }
 
-    private void CompositeUi()
+    private void AddLogo(MenuDuel duel)
     {
-        // The menu is laid out in Assets/ui/layouts/main_menu.hor (how it slides in and its buttons pop up as well),
-        // what its buttons do is decided here
-        UILayout layout = MenuLayouts.Load(this, camera, MenuLayouts.MAIN_MENU);
+        if (!TryLoadTexture("main_logo", "Assets/ui/new_logo.png", out Texture texture)) return;
 
+        var batch = Canvas.AddEntity<SpriteBatch>();
+        Vector2 size = new(texture.Width, texture.Height);
+
+        var logo = batch.AddEntity(new Sprite(size * LOGO_SCALE));
+        logo.Transform.Origin = Origin.TopLeft;
+        logo.Transform.Position = new Vector2(Engine.WindowManager.WindowSize.X / -2, Engine.WindowManager.WindowSize.Y / 2);
+        logo.ConfigureSpriteSheet(SpriteSheet.FromTexture(texture, size), "logo");
+        batch.Add(logo);
+
+        // The logo grows out of its corner, and rattles along with every kick of the duel
+        logo.PopIn(0.7f, 0.15f);
+        duel.Struck += () => logo.Shake(8.0f, 0.35f);
+    }
+
+    protected override void BuildUi(UILayout layout)
+    {
+        // The menu is laid out in Assets/ui/layouts/main_menu.hor, what its buttons do is decided here
         AddButton(layout, "btn_pvp", () => Play(MatchMode.Pvp));
         AddButton(layout, "btn_practice", () => Play(MatchMode.Practice));
         AddButton(layout, "btn_host", HostServer);
-        AddButton(layout, "btn_join", JoinMultiplayer);
+        AddButton(layout, "btn_join", () => GoTo(new JoinServerScene()));
         AddButton(layout, "btn_options", OpenOptions);
 
-        // The skin draws the buttons of the gamepad where the text asks for them
-        hint = layout.Get<Label>("hint");
+        _hint = layout.Get<Label>("hint");
         layout.Get<Label>("version").Text = Constants.VERSION_LABEL;
+
+        _buttons.Select(0);
     }
 
     private void AddButton(UILayout layout, string name, Action pressed)
@@ -134,23 +105,10 @@ internal class MainMenuScene : Scene
         var button = layout.Get<Button>(name);
         button.OnPressed = pressed;
 
-        buttons.Add(button);
+        _buttons.Add(button);
     }
 
-    private void Select(int index)
-    {
-        selectedIndex = Math.Clamp(index, 0, buttons.Count - 1);
-
-        for (int i = 0; i < buttons.Count; i++)
-        {
-            buttons[i].Selected = i == selectedIndex;
-        }
-    }
-
-    private void Play(MatchMode mode)
-    {
-        Engine.SetScene(new GamepadSelectorScene(new MatchSetup(mode)));
-    }
+    private void Play(MatchMode mode) => GoTo(new GamepadSelectorScene(new MatchSetup(mode)));
 
     private void HostServer()
     {
@@ -159,61 +117,43 @@ internal class MainMenuScene : Scene
         if (session.HasFailed)
         {
             session.Dispose();
-
-            hintIsMessage = true;
-            hint.Text = $"port {NetSession.PORT} is taken";
-            hint.Shake(6.0f);
+            ShowMessage($"port {NetSession.PORT} is taken");
             return;
         }
 
-        Engine.SetScene(new GamepadSelectorScene(MatchSetup.Online(session)));
-    }
-
-    private void JoinMultiplayer()
-    {
-        // Which server is asked there, the lobby comes after
-        Engine.SetScene(new JoinServerScene());
+        GoTo(new GamepadSelectorScene(MatchSetup.Online(session)));
     }
 
     private void OpenOptions()
     {
-        // @bogz the options screen goes here, Engine.SetScene(new OptionsScene()) once there is one
-        hintIsMessage = true;
-        hint.Text = "options are on their way";
-        hint.Shake(6.0f);
+        // @bogz the options screen goes here, GoTo(new OptionsScene()) once there is one
+        ShowMessage("options are on their way");
     }
 
-    public override void UpdateState(float dt)
+    private void ShowMessage(string message)
     {
-        _delayTimer += dt;
+        _hintIsMessage = true;
+        _hint.Text = message;
+        _hint.Shake(6.0f);
+    }
 
-        base.UpdateState(dt);
-
+    protected override void UpdateMenu(float dt)
+    {
         // The hint shows the buttons of whichever gamepad was touched last
-        if (!hintIsMessage)
-        {
-            hint.Text = GameInput.Localize(HINT, GameInput.Manager.LastUsed);
-        }
+        if (!_hintIsMessage) _hint.Text = ButtonGlyphs.Localize(HINT, GameInput.Manager.LastUsed);
 
-        // The button that got us here is most likely still held
-        if (_delayTimer < INPUT_DELAY) return;
+        if (!InputReady) return;
 
         // Nobody has picked a gamepad yet, so the menu listens to all of them
         foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
         {
             if (!gamepad.IsConnected) continue;
 
-            if (GameInput.MenuDownPressed(gamepad))
+            _buttons.Move(MenuInput.Vertical(gamepad));
+
+            if (MenuInput.ConfirmPressed(gamepad))
             {
-                Select(selectedIndex + 1);
-            }
-            else if (GameInput.MenuUpPressed(gamepad))
-            {
-                Select(selectedIndex - 1);
-            }
-            else if (gamepad.WasPressed(GamepadInput.A) || gamepad.WasPressed(GamepadInput.Start))
-            {
-                buttons[selectedIndex].OnPressed?.Invoke();
+                _buttons.Press();
                 return;
             }
         }

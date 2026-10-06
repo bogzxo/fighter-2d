@@ -1,33 +1,13 @@
-﻿using System;
-
 namespace Fighter2D.Logic;
 
-[Flags]
-public enum Stance
-{
-    None = 0,
-    Standing = 1 << 0,
-    Crouching = 1 << 1,
-    Jumping = 1 << 2,
-    Falling = 1 << 3
-}
-
-[Flags]
-public enum Direction
-{
-    None = 0,
-    Any = 1 << 0,
-    Forward = 1 << 1,
-    Backward = 1 << 2,
-    Up = 1 << 3,
-    Down = 1 << 4
-}
-
+/// <summary>
+/// What a player is busy with as far as getting hit goes. The moves set these, apart from hitstun which the hit that caused it sets.
+/// </summary>
 public enum PlayerStatusType
 {
     Normal,
-    Attacking,    // for moves that throw a blow
-    Guarding,     // for the block, which only covers the side the player is facing
-    Invulnerable, // for the dodge roll
-    Stunned       // the controls are taken away, for as many ticks as the blow that did it says (see Combat)
+    Attacking,     // in a move that throws a hit
+    Blocking,      // hits from the front bounce off
+    Invulnerable,  // i-frames, hits go straight through (dodge roll)
+    Hitstun        // just got smacked and has no controls until it wears off
 }

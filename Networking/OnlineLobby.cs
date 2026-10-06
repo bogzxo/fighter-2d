@@ -1,7 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
 using Fighter2D.Match;
 
 using Riptide;
@@ -9,26 +5,30 @@ using Riptide;
 namespace Fighter2D.Networking;
 
 /// <summary>
-/// What the two players of an online fight agree on before it starts:
-/// 1. who takes which side.
-/// 2. whether they are ready.
-/// 3. the map, and the rules the match is played by.
+/// What the two players of an online fight agree on before it starts, which is who takes which corner, whether they are ready,
+/// who they play and the map and rules of the match.
 /// The host decides everything. The other player only asks (to swap corners, to be ready).
 /// </summary>
 internal sealed class OnlineLobby
 {
-    private const byte INPUT_SWAP = 0;
-    private const byte INPUT_READY = 1;
-    private const byte INPUT_NOT_READY = 2;
-    private const byte INPUT_CHARACTER = 3;
+    /// <summary>
+    /// The things the joining player can ask the host for.
+    /// </summary>
+    private enum LobbyInput : byte
+    {
+        Swap,
+        Ready,
+        NotReady,
+        Character
+    }
 
     private readonly NetSession _session;
 
-    // How things stand, as the host sees it. The corners are 0 for the left (blue) one and 1 for the right (red) one
+    // How things stand as the host sees it. The corners are 0 for the left (blue) one and 1 for the right (red) one
     private int _hostSide = 0;
     private bool _hostReady, _clientReady;
 
-    // The character each of them picked, by its name in the content. Empty until they have
+    // The character each of them picked, by its id in the content. Empty until they have
     private string _hostCharacter = string.Empty, _clientCharacter = string.Empty;
 
     public bool IsHost => _session.IsHost;
@@ -49,7 +49,7 @@ internal sealed class OnlineLobby
     public bool ChoosingMap { get; private set; }
 
     /// <summary>
-    /// Whether there is no lobby any more: the host is gone, or never was there.
+    /// Whether there is no lobby any more. The host is gone, or never was there.
     /// </summary>
     public bool IsClosed => _session.IsClosed || _session.HasFailed || (!IsHost && !_session.IsConnected);
 
@@ -88,8 +88,10 @@ internal sealed class OnlineLobby
         PeerPresent = !IsHost;
     }
 
+    /* What the players do in the lobby */
+
     /// <summary>
-    /// Called by the other player once their screen is up, the host answers with how things stand.
+    /// Called by the joining player once their screen is up, the host answers with how things stand.
     /// </summary>
     public void SayHello()
     {
@@ -103,14 +105,8 @@ internal sealed class OnlineLobby
     {
         if (side == LocalSide || !PeerPresent) return;
 
-        if (IsHost)
-        {
-            Swap();
-        }
-        else
-        {
-            SendInput(INPUT_SWAP);
-        }
+        if (IsHost) Swap();
+        else SendInput(LobbyInput.Swap);
     }
 
     /// <summary>
@@ -122,23 +118,22 @@ internal sealed class OnlineLobby
         {
             _hostCharacter = id;
             Broadcast();
+            return;
         }
-        else
-        {
-            _clientCharacter = id;
 
-            var message = NetSession.Reliable(NetMessage.LobbyInput);
-            message.AddByte(INPUT_CHARACTER);
-            message.AddString(id);
-            _session.Send(message);
-        }
+        _clientCharacter = id;
+
+        var message = NetSession.Reliable(NetMessage.LobbyInput);
+        message.AddByte((byte)LobbyInput.Character);
+        message.AddString(id);
+        _session.Send(message);
     }
 
     public void SetReady(bool ready)
     {
         if (!PeerPresent) return;
 
-        // Nobody is ready for a fight they do not have the files of
+        // Nobody is ready for a fight they don't have the files of
         if (ready && Content.Phase != ContentPhase.Ready) return;
 
         if (IsHost)
@@ -148,7 +143,7 @@ internal sealed class OnlineLobby
         }
         else
         {
-            SendInput(ready ? INPUT_READY : INPUT_NOT_READY);
+            SendInput(ready ? LobbyInput.Ready : LobbyInput.NotReady);
         }
     }
 
@@ -166,7 +161,7 @@ internal sealed class OnlineLobby
     /// <summary>
     /// Called by the host to start the fight on both machines.
     /// </summary>
-    /// <param name="rules">What the match is played by, the other machine gets them along with the map.</param>
+    /// <param name="rules">The rules of the match, the other machine gets them along with the map.</param>
     public void StartFight(string mapFile, MatchRules rules)
     {
         if (!IsHost) return;
@@ -180,6 +175,8 @@ internal sealed class OnlineLobby
         StartedMap = mapFile;
     }
 
+    /* Sending */
+
     private void Swap()
     {
         // Somebody who is ready has made up their mind
@@ -189,10 +186,10 @@ internal sealed class OnlineLobby
         Broadcast();
     }
 
-    private void SendInput(byte input)
+    private void SendInput(LobbyInput input)
     {
         var message = NetSession.Reliable(NetMessage.LobbyInput);
-        message.AddByte(input);
+        message.AddByte((byte)input);
         _session.Send(message);
     }
 
@@ -213,6 +210,8 @@ internal sealed class OnlineLobby
         _session.Send(message);
     }
 
+    /* Receiving */
+
     private void OnReceived(NetMessage id, Message message)
     {
         switch (id)
@@ -221,29 +220,13 @@ internal sealed class OnlineLobby
                 PeerPresent = true;
                 Broadcast();
 
-                // First things first: do they have what we have. Only asked once per player: they say hello every time they
-                // come back to the lobby (from picking a character), and asking again would have us forget that they do
+                // First things first, do they have what we have. Only asked once per player.
+                // They say hello every time they come back to the lobby (from picking a character), and asking again would have us forget that they already do
                 if (!Content.PeerVerified) Content.Offer();
                 break;
 
             case NetMessage.LobbyInput when IsHost:
-                byte input = message.GetByte();
-
-                if (input == INPUT_SWAP)
-                {
-                    Swap();
-                }
-                else if (input == INPUT_CHARACTER)
-                {
-                    _clientCharacter = message.GetString();
-                    Broadcast();
-                }
-                else
-                {
-                    // Being ready takes having our content, whatever their machine says about it
-                    _clientReady = input == INPUT_READY && Content.PeerVerified;
-                    Broadcast();
-                }
+                ReceiveInput((LobbyInput)message.GetByte(), message);
                 break;
 
             case NetMessage.LobbyState when !IsHost:
@@ -253,7 +236,7 @@ internal sealed class OnlineLobby
                 ChoosingMap = message.GetBool();
                 _hostCharacter = message.GetString();
 
-                // Ours is ours to say, the host only repeats what it heard
+                // Our own character is ours to say, the host only repeats what it heard
                 message.GetString();
                 Revision++;
                 break;
@@ -261,9 +244,30 @@ internal sealed class OnlineLobby
             case NetMessage.StartFight when !IsHost:
                 string mapFile = message.GetString();
 
-                // The rules first, the map is the cue to go and by then they have to be there
+                // The rules first. The map is the cue to go, and by then the rules have to be there
                 StartedRules = MatchRulesMessage.Read(message);
                 StartedMap = mapFile;
+                break;
+        }
+    }
+
+    private void ReceiveInput(LobbyInput input, Message message)
+    {
+        switch (input)
+        {
+            case LobbyInput.Swap:
+                Swap();
+                break;
+
+            case LobbyInput.Character:
+                _clientCharacter = message.GetString();
+                Broadcast();
+                break;
+
+            default:
+                // Being ready takes having our content, whatever their machine says about it
+                _clientReady = input == LobbyInput.Ready && Content.PeerVerified;
+                Broadcast();
                 break;
         }
     }

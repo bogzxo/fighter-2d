@@ -148,7 +148,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <layer id="2" name="Colliders" width="96" height="44" opacity="0.5" tintcolor="#ff0000">
+ <layer id="2" name="Colliders" width="96" height="44" visible="0" opacity="0.5" tintcolor="#ff0000">
   <properties>
    <property name="CastsShadows" type="bool" value="false"/>
    <property name="IsCollidable" type="bool" value="true"/>

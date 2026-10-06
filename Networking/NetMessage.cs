@@ -1,23 +1,23 @@
-﻿namespace Fighter2D.Networking;
+namespace Fighter2D.Networking;
 
 /// <summary>
 /// Everything the two machines of an online fight say to each other.
 /// </summary>
 internal enum NetMessage : ushort
 {
-    // Lobby
+    // Lobby (see OnlineLobby)
     LobbyHello = 1,
     LobbyInput,
     LobbyState,
     StartFight,
 
-    // Making sure both machines have the same content
+    // Making sure both machines have the same content (see ContentSync)
     ContentEntry,
     ContentRequest,
     ContentChunk,
     ContentReady,
 
-    // Fight
+    // Fight (see FightNetwork)
     PlayerInput,
     PlayerState,
     Hit,

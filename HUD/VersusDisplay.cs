@@ -1,4 +1,4 @@
-﻿using Fighter2D.Character;
+using Fighter2D.Character;
 using Fighter2D.Match;
 using Fighter2D.Scenes;
 
@@ -8,12 +8,14 @@ using Horizon.Rendering.UIX.Components;
 namespace Fighter2D.HUD;
 
 /// <summary>
-/// The two fighters shown off against each other before the first round: who is playing whom, and what the match is played by.
+/// The two fighters shown off against each other before the first round, with who is playing whom and the rules of the match.
 /// It is up for as long as the RoundDirector is in its versus phase and gone for the rest of the fight.
 /// </summary>
 internal sealed class VersusDisplay : IHudDisplay
 {
     private const string PORTRAIT_ANIMATION = "idle";
+
+    // Everything of the versus screen is on a layer of its own in the layout, so showing and hiding it is one switch
     private const string LAYER = "versus";
 
     private readonly RoundDirector _round;
@@ -49,7 +51,6 @@ internal sealed class VersusDisplay : IHudDisplay
 
     public void Update(float dt)
     {
-        // Everything of the display is on a layer of its own in the layout, which is all there is to switch
         bool showing = _round.Phase == RoundPhase.Versus;
         _module.SetLayerVisible(LAYER, showing);
 
