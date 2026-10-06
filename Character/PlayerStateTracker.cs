@@ -1,4 +1,4 @@
-﻿using Fighter2D.Logic;
+using Fighter2D.Logic;
 using Fighter2D.Logic.Moves;
 
 namespace Fighter2D.Character;
@@ -18,7 +18,17 @@ internal class PlayerStateTracker
 	public float FallDuration { get; private set; }
 	public bool DeltaOnGround { get; private set; }
 
-	private float _statusTimer = 0.0f;
+	/// <summary>
+	/// How many ticks of the fight the stun we are in has left, 0 when we aren't in one.
+	/// </summary>
+	public int StunTicks { get; private set; }
+
+	/// <summary>
+	/// How many blows have landed on us since we were last free to do anything about it, 0 when we are.
+	/// </summary>
+	public int ComboHits { get; private set; }
+
+	public bool IsStunned => CurrentStatus == PlayerStatusType.Stunned;
 
 	// Looked up once rather than on every update
 	private Horizon.Physics.Fixtures.IPhysicsFixture? _feetFixture;
@@ -35,32 +45,43 @@ internal class PlayerStateTracker
 		UpdateStance(dt);
 	}
 
-	public void UpdateStatus(float dt)
+	/// <summary>
+	/// Counts a tick off the stun, the other statuses are managed by the moves that set them.
+	/// </summary>
+	/// <returns>True on the tick the stun runs out.</returns>
+	public bool TickStun()
 	{
-		// Only decrement timer for timed statuses like Stun or ComboTrap
-		// (Attacking, Guarding, etc., are managed manually by the Move Coroutines)
-		if (CurrentStatus is PlayerStatusType.Normal or PlayerStatusType.Attacking or PlayerStatusType.Guarding or PlayerStatusType.Invulnerable)
-		{
-			return;
-		}
+		if (!IsStunned || --StunTicks > 0) return false;
 
-		_statusTimer -= dt;
-        if (!(_statusTimer <= 0)) return;
-        
-        CurrentStatus = PlayerStatusType.Normal;
-        _statusTimer = 0.0f;
-    }
-
-	public void ApplyStun(float duration)
-	{
-		CurrentStatus = PlayerStatusType.Stunned;
-		_statusTimer = duration;
+		ClearStun();
+		return true;
 	}
 
-	public void ApplyComboTrap(float duration)
+	/// <summary>
+	/// Stuns us for a number of ticks from now, which counts as one more blow of the combo we are in.
+	/// </summary>
+	public void ApplyStun(int ticks)
 	{
-		CurrentStatus = PlayerStatusType.ComboTrapped;
-		_statusTimer = duration;
+		CurrentStatus = PlayerStatusType.Stunned;
+		StunTicks = Math.Max(1, ticks);
+		ComboHits++;
+	}
+
+	/// <summary>
+	/// Puts the status where the machine that plays this player says it is.
+	/// </summary>
+	public void Restore(PlayerStatusType status, int stunTicks, int comboHits)
+	{
+		CurrentStatus = status;
+		StunTicks = status == PlayerStatusType.Stunned ? Math.Max(1, stunTicks) : 0;
+		ComboHits = status == PlayerStatusType.Stunned ? comboHits : 0;
+	}
+
+	private void ClearStun()
+	{
+		CurrentStatus = PlayerStatusType.Normal;
+		StunTicks = 0;
+		ComboHits = 0;
 	}
 
 	public void ResetFallDuration() => FallDuration = 0f;

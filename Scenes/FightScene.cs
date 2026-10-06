@@ -174,7 +174,7 @@ internal class FightScene : Scene
         // Spawn P1 (Master/Controlled Player)
         ControlledPlayer = new Player()
         {
-            Controller = new LocalPlayerController(new GamepadPlayerInput(_gamepadIndex)),
+            Controller = new PlayerController(new GamepadPlayerInput(_gamepadIndex)),
             SpawnPosition = spawnPos,
             CharacterId = CharacterId
         };
@@ -198,7 +198,7 @@ internal class FightScene : Scene
         {
             OtherPlayer = new Player()
             {
-                Controller = new LocalPlayerController(new DummyPlayerInput())
+                Controller = new PlayerController(new DummyPlayerInput())
             };
         }
 

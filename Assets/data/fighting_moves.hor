@@ -14,11 +14,14 @@
 //   stances:          the stances it can be started from: "standing | crouching | jumping | falling"
 //   damage:           how much health a hit takes, out of 100
 //   knockback:        the push whoever gets hit is given, vec(away from the attacker, up)
-//   stun:             how long whoever gets hit loses control for, in seconds
+//   stun:             how long whoever gets hit loses control for, in frames of the animation of this move (so it can
+//                     be held against the frames the move itself takes). Every hit stuns: a move that doesn't say
+//                     for how long stuns for longer the more frames go by before its hit, see below
 //   interruptible:    whether another move can cut this one short at all (its phases say from when)
-//   steering:         whether the player can walk and turn around during the move
-//   status:           what the player is while the move lasts: "attacking", "guarding" (hits are blocked) or
-//                     "invulnerable" (hits go straight through)
+//   steering:         whether the player can walk during the move
+//   turning:          whether the player can turn around during the move, the same as steering if it doesn't say
+//   status:           what the player is while the move lasts: "attacking", "guarding" (hits from in front are
+//                     blocked, and the player can't turn around) or "invulnerable" (hits go straight through)
 //   stance:           the stance the move puts the player in, and stance_after the one it leaves them in
 //   warns:            whether the other player is told the move is coming, moves that do damage always do
 //   repeat:           a condition (see below) under which the move starts over after its last phase
@@ -45,6 +48,19 @@
 //
 // Three names mean something to the game: "idle" is what a player does when they do nothing (and has to be there),
 // "hit_stun" is what they are put in when they get stunned, and "heavy_land" what a long fall ends in, if there is one.
+//
+// What a hit comes to (the numbers behind all of this are in Logic/Combat.cs):
+//   - Whoever gets hit is stunned: they are put in "hit_stun" and can't do anything until it is over. A quick move
+//     stuns for a little less long than it takes its attacker to be done with it, so whoever got hit can get a
+//     quick move of their own in first. The longer a move takes to wind up the longer it stuns, and from some
+//     length on the attacker is free first and has the time to follow up with something quick: that is a combo.
+//   - A hit on somebody who is already stunned doesn't cut their stun short: a quick move in the middle of a long
+//     stun leaves the long one standing.
+//   - Somebody who is stunned and in the air (knocked up there by a move with a knockback) can be kept there: every
+//     hit adds a little to the stun they are in, less each time.
+//   - A hit that catches somebody winding up an attack of their own (before the frame it hits on) is a counter
+//     hit, which stuns them for longer and hurts more.
+//   - A guard only covers the side the player is facing, and they can't turn around without letting go of it.
 
 let moves = {
     block: {
@@ -64,6 +80,10 @@ let moves = {
         stances: "standing | crouching | jumping | falling",
         interruptible: false,
         steering: false,
+        finish_reroutes: {
+            jumping: "fall",
+            falling: "fall"
+        },
         phases: {
             dazed: { animation: "hard_landing", frames: 1, loop_while: "stunned", effect: "haze", effect_frames: 0 }
         }
@@ -74,7 +94,7 @@ let moves = {
         trigger: "pressed",
         priority: 20,
         stances: "standing | falling | jumping | crouching",
-        damage: 14,
+        damage: 5,
         interruptible: false,
         status: "attacking",
         stance_reroutes: {
@@ -91,7 +111,7 @@ let moves = {
         trigger: "pressed",
         priority: 30,
         stances: "standing | falling | jumping | crouching",
-        damage: 14,
+        damage: 5,
         interruptible: false,
         status: "attacking",
         stance_reroutes: {
@@ -108,7 +128,7 @@ let moves = {
         trigger: "pressed",
         priority: 24,
         stances: "standing | crouching",
-        damage: 8,
+        damage: 3,
         interruptible: false,
         status: "attacking",
         phases: {
@@ -121,7 +141,7 @@ let moves = {
         trigger: "pressed",
         priority: 34,
         stances: "standing | crouching",
-        damage: 8,
+        damage: 3,
         interruptible: false,
         status: "attacking",
         phases: {
@@ -131,9 +151,9 @@ let moves = {
 
     jump_kick: {
         stances: "jumping | falling",
-        damage: 18,
+        damage: 8,
         knockback: vec(900, 1900),
-        stun: 3,
+        stun: 12,
         interruptible: false,
         status: "attacking",
         finish_reroutes: {

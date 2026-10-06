@@ -18,6 +18,7 @@ internal enum NetMessage : ushort
     ContentReady,
 
     // Fight
+    PlayerInput,
     PlayerState,
     Hit,
     RoundState

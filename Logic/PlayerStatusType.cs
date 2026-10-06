@@ -26,9 +26,8 @@ public enum Direction
 public enum PlayerStatusType
 {
     Normal,
-    Attacking,    // for move coroutines
-    Guarding,     // for block coroutine
-    Invulnerable, // for dodge roll coroutine
-    Stunned,
-    ComboTrapped
+    Attacking,    // for moves that throw a blow
+    Guarding,     // for the block, which only covers the side the player is facing
+    Invulnerable, // for the dodge roll
+    Stunned       // the controls are taken away, for as many ticks as the blow that did it says (see Combat)
 }

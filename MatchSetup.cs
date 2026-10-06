@@ -135,7 +135,7 @@ internal class MatchSetup(MatchMode mode)
             // Player two is just another local player on the second gamepad
             return new FightScene(mapDefinition, slot, new Player()
             {
-                Controller = new LocalPlayerController(new GamepadPlayerInput(Slots[1])),
+                Controller = new PlayerController(new GamepadPlayerInput(Slots[1])),
                 SpawnPosition = right,
                 CharacterId = GetCharacter(1),
             })

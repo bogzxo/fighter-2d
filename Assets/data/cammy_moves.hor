@@ -33,6 +33,10 @@ let moves = {
         stances: "standing | crouching | jumping | falling",
         interruptible: false,
         steering: false,
+        finish_reroutes: {
+            jumping: "fall",
+            falling: "fall"
+        },
         phases: {
             dazed: { animation: "hit", loop_while: "stunned", effect: "haze", effect_frames: 0 }
         }
@@ -43,7 +47,7 @@ let moves = {
         trigger: "pressed",
         priority: 20,
         stances: "standing | falling | jumping | crouching",
-        damage: 4,
+        damage: 6,
         interruptible: false,
         status: "attacking",
         stance_reroutes: {
@@ -61,7 +65,7 @@ let moves = {
         trigger: "pressed",
         priority: 30,
         stances: "standing | falling | jumping | crouching",
-        damage: 9,
+        damage: 8,
         knockback: vec(700, 600),
         interruptible: false,
         status: "attacking",
@@ -80,7 +84,7 @@ let moves = {
         trigger: "pressed",
         priority: 24,
         stances: "standing | falling | jumping | crouching",
-        damage: 3,
+        damage: 4,
         interruptible: false,
         status: "attacking",
         stance_reroutes: {
@@ -113,7 +117,7 @@ let moves = {
 
     crouch_kick: {
         stances: "crouching",
-        damage: 4,
+        damage: 5,
         interruptible: false,
         steering: false,
         status: "attacking",
@@ -128,9 +132,9 @@ let moves = {
 
     sweep: {
         stances: "crouching",
-        damage: 8,
+        damage: 7,
         knockback: vec(500, 1500),
-        stun: 1,
+        stun: 12,
         interruptible: false,
         steering: false,
         status: "attacking",
@@ -145,7 +149,7 @@ let moves = {
 
     crouch_punch: {
         stances: "crouching",
-        damage: 3,
+        damage: 4,
         interruptible: false,
         steering: false,
         status: "attacking",
@@ -176,9 +180,9 @@ let moves = {
 
     jump_kick: {
         stances: "jumping | falling",
-        damage: 9,
+        damage: 8,
         knockback: vec(900, 1900),
-        stun: 3,
+        stun: 6,
         interruptible: false,
         status: "attacking",
         finish_reroutes: {
@@ -192,7 +196,7 @@ let moves = {
 
     jump_light_kick: {
         stances: "jumping | falling",
-        damage: 4,
+        damage: 5,
         interruptible: false,
         status: "attacking",
         finish_reroutes: {
@@ -221,7 +225,7 @@ let moves = {
 
     jump_light_punch: {
         stances: "jumping | falling",
-        damage: 3,
+        damage: 4,
         interruptible: false,
         status: "attacking",
         finish_reroutes: {
@@ -240,7 +244,7 @@ let moves = {
         stances: "standing | crouching",
         damage: 10,
         knockback: vec(1300, 900),
-        stun: 1,
+        stun: 12,
         interruptible: false,
         steering: false,
         status: "attacking",
@@ -260,9 +264,9 @@ let moves = {
         trigger: "pressed",
         priority: 6,
         stances: "standing | crouching",
-        damage: 12,
+        damage: 11,
         knockback: vec(500, 2800),
-        stun: 2,
+        stun: 24,
         interruptible: false,
         steering: false,
         status: "attacking",
@@ -281,7 +285,7 @@ let moves = {
         trigger: "pressed",
         priority: 36,
         stances: "standing",
-        damage: 15,
+        damage: 12,
         knockback: vec(1100, 400),
         interruptible: false,
         steering: false,

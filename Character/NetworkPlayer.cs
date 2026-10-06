@@ -1,25 +1,23 @@
-using System.Numerics;
-using Bogz.Logging.Loggers;
 using Fighter2D.Character.Controllers;
-using Fighter2D.Logic;
-using Fighter2D.Scenes;
-using Horizon.Physics;
-using Horizon.Physics.Fixtures;
-using Horizon.Rendering.Particles;
-using Horizon.Rendering.Spriting;
 
 namespace Fighter2D.Character;
 
 /// <summary>
-/// Representation of a remote player connected via Riptide network.
+/// Representation of a remote player connected via Riptide network. It is played like any other player, by the buttons
+/// the other machine says were pressed, and put right by FightNetwork wherever that comes apart from how they are doing over there.
 /// </summary>
 internal class NetworkPlayer : Player
 {
     public readonly string Address;
 
+    /// <summary>
+    /// The buttons of the other machine, FightNetwork hands them over as they come in.
+    /// </summary>
+    public NetworkPlayerInput Input { get; } = new();
+
     public NetworkPlayer(string address)
     {
         this.Address = address;
-        Controller = new NetworkedPlayerController();
+        Controller = new PlayerController(Input);
     }
 }

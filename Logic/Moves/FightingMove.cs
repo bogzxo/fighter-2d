@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -52,9 +52,63 @@ public class MovePhase
     // A push the player gets as the phase starts, X is the way they are facing and Y is up
     public Vector2 Impulse { get; init; }
 
-    // Something for the eye (see MoveRoutine for the ones there are), and for how many frames it keeps coming: 0 is every frame
+    // Something for the eye (see MovePlayback for the ones there are), and for how many frames it keeps coming: 0 is every frame
     public string? Effect { get; init; }
     public uint EffectFrames { get; init; } = 1;
+}
+
+/// <summary>
+/// How long the parts of a move take, in ticks of the fight (see PlayerConfig.TICK_RATE) rather than in frames of its
+/// animation: characters animate at different rates, and what a hit comes to has to be the same for all of them.
+/// It is worked out once the animations of the character are known, see <see cref="MoveList.Bake"/>.
+/// </summary>
+/// <param name="Startup">How long after the move starts its hit is thrown, 0 for a move that doesn't hit.</param>
+/// <param name="Recovery">How long the move goes on for after its hit was thrown.</param>
+/// <param name="HitStun">How long whoever it lands on is stunned for.</param>
+public readonly record struct MoveFrameData(int Startup, int Recovery, int HitStun)
+{
+    /// <summary>
+    /// How many ticks sooner than whoever got hit the attacker is free again, below zero if it is the other way round.
+    /// </summary>
+    public int Advantage => HitStun - Recovery;
+
+    /// <summary>
+    /// Helper method to work out the frame data of a move.
+    /// </summary>
+    /// <param name="animationLength">How many frames an animation of the character has.</param>
+    /// <param name="frameRate">How many frames of animation a second the character plays at.</param>
+    public static MoveFrameData Of(FightingMove move, Func<string?, uint> animationLength, float frameRate)
+    {
+        float ticksPerFrame = Character.Controllers.PlayerConfig.TICK_RATE / MathF.Max(1.0f, frameRate);
+
+        // A phase that loops counts once, how often it comes round isn't known until it is played
+        uint total = 0;
+        int hitFrame = -1;
+
+        foreach (MovePhase phase in move.Phases)
+        {
+            uint frames = phase.Frames > 0 ? phase.Frames : Math.Max(1, animationLength(phase.Animation));
+
+            if (hitFrame < 0 && phase.Hit >= 0) hitFrame = (int)total + phase.Hit;
+            total += frames;
+        }
+
+        if (hitFrame < 0) return default;
+
+        float startup = hitFrame * ticksPerFrame;
+        float recovery = (total - hitFrame) * ticksPerFrame;
+
+        // A move that says how long it stuns for is taken at its word, in frames of its own animation. One that doesn't
+        // stuns for as long as it took to wind up: the longer the wait, the more whoever lands it gets out of it
+        float stun = move.Stun >= 0
+            ? move.Stun * ticksPerFrame
+            : recovery + MathF.Min(Combat.MAX_ADVANTAGE, startup * Combat.WINDUP_REWARD - Combat.BASE_DISADVANTAGE);
+
+        return new MoveFrameData(
+            (int)MathF.Round(startup),
+            (int)MathF.Round(recovery),
+            Math.Max(Combat.MIN_HIT_STUN, (int)MathF.Round(stun)));
+    }
 }
 
 public class FightingMove
@@ -65,8 +119,9 @@ public class FightingMove
     // The impulse given to whoever gets hit, X pushes them away from the attacker and Y launches them into the air
     public Vector2 Knockback { get; init; } = Vector2.Zero;
 
-    // How long (in seconds) whoever gets hit loses control for
-    public float StunDuration { get; init; } = 0.0f;
+    // How long whoever gets hit is stunned for, in frames of the animation of this move. Below zero leaves it to how
+    // long the move takes to wind up, see MoveFrameData
+    public float Stun { get; init; } = -1.0f;
 
     public Stance Stances { get; init; } = Fighter2D.Logic.Stance.Standing;
 
@@ -82,8 +137,9 @@ public class FightingMove
     // Whether other moves may cut this one short, the phases decide when exactly through their interrupt frame
     public bool Interruptible { get; init; } = true;
 
-    // Whether the player can walk and turn around during the move
+    // Whether the player can walk during the move, and whether they can turn around during it
     public bool AllowsSteering { get; init; } = true;
+    public bool AllowsTurning { get; init; } = true;
 
     // What the player is for as long as the move lasts (attacking, guarding, invulnerable), null leaves that alone
     public PlayerStatusType? Status { get; init; }
@@ -106,4 +162,7 @@ public class FightingMove
 
     // Continues into a different move once this one has finished, depending on the player's stance
     public Dictionary<Stance, string>? FinishReroutes { get; init; }
+
+    // How long the move takes and how long it stuns for, known once the character it belongs to is
+    public MoveFrameData FrameData { get; internal set; }
 }

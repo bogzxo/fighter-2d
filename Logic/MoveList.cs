@@ -84,6 +84,19 @@ internal class MoveList
         _inputMoves = [.. Moves.Values.Where(move => move.Priority >= 0).OrderBy(move => move.Priority)];
     }
 
+    /// <summary>
+    /// Works out how long every move takes for the character that has them, see <see cref="MoveFrameData"/>.
+    /// </summary>
+    /// <param name="animationLength">How many frames an animation of the character has.</param>
+    /// <param name="frameRate">How many frames of animation a second the character plays at.</param>
+    public void Bake(Func<string?, uint> animationLength, float frameRate)
+    {
+        foreach (FightingMove move in Moves.Values)
+        {
+            move.FrameData = MoveFrameData.Of(move, animationLength, frameRate);
+        }
+    }
+
     public bool TryGetMove(string id, out FightingMove move)
     {
         if (Moves.TryGetValue(id, out var found))
@@ -124,7 +137,7 @@ internal class MoveList
         var known = new HashSet<string>
         {
             "input", "trigger", "priority", "stances", "damage", "knockback", "stun", "interruptible", "steering",
-            "status", "stance", "stance_after", "warns", "repeat", "phases", "stance_reroutes", "finish_reroutes"
+            "turning", "status", "stance", "stance_after", "warns", "repeat", "phases", "stance_reroutes", "finish_reroutes"
         };
 
         foreach (string key in properties.Keys)
@@ -134,18 +147,22 @@ internal class MoveList
 
         int damage = (int)Number(properties, "damage", 0);
 
+        // A move that can't be walked during can't be turned around in either, unless it says otherwise
+        bool steering = Bool(properties, "steering", true);
+
         return new FightingMove
         {
             Id = id,
             Damage = damage,
             Knockback = properties.TryGetValue("knockback", out var knockback) ? Vector(knockback, "knockback") : Vector2.Zero,
-            StunDuration = Number(properties, "stun", 0),
+            Stun = Number(properties, "stun", -1),
             Stances = properties.TryGetValue("stances", out var stances) ? Flags<Stance>(stances, "stances") : Stance.Standing,
             InputSignatures = ReadInputs(properties),
             Trigger = properties.TryGetValue("trigger", out var trigger) ? Named<InputTrigger>(Text(trigger, "trigger").Replace("_", ""), "trigger") : InputTrigger.Held,
             Priority = (int)Number(properties, "priority", -1),
             Interruptible = Bool(properties, "interruptible", true),
-            AllowsSteering = Bool(properties, "steering", true),
+            AllowsSteering = steering,
+            AllowsTurning = Bool(properties, "turning", steering),
             Status = properties.TryGetValue("status", out var status) ? Named<PlayerStatusType>(Text(status, "status"), "status") : null,
             Stance = properties.TryGetValue("stance", out var stance) ? Named<Stance>(Text(stance, "stance"), "stance") : null,
             StanceAfter = properties.TryGetValue("stance_after", out var after) ? Named<Stance>(Text(after, "stance_after"), "stance_after") : null,
@@ -200,7 +217,7 @@ internal class MoveList
                 if (!known.Contains(key)) throw new Exception($"'{key}' isn't something a phase has ({name}).");
             }
 
-            if (phase.TryGetValue("effect", out var effectName) && !Routines.MoveRoutine.IsEffect(Text(effectName, "effect")))
+            if (phase.TryGetValue("effect", out var effectName) && !MovePlayback.IsEffect(Text(effectName, "effect")))
                 throw new Exception($"'{Text(effectName, "effect")}' isn't an effect ({name}).");
 
             read.Add(new MovePhase

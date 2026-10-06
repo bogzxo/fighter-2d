@@ -92,6 +92,21 @@ internal class Player() : Sprite(SIZE)
     public Vector2 HeadPosition => Transform.Position + Vector2.UnitY * (2 * Scale);
 
     /// <summary>
+    /// The way the player is facing, -1 for left and 1 for right. Everything that has a direction (the push of a move,
+    /// what a blow reaches, which side a guard covers) goes by this.
+    /// </summary>
+    public float Facing => Flipped ? -1.0f : 1.0f;
+
+    /// <summary>
+    /// Whether the other player is in front of us rather than behind our back. Somebody right on top of us is both.
+    /// </summary>
+    public bool IsFacing(Player other)
+    {
+        float toOther = other.Transform.Position.X - Transform.Position.X;
+        return toOther == 0.0f || (toOther < 0.0f) == Flipped;
+    }
+
+    /// <summary>
     /// Where the player can be hit right now: the box around what is drawn of them on the frame they are showing.
     /// </summary>
     public Box HurtBox
@@ -209,6 +224,11 @@ internal class Player() : Sprite(SIZE)
         if (success) _boxes = CharacterBoxes.Load(Fighter2D.Content.GameContent.PathOf(Character.SpriteDirectory), manager);
 
         AnimationManager.AnimateFrames = false;
+
+        // How long a move takes (and with that how long it stuns for) depends on the animations it plays
+        MoveList.Bake(
+            animation => animation is not null && manager.Animations.TryGetValue(animation, out var found) ? found.Length : 1,
+            Character.FrameRate);
 
         world = Parent.GetComponent<PhysicsWorld>();
         // Create player physics body and feet fixture
