@@ -22,14 +22,25 @@ internal class Program
         // Unpack native libraries and shaders to the same folder as the executable, so that the game can find them
         PackedFiles.Unpack();
 
+        // Whatever the player set on the options screen last time, the window is made the way they left it
+        GameOptions.Load();
+
         var engine = new GameEngine(new GameEngineConfiguration
         {
             InitialScene = typeof(MainMenuScene),
             WindowConfiguration = WindowManagerConfiguration.Default1600x900 with
             {
                 WindowTitle = Constants.WINDOW_TITLE,
+                WindowSize = GameOptions.Resolution,
+                VSync = GameOptions.VSync,
+                FramesPerSecond = GameOptions.FrameLimit
             }
         });
+
+        // Fullscreen is gone into the same way the options screen does it, which is before the first scene is made
+        if (GameOptions.Fullscreen) engine.WindowManager.Apply(GameOptions.Display);
+
+        Screen.ApplyTransitions();
 
         // Every scene reads its gamepads from here, so it has to be there before the first one
         GameInput.Attach(engine);
@@ -40,7 +51,14 @@ internal class Program
         if (TryGetArgument(args, ARGUMENT_MAP, out string mapName) && TryFindMap(mapName, out MapDefinition map))
         {
             TryGetArgument(args, ARGUMENT_CHARACTER, out string character);
-            engine.SetScene(new FightScene(map, 0) { CharacterId = character.Length > 0 ? character : null });
+
+            FightScene CreateFight() => new(map, 0)
+            {
+                CharacterId = character.Length > 0 ? character : null,
+                Rematch = CreateFight
+            };
+
+            engine.SetScene(CreateFight(), Screen.IntoFight);
         }
         else
         {

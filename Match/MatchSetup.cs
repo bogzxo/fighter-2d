@@ -109,7 +109,10 @@ internal class MatchSetup(MatchMode mode)
             CharacterId = GetCharacter(0),
 
             // Online both machines play by what the host settled on, which came along with the map
-            Rules = Lobby?.StartedRules ?? Rules
+            Rules = Lobby?.StartedRules ?? Rules,
+
+            // The same fight all over again. Not online, the other machine would have to want that as well
+            Rematch = IsOnline ? null : () => CreateFight(mapDefinition)
         };
     }
 
@@ -121,7 +124,7 @@ internal class MatchSetup(MatchMode mode)
         if (Lobby is not null)
         {
             // The other player is played on their machine, all we see of them is what it tells us
-            return new NetworkPlayer(Lobby.IsHost ? "joined us" : "the host") { CharacterId = Lobby.RemoteCharacter };
+            return new NetworkPlayer() { CharacterId = Lobby.RemoteCharacter };
         }
 
         if (Mode == MatchMode.Pvp && Slots.Count > 1)

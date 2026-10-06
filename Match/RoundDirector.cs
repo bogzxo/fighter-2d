@@ -74,6 +74,19 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
     /// </summary>
     public Func<bool>? SkipRequested { get; set; }
 
+    /// <summary>
+    /// Called instead of <see cref="Finished"/> when the players would rather go again. Null if there is no rematch to be had,
+    /// which is the case online (the other machine would have to want one as well).
+    /// </summary>
+    public Action? Rematch { get; set; }
+
+    /// <summary>
+    /// Asked on every update while the result is up and a rematch is on offer, true starts it.
+    /// </summary>
+    public Func<bool>? RematchRequested { get; set; }
+
+    public bool RematchOffered => Rematch is not null;
+
     public bool Enabled { get; set; } = true;
     public string Name { get; set; } = "Round Director";
     public Entity Parent { get; set; } = null!;
@@ -248,7 +261,20 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
     {
         if (_finished) return;
 
-        if (PhaseTime >= MATCH_OVER_TIME || (PhaseTime >= MATCH_OVER_SKIP && SkipRequested?.Invoke() == true))
+        // Not right away, the button somebody was mashing when the last hit landed shouldn't decide anything
+        bool listening = PhaseTime >= MATCH_OVER_SKIP;
+
+        if (listening && Rematch is not null && RematchRequested?.Invoke() == true)
+        {
+            _finished = true;
+            Rematch();
+            return;
+        }
+
+        // With a rematch on offer the result waits for an answer. Without one it moves on by itself after a while
+        bool timeIsUp = Rematch is null && PhaseTime >= MATCH_OVER_TIME;
+
+        if (timeIsUp || (listening && SkipRequested?.Invoke() == true))
         {
             _finished = true;
             Finished?.Invoke();

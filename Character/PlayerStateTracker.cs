@@ -36,6 +36,11 @@ internal class PlayerStateTracker(Player player)
     /// </summary>
     public int ComboCount { get; private set; }
 
+    /// <summary>
+    /// How much damage those hits have done all together.
+    /// </summary>
+    public int ComboDamage { get; private set; }
+
     public bool IsInHitstun => CurrentStatus == PlayerStatusType.Hitstun;
 
     /// <summary>
@@ -68,11 +73,13 @@ internal class PlayerStateTracker(Player player)
     /// <summary>
     /// Puts us in hitstun for a number of ticks from now, which counts as one more hit of the combo we are eating.
     /// </summary>
-    public void ApplyHitstun(int ticks)
+    /// <param name="damage">How much the hit that did it took off us, for the combo counter.</param>
+    public void ApplyHitstun(int ticks, int damage)
     {
         CurrentStatus = PlayerStatusType.Hitstun;
         HitstunTicks = Math.Max(1, ticks);
         ComboCount++;
+        ComboDamage += damage;
     }
 
     /// <summary>
@@ -85,6 +92,7 @@ internal class PlayerStateTracker(Player player)
         CurrentStatus = status;
         HitstunTicks = hitstun ? Math.Max(1, hitstunTicks) : 0;
         ComboCount = hitstun ? comboCount : 0;
+        if (!hitstun) ComboDamage = 0;
     }
 
     private void ClearHitstun()
@@ -92,6 +100,7 @@ internal class PlayerStateTracker(Player player)
         CurrentStatus = PlayerStatusType.Normal;
         HitstunTicks = 0;
         ComboCount = 0;
+        ComboDamage = 0;
     }
 
     public void ResetFallDuration() => FallDuration = 0f;

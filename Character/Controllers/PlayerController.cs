@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 
 using Fighter2D.Combat;
 using Fighter2D.Logic;
@@ -6,6 +7,7 @@ using Fighter2D.Logic.Moves;
 
 using Horizon.Core;
 using Horizon.Core.Components;
+using Horizon.Rendering.Spriting;
 
 namespace Fighter2D.Character.Controllers;
 
@@ -20,6 +22,10 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
     private const int MAX_TICKS_PER_UPDATE = 8;
 
     private static readonly FightingMove NoMove = new() { Id = MoveIds.NONE };
+
+    // What somebody who got knocked out is dimmed to, and how long (in seconds) that takes
+    private static readonly Vector4 KnockedOutTint = new(0.62f, 0.62f, 0.72f, 1.0f);
+    private const float KNOCKED_OUT_FADE = 0.5f;
 
     public IPlayerInput Input { get; } = input;
     public PlayerInputs Inputs { get; } = new();
@@ -74,9 +80,14 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
     public bool IsRecovering => StateTracker.CurrentStatus == PlayerStatusType.Attacking && HitThrown;
 
     /// <summary>
-    /// Whether the player has the controls, hitstun takes them away.
+    /// Whether the player is out of health. Somebody who is stays down until the round is reset.
     /// </summary>
-    public bool IsInControl => !StateTracker.IsInHitstun;
+    public bool IsKnockedOut => Player.Health == 0;
+
+    /// <summary>
+    /// Whether the player has the controls. Hitstun takes them away, and so does being knocked out.
+    /// </summary>
+    public bool IsInControl => !StateTracker.IsInHitstun && !IsKnockedOut;
 
     /// <summary>
     /// Whether a new move is allowed to start right now.
@@ -103,6 +114,9 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
 
     // Whether the move is being stepped right now, a move that starts from in there keeps the rhythm going
     private bool _stepping;
+
+    // Whether we were knocked out on the last tick, for spotting the tick we go down on
+    private bool _wasKnockedOut;
 
     public void Initialize()
     {
@@ -156,8 +170,9 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
         }
         else
         {
-            // The hitstun move lasts exactly as long as the hitstun does
-            if (StateTracker.TickHitstun() && CurrentMove.Id == MoveIds.HIT_STUN) FinishMove();
+            // Somebody who is knocked out never gets out of hitstun, for everybody else the hitstun move lasts exactly as long as the hitstun does
+            if (IsKnockedOut) StayDown();
+            else if (StateTracker.TickHitstun() && CurrentMove.Id == MoveIds.HIT_STUN) FinishMove();
 
             AdvanceMove();
         }
@@ -188,6 +203,20 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
         InputFlags held = frozen && !IsRemote ? InputFlags.None : Input.Read();
 
         return frozen ? InputFlags.None : held;
+    }
+
+    /// <summary>
+    /// Helper method to keep a knocked out player on the floor. It only kicks in once the hitstop of the hit that did it is over.
+    /// </summary>
+    private void StayDown()
+    {
+        // Does nothing if we are in it already, or if the move list doesn't have one (then they stay in hit_stun)
+        ChangeToMove(MoveIds.KNOCKED_OUT);
+
+        if (_wasKnockedOut) return;
+        _wasKnockedOut = true;
+
+        Player.TweenTint(KnockedOutTint, KNOCKED_OUT_FADE);
     }
 
     /* Moves */
@@ -334,9 +363,10 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
     /// <summary>
     /// Takes the controls away for a number of ticks. Whatever we were doing ends here and we sit in the hitstun move until it is over.
     /// </summary>
-    public void ApplyHitstun(int ticks)
+    /// <param name="damage">How much the hit that did it took off us, for the combo counter.</param>
+    public void ApplyHitstun(int ticks, int damage = 0)
     {
-        StateTracker.ApplyHitstun(ticks);
+        StateTracker.ApplyHitstun(ticks, damage);
 
         // Every hit restarts the move, so each hit of a combo is seen to land
         ChangeToMove(MoveIds.HIT_STUN, forceRestart: true);
@@ -360,6 +390,7 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
         CanCancel = false;
         _hitstop = 0;
         _frameProgress = 0.0f;
+        _wasKnockedOut = false;
         Movement.Reset();
 
         ChangeToMove(MoveIds.IDLE, forceRestart: true);

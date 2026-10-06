@@ -86,7 +86,7 @@ internal sealed class LobbySelectFlow : GamepadSelectFlow
             return;
         }
 
-        Scene.GoTo(Setup.CreateFight(map));
+        Scene.GoTo(Setup.CreateFight(map), Screen.IntoFight);
     }
 
     public override bool HandlePicked(Gamepad gamepad)

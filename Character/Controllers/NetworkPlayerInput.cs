@@ -24,7 +24,6 @@ internal class NetworkPlayerInput : IPlayerInput
     private uint _newest;
     private bool _started;
 
-    public string Name => "Network";
     public bool IsRemote => true;
 
     /// <summary>

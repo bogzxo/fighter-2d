@@ -140,6 +140,16 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
         _pending = null;
     }
 
+    /// <summary>
+    /// Called when our player swings at the network player and hits nothing. Their machine can't tell by itself, it never sees our hitboxes.
+    /// </summary>
+    public void SendWhiff(string move)
+    {
+        var message = NetSession.Reliable(NetMessage.Whiff);
+        message.AddString(move);
+        session.Send(message);
+    }
+
     /* Receiving */
 
     private void OnMessageReceived(NetMessage id, Message message)
@@ -157,6 +167,10 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
 
             case NetMessage.Hit:
                 ReceiveHit(HitReport.Read(message));
+                break;
+
+            case NetMessage.Whiff:
+                ReceiveWhiff(message.GetString());
                 break;
 
             case NetMessage.RoundState when !session.IsHost:
@@ -181,6 +195,17 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
 
         // They took a guess at what it did to us, this is what it actually did
         SendSnapshot(reliable: true);
+    }
+
+    /// <summary>
+    /// Called when the network player says they swung at us and missed, so our HUD can call it out like theirs does.
+    /// </summary>
+    private void ReceiveWhiff(string moveId)
+    {
+        if (Remote is { } attacker && attacker.MoveList.TryGetMove(moveId, out var move))
+        {
+            Fight.CombatLog.Report(new AttackReport(RemotePlayer, move, HitResult.Whiff));
+        }
     }
 
     private void ReceiveSnapshot(in PlayerSnapshot snapshot)

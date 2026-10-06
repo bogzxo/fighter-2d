@@ -10,9 +10,6 @@ namespace Fighter2D.Character.Controllers;
 /// </summary>
 internal interface IPlayerInput
 {
-    // What the player is called in logs and debug output
-    string Name { get; }
-
     // How fast the player walks compared to the walk speed of their character, a slow opponent is easier to get away from
     float WalkSpeedScale => 1.0f;
 

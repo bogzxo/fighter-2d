@@ -21,14 +21,17 @@ internal static class HitResolver
     /// <param name="frame">The frame of the animation the hit comes out on, which is what the hitbox is read from.</param>
     public static void TryLand(PlayerController attacker, uint frame)
     {
-        // A network player doesn't get to decide anything here, their hits arrive as messages (see FightNetwork)
+        // A network player doesn't get to decide anything here, their hits and whiffs arrive as messages (see FightNetwork)
         if (attacker.IsRemote) return;
 
         Player player = attacker.Player, opponent = attacker.Opponent;
+        FightingMove move = attacker.CurrentMove;
 
         if (!TryConnect(player, opponent, frame, out Box hitbox))
         {
-            Fight.CombatLog.Report(player, HitResult.Whiff);
+            // Swung at nothing. The other machine can't see that for itself, so it gets told
+            Fight.CombatLog.Report(new AttackReport(player, move, HitResult.Whiff));
+            if (opponent.Controller.IsRemote) Fight.Network?.SendWhiff(move.Id);
             return;
         }
 
@@ -38,9 +41,9 @@ internal static class HitResolver
 
         // Online the machine of whoever got hit has the last word. Until it answers we go by what it looked like from here
         bool predicted = opponent.Controller.IsRemote;
-        if (predicted) Fight.Network?.SendHit(attacker.CurrentMove.Id, direction, impact);
+        if (predicted) Fight.Network?.SendHit(move.Id, direction, impact);
 
-        Resolve(attacker, opponent.Controller, attacker.CurrentMove, direction, impact, predicted);
+        Resolve(attacker, opponent.Controller, move, direction, impact, predicted);
     }
 
     /// <summary>
@@ -52,18 +55,25 @@ internal static class HitResolver
     {
         HitResult result = Judge(victim, direction);
         bool landed = result is not (HitResult.Whiff or HitResult.Blocked);
+        bool lethal = false;
 
         if (landed)
         {
             bool counter = result == HitResult.CounterHit;
+            int damage = DamageOf(move, counter);
 
-            if (!predicted) DealDamage(victim.Player, move, counter);
+            // Going by the health we know of. For a network player that is whatever their last snapshot said
+            lethal = damage >= victim.Player.Health;
+
+            if (!predicted) victim.Player.Health = (byte)Math.Max(0, victim.Player.Health - damage);
             Launch(victim.Player, move, direction);
-            victim.ApplyHitstun(HitstunFor(victim, move, counter));
+            victim.ApplyHitstun(HitstunFor(victim, move, counter), damage);
         }
 
-        HitFeedback.Play(attacker, victim, move, result, direction, impact);
-        Fight.CombatLog.Report(attacker.Player, result, landed ? victim.StateTracker.ComboCount : 0);
+        HitFeedback.Play(attacker, victim, move, result, direction, impact, lethal);
+
+        var state = victim.StateTracker;
+        Fight.CombatLog.Report(new AttackReport(attacker.Player, move, result, landed ? state.ComboCount : 0, landed ? state.ComboDamage : 0));
 
         return result;
     }
@@ -86,7 +96,7 @@ internal static class HitResolver
     /// Helper method to decide whether a hit that reached somebody counts, going by nothing but the state they are in.
     /// </summary>
     /// <param name="direction">The way the hit was going, -1 for left and 1 for right.</param>
-    public static HitResult Judge(PlayerController victim, float direction)
+    private static HitResult Judge(PlayerController victim, float direction)
     {
         // Dodge rolls go straight through hits
         if (victim.StateTracker.CurrentStatus == PlayerStatusType.Invulnerable) return HitResult.Whiff;
@@ -103,11 +113,8 @@ internal static class HitResolver
         return HitResult.Hit;
     }
 
-    private static void DealDamage(Player victim, FightingMove move, bool counter)
-    {
-        float damage = move.Damage * (counter ? CombatRules.COUNTER_DAMAGE_SCALE : 1.0f);
-        victim.Health = (byte)Math.Max(0, victim.Health - (int)MathF.Round(damage));
-    }
+    private static int DamageOf(FightingMove move, bool counter) =>
+        (int)MathF.Round(move.Damage * (counter ? CombatRules.COUNTER_DAMAGE_SCALE : 1.0f));
 
     /// <summary>
     /// Helper method to shove the victim away from the attacker, launchers send them into the air.

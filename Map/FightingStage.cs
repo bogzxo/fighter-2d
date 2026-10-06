@@ -57,7 +57,8 @@ internal sealed class FightingStage : IDisposable
     private readonly List<Light2D> _lights = [];
     private readonly Vector2?[] _spawns = new Vector2?[2];
 
-    public FightingStage(MapDefinition definition, PhysicsWorld world, DeferredRenderer2D renderer)
+    /// <param name="world">The physics world the collision of the map goes into, null for a stage nobody is going to stand on (the map preview).</param>
+    public FightingStage(MapDefinition definition, DeferredRenderer2D renderer, PhysicsWorld? world)
     {
         string path = GameContent.PathOf(GameContent.MAPS_DIRECTORY + "/" + definition.FileName);
 
@@ -79,7 +80,7 @@ internal sealed class FightingStage : IDisposable
             .WithProperty("emitter_type", ReadEmitter)
             .WithProperty("light_radius", ReadLight));
 
-        BuildColliders(world);
+        if (world is not null) BuildColliders(world);
         renderer.Occlusion = _occlusion = BuildOcclusion();
         MeasureBounds();
 

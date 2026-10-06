@@ -103,12 +103,22 @@ internal abstract class MenuScene : Scene
     }
 
     /// <summary>
-    /// Helper method to leave for another scene. The engine swaps scenes at the start of the next frame, until then this one stays quiet.
+    /// Helper method to leave for another scene, the way the options say menus hand over to each other (see <see cref="Screen.BetweenMenus"/>).
+    /// This menu stays on screen until the engine has covered it up, and stays quiet for as long as that takes.
     /// </summary>
     internal void GoTo(Scene scene)
     {
         _leaving = true;
         Engine.SetScene(scene);
+    }
+
+    /// <summary>
+    /// Helper method to leave for another scene with a transition of its own, null for a hard cut.
+    /// </summary>
+    internal void GoTo(Scene scene, SceneTransition? transition)
+    {
+        _leaving = true;
+        Engine.SetScene(scene, transition);
     }
 
     /// <summary>

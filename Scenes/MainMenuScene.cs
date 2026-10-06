@@ -20,7 +20,7 @@ using Texture = Horizon.OpenGL.Assets.Texture;
 namespace Fighter2D.Scenes;
 
 /// <summary>
-/// The first scene of the game, where the kind of fight is picked (or the options, once there are any).
+/// The first scene of the game, where the kind of fight is picked (or the options).
 /// Behind the menu two fighters go at each other forever, see <see cref="MenuDuel"/>.
 /// </summary>
 internal class MainMenuScene : MenuScene
@@ -92,7 +92,7 @@ internal class MainMenuScene : MenuScene
         AddButton(layout, "btn_practice", () => Play(MatchMode.Practice));
         AddButton(layout, "btn_host", HostServer);
         AddButton(layout, "btn_join", () => GoTo(new JoinServerScene()));
-        AddButton(layout, "btn_options", OpenOptions);
+        AddButton(layout, "btn_options", () => GoTo(new OptionsScene()));
 
         _hint = layout.Get<Label>("hint");
         layout.Get<Label>("version").Text = Constants.VERSION_LABEL;
@@ -122,12 +122,6 @@ internal class MainMenuScene : MenuScene
         }
 
         GoTo(new GamepadSelectorScene(MatchSetup.Online(session)));
-    }
-
-    private void OpenOptions()
-    {
-        // @bogz the options screen goes here, GoTo(new OptionsScene()) once there is one
-        ShowMessage("options are on their way");
     }
 
     private void ShowMessage(string message)

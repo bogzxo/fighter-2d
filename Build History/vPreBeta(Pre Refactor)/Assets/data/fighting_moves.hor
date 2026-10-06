@@ -1,0 +1,167 @@
+﻿// The moves that hurt (or stop it hurting). The ones for getting around are in movement_moves.hor, a character
+// lists the files its moves come from in characters.hor.
+//
+// A move is what starts it, what it does to whoever it lands on, and its phases:
+//   input:            the button that starts it. "DPadLeft | DPadRight" is either of them, "A + B" is both together.
+//                     The buttons are A, B, X, Y, DPadUp, DPadDown, DPadLeft, DPadRight, LeftBumper, RightBumper,
+//                     LeftTrigger and RightTrigger, which button of the gamepad each of them is on is up to the
+//                     player (who can also put A + B, X + Y, A + X and B + Y on a button of their own). A move
+//                     without an input is only ever rerouted to.
+//   trigger:          how the input has to be entered: "held" (for as long as it is), "pressed" (once per press)
+//                     or "double_tap"
+//   priority:         where the move stands when the inputs are matched, the lowest goes first. A move that needs
+//                     more than another one has to come before it (double tap left before left)
+//   stances:          the stances it can be started from: "standing | crouching | jumping | falling"
+//   damage:           how much health a hit takes, out of 100
+//   knockback:        the push whoever gets hit is given, vec(away from the attacker, up)
+//   stun:             how long whoever gets hit loses control for, in frames of the animation of this move (so it can
+//                     be held against the frames the move itself takes). Every hit stuns: a move that doesn't say
+//                     for how long stuns for longer the more frames go by before its hit, see below
+//   interruptible:    whether another move can cut this one short at all (its phases say from when)
+//   steering:         whether the player can walk during the move
+//   turning:          whether the player can turn around during the move, the same as steering if it doesn't say
+//   status:           what the player is while the move lasts: "attacking", "guarding" (hits from in front are
+//                     blocked, and the player can't turn around) or "invulnerable" (hits go straight through)
+//   stance:           the stance the move puts the player in, and stance_after the one it leaves them in
+//   warns:            whether the other player is told the move is coming, moves that do damage always do
+//   repeat:           a condition (see below) under which the move starts over after its last phase
+//   stance_reroutes:  another move to do instead, by the stance the player is in when the input comes
+//   finish_reroutes:  the move to carry on with once this one is over, by the stance the player is in by then
+//                     (without one they go back to "idle")
+//
+// The phases of a move run one after the other, in the order they are written. A phase is:
+//   animation:        the animation to play, out of the character's sprite definition. Without one the animation
+//                     of the phase before carries on
+//   frames:           how many frames the phase lasts, as long as its animation if it doesn't say
+//   hit:              the frame the hit lands on, counted from 0
+//   interrupt:        the frame from which another move can cut this one short
+//   lock:             the frame from which another move can't cut this one short any more
+//   status:           a status (see above) the player only takes on during this phase, from the frame status_frame
+//                     says (0 if it doesn't). It lasts until the move is over
+//   loop_while:            a condition, the phase starts over for as long as it holds and ends the frame it doesn't
+//   until:            a condition, the phase ends the frame it holds
+//   impulse:          a push the player gets as the phase starts, vec(the way they are facing, up)
+//   effect:           something for the eye: "jump", "roll" or "haze". effect_frames is how many frames it keeps
+//                     coming for (1 if it doesn't say, 0 for all of them)
+//
+// The conditions are "held" (the input of the move is), "stunned", "jumping" (on the way up), "falling" and "always".
+//
+// Three names mean something to the game: "idle" is what a player does when they do nothing (and has to be there),
+// "hit_stun" is what they are put in when they get stunned, and "heavy_land" what a long fall ends in, if there is one.
+//
+// What a hit comes to (the numbers behind all of this are in Logic/Combat.cs):
+//   - Whoever gets hit is stunned: they are put in "hit_stun" and can't do anything until it is over. A quick move
+//     stuns for a little less long than it takes its attacker to be done with it, so whoever got hit can get a
+//     quick move of their own in first. The longer a move takes to wind up the longer it stuns, and from some
+//     length on the attacker is free first and has the time to follow up with something quick: that is a combo.
+//   - A hit on somebody who is already stunned doesn't cut their stun short: a quick move in the middle of a long
+//     stun leaves the long one standing.
+//   - Somebody who is stunned and in the air (knocked up there by a move with a knockback) can be kept there: every
+//     hit adds a little to the stun they are in, less each time.
+//   - A hit that catches somebody winding up an attack of their own (before the frame it hits on) is a counter
+//     hit, which stuns them for longer and hurts more.
+//   - A guard only covers the side the player is facing, and they can't turn around without letting go of it.
+
+let moves = {
+    block: {
+        input: "RightBumper",
+        trigger: "held",
+        priority: 40,
+        stances: "standing | crouching",
+        interruptible: true,
+        steering: false,
+        phases: {
+            raise: { animation: "block_start", interrupt: 0, lock: 3, status: "guarding", status_frame: 2 },
+            hold: { animation: "block_loop", loop_while: "held", lock: 0 }
+        }
+    },
+
+    hit_stun: {
+        stances: "standing | crouching | jumping | falling",
+        interruptible: false,
+        steering: false,
+        finish_reroutes: {
+            jumping: "fall",
+            falling: "fall"
+        },
+        phases: {
+            dazed: { animation: "hard_landing", frames: 1, loop_while: "stunned", effect: "haze", effect_frames: 0 }
+        }
+    },
+
+    kick_left: {
+        input: "A",
+        trigger: "pressed",
+        priority: 20,
+        stances: "standing | falling | jumping | crouching",
+        damage: 5,
+        interruptible: false,
+        status: "attacking",
+        stance_reroutes: {
+            jumping: "jump_kick",
+            falling: "jump_kick"
+        },
+        phases: {
+            swing: { animation: "kick", hit: 3 }
+        }
+    },
+
+    kick_right: {
+        input: "B",
+        trigger: "pressed",
+        priority: 30,
+        stances: "standing | falling | jumping | crouching",
+        damage: 5,
+        interruptible: false,
+        status: "attacking",
+        stance_reroutes: {
+            jumping: "jump_kick",
+            falling: "jump_kick"
+        },
+        phases: {
+            swing: { animation: "kick", hit: 3 }
+        }
+    },
+
+    punch_left: {
+        input: "X",
+        trigger: "pressed",
+        priority: 24,
+        stances: "standing | crouching",
+        damage: 3,
+        interruptible: false,
+        status: "attacking",
+        phases: {
+            swing: { animation: "punch", hit: 2 }
+        }
+    },
+
+    punch_right: {
+        input: "Y",
+        trigger: "pressed",
+        priority: 34,
+        stances: "standing | crouching",
+        damage: 3,
+        interruptible: false,
+        status: "attacking",
+        phases: {
+            swing: { animation: "punch", hit: 2 }
+        }
+    },
+
+    jump_kick: {
+        stances: "jumping | falling",
+        damage: 8,
+        knockback: vec(900, 1900),
+        stun: 12,
+        interruptible: false,
+        status: "attacking",
+        finish_reroutes: {
+            standing: "idle",
+            falling: "fall"
+        },
+        phases: {
+            swing: { animation: "jump_kick", hit: 4 }
+        }
+    }
+}

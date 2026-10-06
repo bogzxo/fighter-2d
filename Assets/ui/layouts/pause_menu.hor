@@ -1,0 +1,24 @@
+// The menu that comes up when somebody presses start in the middle of a fight (PauseMenu.cs).
+// The fight behind it is blurred by the game while this is up, so there is nothing here to darken it.
+
+let menu = compositor.stack({
+    background: "panel",
+    padding: vec(44, 36),
+    spacing: 16,
+    intro: "pop",
+    intro_time: 0.25
+});
+
+let title = compositor.label({ parent: menu, text: "PAUSED", text_scale: 0.8 });
+
+let btn_resume = compositor.button({ parent: menu, label: "Carry on", size: vec(360, 0) });
+let btn_rematch = compositor.button({ parent: menu, label: "Start over", size: vec(360, 0) });
+let btn_quit = compositor.button({ parent: menu, label: "Main menu", size: vec(360, 0) });
+
+let hint = compositor.label({
+    parent: menu,
+    size: vec(0, 30),
+    text: "[icon:dpad] choose    [icon:pad_a] pick    [icon:pad_b] carry on",
+    text_scale: 0.25,
+    color: vec(0.58, 0.6, 0.66, 1)
+});

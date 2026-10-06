@@ -20,7 +20,9 @@ internal static class MenuLayouts
     public const string MATCH_RULES = "match_rules.hor";
     public const string BINDINGS = "bindings.hor";
     public const string JOIN_SERVER = "join_server.hor";
+    public const string OPTIONS = "options.hor";
     public const string FIGHT_HUD = "fight_overlay.hor";
+    public const string PAUSE_MENU = "pause_menu.hor";
 
     private const string DIRECTORY = "Assets/ui/layouts";
 

@@ -14,7 +14,7 @@ namespace Fighter2D.Networking;
 internal sealed class ContentHost
 {
     // How much of a file goes into one message, and how many of those go out per update so the connection isn't swamped
-    public const int CHUNK_SIZE = 1000;
+    private const int CHUNK_SIZE = 1000;
     private const int CHUNKS_PER_TICK = 24;
 
     private readonly NetSession _session;

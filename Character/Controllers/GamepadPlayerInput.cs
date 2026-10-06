@@ -10,7 +10,6 @@ namespace Fighter2D.Character.Controllers;
 /// </summary>
 internal class GamepadPlayerInput(int slot) : IPlayerInput
 {
-    public string Name => $"Player {slot + 1}";
     public Gamepad? Gamepad => GameInput.Manager.TryGet(slot, out Gamepad gamepad) ? gamepad : null;
 
     public InputFlags Read()

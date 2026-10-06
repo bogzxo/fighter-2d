@@ -14,6 +14,7 @@ namespace Fighter2D.HUD;
 /// <summary>
 /// Everything that is laid over a fight. The health bars, the clock and the rounds, the versus screen, the input display and the hit callouts.
 /// Each of those is an <see cref="IHudDisplay"/>, this only loads the layout (Assets/ui/layouts/fight_overlay.hor) and keeps them all updated.
+/// The input display and the callouts are only there if the player wants them, see <see cref="GameOptions"/>.
 /// </summary>
 internal class HUDManager : IGameComponent
 {
@@ -38,8 +39,10 @@ internal class HUDManager : IGameComponent
         _displays.Add(new HealthDisplay(layout, round));
         _displays.Add(new RoundDisplay(layout, round));
         _displays.Add(new VersusDisplay(layout, round));
-        _displays.Add(new InputDisplay(layout, round));
-        _displays.Add(new HitCalloutDisplay(layout, round, Fight.CombatLog));
+
+        // What these would have written into stays empty without them, there is nothing to hide
+        if (GameOptions.InputDisplay) _displays.Add(new InputDisplay(layout, round));
+        if (GameOptions.HitCallouts) _displays.Add(new HitCalloutDisplay(layout, round, Fight.CombatLog));
     }
 
     public void UpdateState(float dt)

@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 using Fighter2D.Map;
 using Fighter2D.Match;
 
+using Horizon.Engine;
 using Horizon.Input2;
+using Horizon.Physics;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
 
@@ -15,15 +18,16 @@ namespace Fighter2D.Scenes;
 
 /// <summary>
 /// Scene where the map of the fight is picked, either with the gamepad or by clicking.
+/// Behind the menu is a live preview of whichever map is selected, see <see cref="MapPreview"/>.
 /// In an online fight this is the host's job, the other player waits in the lobby and follows them into the fight.
 /// </summary>
 internal class MapSelectionScene(MatchSetup setup) : MenuScene
 {
-    private const int DESCRIPTION_LINE_LENGTH = 34;
-    private const string HINT = "[icon:dpad] choose a map    [icon:pad_a] fight    [icon:pad_b] back";
+    private const int DESCRIPTION_LINE_LENGTH = 26;
+    private const string HINT = "[icon:dpad] choose    [icon:pad_a] fight    [icon:pad_b] back";
 
-    // How long (in seconds) the keyboard has to wait before it can start the fight, it has no press to tell apart from a hold
-    private const float KEYBOARD_DELAY = 1.0f;
+    // The menu covers the left of the screen, so the preview looks a bit to the left of where the fight starts to put that spot in what is left
+    private static readonly Vector2 PREVIEW_OFFSET = new(-110, 0);
 
     protected override string LayoutFile => MenuLayouts.MAP_SELECT;
     protected override float InputDelay => 0.3f;
@@ -31,10 +35,26 @@ internal class MapSelectionScene(MatchSetup setup) : MenuScene
     private List<MapDefinition> _maps = [];
     private readonly ButtonList _buttons = new();
     private Label _description = null!, _hint = null!;
+    private MapPreview _preview = null!;
 
     protected override void Prepare()
     {
         _maps = MapLoader.LoadAll();
+    }
+
+    protected override void BuildBackdrop()
+    {
+        Vector2 viewport = Engine.WindowManager.ViewportSize;
+
+        // The preview is a piece of the world, so the scene looks at it through a world camera the way a fight does.
+        // The menu keeps the camera it was given, a UI doesn't care what the scene is looking at
+        var worldCamera = AddEntity(new Camera2D(viewport / 2.0f));
+        ActiveCamera = worldCamera;
+
+        // Only there for the weather to live in, nothing ever collides with anything on this screen
+        var world = AddComponent<PhysicsWorld>();
+
+        _preview = Canvas.AddEntity(new MapPreview(worldCamera, world, viewport, PREVIEW_OFFSET));
     }
 
     protected override void BuildUi(UILayout layout)
@@ -73,17 +93,11 @@ internal class MapSelectionScene(MatchSetup setup) : MenuScene
         GameInput.Manager.TryGet(setup.MenuSlot, out Gamepad? gamepad);
         _hint.Text = ButtonGlyphs.Localize(HINT, gamepad);
 
-        if (SceneTime > KEYBOARD_DELAY && Engine.InputManager.IsPressed(Horizon.Input.VirtualAction.Interact))
-        {
-            Continue();
-            return;
-        }
-
         if (gamepad is null || !InputReady) return;
 
         int move = MenuInput.Vertical(gamepad);
 
-        if (gamepad.WasPressed(GamepadInput.A)) Continue();
+        if (MenuInput.ConfirmPressed(gamepad)) Continue();
         else if (gamepad.WasPressed(GamepadInput.B)) Back();
         else if (move != 0) SelectMap(_buttons.Selected + move);
     }
@@ -110,7 +124,10 @@ internal class MapSelectionScene(MatchSetup setup) : MenuScene
         if (_maps.Count == 0) return;
 
         _buttons.Select(index);
-        _description.Text = WrapText(_maps[_buttons.Selected].Description, DESCRIPTION_LINE_LENGTH);
+
+        MapDefinition map = _maps[_buttons.Selected];
+        _description.Text = WrapText(map.Description, DESCRIPTION_LINE_LENGTH);
+        _preview.Show(map);
     }
 
     /// <summary>

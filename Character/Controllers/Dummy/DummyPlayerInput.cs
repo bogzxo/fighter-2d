@@ -15,7 +15,6 @@ internal class DummyPlayerInput : IPlayerInput
     private DummyGuard _guard = null!;
     private DummyOffence _offence = null!;
 
-    public string Name => "Dummy";
     public float WalkSpeedScale => DummyConfig.WALK_SPEED_SCALE;
 
     public void Attach(PlayerController controller)

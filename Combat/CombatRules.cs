@@ -29,4 +29,7 @@ internal static class CombatRules
     public const int HEAVY_HITSTOP = 8;
     public const int COUNTER_HITSTOP = 11;
     public const int BLOCK_HITSTOP = 2;
+
+    // The hit that ends the round holds a lot longer, that is the K.O. freeze
+    public const int KO_HITSTOP = 36;
 }

@@ -21,5 +21,6 @@ internal enum NetMessage : ushort
     PlayerInput,
     PlayerState,
     Hit,
+    Whiff,
     RoundState
 }

@@ -8,16 +8,13 @@ namespace Fighter2D.Character;
 /// </summary>
 internal class NetworkPlayer : Player
 {
-    public readonly string Address;
-
     /// <summary>
     /// The buttons of the other machine, FightNetwork hands them over as they come in.
     /// </summary>
     public NetworkPlayerInput Input { get; } = new();
 
-    public NetworkPlayer(string address)
+    public NetworkPlayer()
     {
-        this.Address = address;
         Controller = new PlayerController(Input);
     }
 }

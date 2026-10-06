@@ -12,6 +12,9 @@ public static class MoveIds
     // What a player is put in for as long as they are in hitstun
     public const string HIT_STUN = "hit_stun";
 
+    // What a player is put in once their health is gone, if the move list has it. Without one they stay in hit_stun
+    public const string KNOCKED_OUT = "knocked_out";
+
     // What a player is put in after a long fall, if the move list has it
     public const string HEAVY_LAND = "heavy_land";
 

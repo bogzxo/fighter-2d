@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 
 using Fighter2D.Character;
@@ -10,10 +11,12 @@ using Fighter2D.Map;
 using Fighter2D.Match;
 using Fighter2D.Networking;
 
+using Horizon.Core.Tweening;
 using Horizon.Engine;
 using Horizon.Input2;
 using Horizon.Physics;
 using Horizon.Rendering;
+using Horizon.Rendering.PostProcessing;
 using Horizon.Rendering.Spriting;
 
 namespace Fighter2D.Scenes;
@@ -26,6 +29,15 @@ namespace Fighter2D.Scenes;
 internal class FightScene : Scene
 {
     private static readonly Vector2 GRAVITY = new(0, -8000);
+
+    // How far (in pixels) the arena is smeared behind the versus screen and behind the pause menu
+    private const float VERSUS_BLUR = 14.0f;
+    private const float PAUSE_BLUR = 10.0f;
+
+    // How long (in seconds) the arena takes to come into focus once the versus screen is gone, and to blur and clear up around the pause menu
+    private const float VERSUS_CLEAR_TIME = 0.6f;
+    private const float PAUSE_BLUR_TIME = 0.16f;
+    private const float PAUSE_CLEAR_TIME = 0.22f;
 
     public override Camera ActiveCamera { get; protected set; } = null!;
 
@@ -49,6 +61,12 @@ internal class FightScene : Scene
     /// </summary>
     public string? CharacterId { get; init; }
 
+    /// <summary>
+    /// Makes this same fight all over again, for a rematch. Null if there is none to be had, which also means no pause menu (its restart needs this).
+    /// A fight can't just start itself over, its players and everything else in it belong to this scene and go when it does.
+    /// </summary>
+    public Func<FightScene>? Rematch { get; init; }
+
     private MapDefinition _mapDefinition;
     private readonly int _gamepadIndex;
     private Player? _opponent;
@@ -62,6 +80,10 @@ internal class FightScene : Scene
     private PlayerLights _playerLights = null!;
     private RoundDirector _round = null!;
     private FightNetwork? _network;
+
+    // Smears the arena while something is up in front of it that wants the attention
+    private BlurEffect _backdropBlur = null!;
+    private PauseMenu? _pause;
 
     /// <param name="opponent">Whoever player two is, null to fight the dummy.</param>
     public FightScene(MapDefinition mapDefinition, int gamepadIndex, Player? opponent = null)
@@ -79,6 +101,7 @@ internal class FightScene : Scene
         // Spin up physics world with heavy gravity so players wont float around like fuckin astronauts
         _world = AddComponent<PhysicsWorld>();
         _world.Gravity = GRAVITY;
+        _world.RenderDebug = GameOptions.Hitboxes;
 
         // The camera goes first so it is up to date by the time anything is drawn with it
         Vector2 viewport = Engine.WindowManager.ViewportSize;
@@ -86,7 +109,7 @@ internal class FightScene : Scene
 
         CreateRenderer(viewport);
 
-        _stage = new FightingStage(_mapDefinition, _world, _renderer);
+        _stage = new FightingStage(_mapDefinition, _renderer, _world);
         Vector2 ourSpawn = StartsOnTheRight ? _stage.RightSpawn : _stage.LeftSpawn;
         Vector2 theirSpawn = StartsOnTheRight ? _stage.LeftSpawn : _stage.RightSpawn;
 
@@ -95,7 +118,8 @@ internal class FightScene : Scene
         SpawnEffects();
         SpawnPlayerTwo(players, theirSpawn);
 
-        _camera = new FightCamera(_sceneCamera, _stage, viewport, ourSpawn);
+        // Both of them in the picture from the start
+        _camera = new FightCamera(_sceneCamera, _stage, viewport, (ourSpawn + theirSpawn) / 2.0f);
 
         StartMatch();
 
@@ -115,8 +139,10 @@ internal class FightScene : Scene
             LightingPixelSize = 1.0f
         });
 
-        // Blur first, then the CRT on top of the blurred picture
+        // Motion blur first and the CRT last, on top of everything the others did to the picture.
+        // The fight starts out behind the versus screen, so the arena starts out as a smear
         Screen.AddMotionBlur(_renderer);
+        _backdropBlur = _renderer.PostProcessing.Add(new BlurEffect { Radius = VERSUS_BLUR });
         Screen.AddCrt(_renderer);
     }
 
@@ -172,8 +198,14 @@ internal class FightScene : Scene
         {
             IsAuthority = Session is null || Session.IsHost,
             Finished = LeaveFight,
-            SkipRequested = ContinuePressed
+
+            // With a rematch on offer A is for going again and B for leaving, without one A just moves things along
+            Rematch = Rematch is null ? null : StartRematch,
+            RematchRequested = ConfirmPressed,
+            SkipRequested = Rematch is null ? ConfirmPressed : BackPressed
         });
+
+        _round.PhaseChanged += OnPhaseChanged;
 
         Fight.Network = null;
         if (Session is not null)
@@ -186,10 +218,47 @@ internal class FightScene : Scene
         }
 
         AddComponent<HUDManager>();
+        AddPauseMenu();
+    }
+
+    /// <summary>
+    /// Helper method to give the fight its pause menu, which goes on top of the HUD. Online there is none, nobody gets to freeze somebody else's game.
+    /// </summary>
+    private void AddPauseMenu()
+    {
+        if (Session is not null || Rematch is null) return;
+
+        _pause = AddComponent(new PauseMenu
+        {
+            // The versus screen and the result have the screen to themselves
+            CanOpen = () => _round.Phase is RoundPhase.Ready or RoundPhase.Fight or RoundPhase.RoundOver,
+
+            Opened = () => _backdropBlur.BlurTo(PAUSE_BLUR, PAUSE_BLUR_TIME),
+            Closed = () => _backdropBlur.BlurTo(0.0f, PAUSE_CLEAR_TIME),
+
+            Rematch = StartRematch,
+            Quit = LeaveFight
+        });
+    }
+
+    private void OnPhaseChanged(RoundPhase phase)
+    {
+        // The versus screen is gone, the arena comes into focus. It only ever leaves that phase the once
+        if (phase != RoundPhase.Versus && _backdropBlur.Radius >= VERSUS_BLUR)
+        {
+            _backdropBlur.BlurTo(0.0f, VERSUS_CLEAR_TIME, Easing.InOutSine);
+        }
     }
 
     public override void UpdateState(float dt)
     {
+        // Nothing of the fight moves while the pause menu is up, only the menu itself
+        if (_pause is { HoldsFight: true })
+        {
+            _pause.UpdateState(dt);
+            return;
+        }
+
         // Hits and thunder both rattle the view
         _camera.Shake(_weather.Shake + Fight.Effects.Shake);
         _playerLights.Follow(Fight.PlayerOne, Fight.PlayerTwo);
@@ -199,13 +268,18 @@ internal class FightScene : Scene
 
     public override void UpdatePhysics(float dt)
     {
+        if (_pause is { HoldsFight: true }) return;
+
         base.UpdatePhysics(dt);
 
         // The players are drawn where the physics has just put them, and the camera follows in the same breath (see FightCamera.Follow)
         SyncToPhysics(Fight.PlayerOne);
         SyncToPhysics(Fight.PlayerTwo);
 
-        if (Fight.PlayerOne is { } player) _camera?.Follow(player.Transform.Position, dt);
+        if (Fight.PlayerOne is { } us && Fight.PlayerTwo is { } them)
+        {
+            _camera?.Follow(us.Transform.Position, them.Transform.Position, dt);
+        }
     }
 
     private static void SyncToPhysics(Player? player)
@@ -214,23 +288,42 @@ internal class FightScene : Scene
     }
 
     /// <summary>
-    /// Called by the rounds once the match is over and its result has been up for long enough.
+    /// Called by the rounds once the match is over and its result has been up for long enough, and by the pause menu for whoever has had enough.
     /// </summary>
     private void LeaveFight()
     {
-        Engine.SetScene(new MainMenuScene());
+        Engine.SetScene(new MainMenuScene(), Screen.IntoFight);
     }
 
     /// <summary>
-    /// Helper method to test whether anybody has pressed the button that skips the result screen.
+    /// Called when the players want the same fight again, from the result of the match or from the pause menu.
     /// </summary>
-    private static bool ContinuePressed()
+    private void StartRematch()
+    {
+        if (Rematch is not null) Engine.SetScene(Rematch(), Screen.IntoFight);
+    }
+
+    /// <summary>
+    /// Helper method to test whether anybody has pressed a button that says yes.
+    /// </summary>
+    private static bool ConfirmPressed()
     {
         foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
         {
-            if (!gamepad.IsConnected) continue;
+            if (gamepad.IsConnected && MenuInput.ConfirmPressed(gamepad)) return true;
+        }
 
-            if (gamepad.WasPressed(GamepadInput.A) || gamepad.WasPressed(GamepadInput.Start)) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Helper method to test whether anybody has pressed the button that says no.
+    /// </summary>
+    private static bool BackPressed()
+    {
+        foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
+        {
+            if (gamepad.IsConnected && gamepad.WasPressed(GamepadInput.B)) return true;
         }
 
         return false;
@@ -241,8 +334,8 @@ internal class FightScene : Scene
         // Shut down sockets cleanly so ports aren't left hanging open
         _network?.Dispose();
 
-        if (Fight.Network == _network) Fight.Network = null;
-        if (Fight.Round == _round) Fight.Round = null;
+        // Only if the fight is still ours. By the time a scene is disposed of the next one is set up, and after a rematch that is another fight
+        if (Fight.Round == _round) Fight.Clear();
 
         _stage?.Dispose();
         base.DisposeOther();
