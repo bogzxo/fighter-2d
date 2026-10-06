@@ -1,8 +1,5 @@
 using System.Numerics;
 using Bogz.Logging.Loggers;
-using Egui;
-using Egui.Containers;
-using Egui.Widgets;
 using Fighter2D.Character.Controllers;
 using Fighter2D.Logic;
 using Fighter2D.Scenes;
@@ -24,21 +21,5 @@ internal class NetworkPlayer : Player
     {
         this.Address = address;
         Controller = new NetworkedPlayerController();
-    }
-
-    public override void RenderUi(Ui root)
-    {
-        base.RenderUi(root);
-
-        new Window("Network Player")
-            .Show(root.Ctx, ui =>
-            {
-                ui.Heading("Player Information");
-                ui.Label($"Address: {Address}");
-                ui.Label($"Current Move: {Controller.CurrentMove.Id}");
-                ui.Label($"Current Stance: {Controller.StateTracker.CurrentStance}");
-                ui.Label($"Current Status: {Controller.StateTracker.CurrentStatus}");
-                ui.Label($"Is Grounded: {Controller.StateTracker.IsGrounded}");
-            });
     }
 }

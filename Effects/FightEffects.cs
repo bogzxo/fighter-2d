@@ -13,27 +13,47 @@ using Horizon.Rendering.Particles.Simulation;
 namespace Fighter2D.Effects;
 
 /// <summary>
-/// Every particle effect of a fight: the sparks and dust thrown up by the players, and the ambience drifting through the map.
+/// Every particle effect of a fight: the blood and dust thrown up by the players, and what the emitters of the map let go.
+/// What is in the air of the map by itself (rain, a storm) is the <see cref="Weather"/>.
 /// The controllers and move routines only say what happened (a hit, a landing etc.), how it looks is decided here.
 /// </summary>
 internal class FightEffects : GameObject
 {
     private const int MaxSprayCount = 128;
-    private const float AMBIENCE_MARGIN = 96f;    // How far outside of the view the ambience spawns, so it never pops in
     private const float EMITTER_LIGHT_DROP = 24f; // How far underneath an emitter the light of what it lets go is
 
-    private static readonly Vector3 FLASH_COLOUR = new(1.0f, 0.85f, 0.55f);
+    // How much bigger than the room a drop of water takes up it is drawn, so the drops of a pool leave no gaps between them
+    private const float WATER_OVERLAP = 1.1f;
 
-    private readonly ParticleRenderer2D _sparks, _dust, _haze, _ambience, _water, _lava;
-    private readonly Camera2D _camera;
+    // How far (in seconds of its way) a drop of water is drawn out as it falls, which is what closes the gaps of a
+    // stream: there is a bit less than this long between two drops that fall one behind the other.
+    // And the longest that makes it, in units of the world
+    private const float WATER_STRETCH = 0.13f;
+    private const float WATER_MAX_STRETCH = 40.0f;
+
+    // Blood only a touch, a drop that flies is a streak and one that has landed is a dot
+    private const float BLOOD_STRETCH = 0.05f;
+
+    // How quickly the jolt of a blow dies away, and how fast it rattles the view
+    private const float JOLT_FADE = 14.0f;
+    private const float JOLT_SPEED = 55.0f;
+
+    private float _jolt, _joltTime;
+
+    /// <summary>
+    /// How far a blow that just landed has the view off of where it belongs right now, in whole pixels of the art. Zero most of the time.
+    /// </summary>
+    public Vector2 Shake { get; private set; }
+
+    private readonly ParticleRenderer2D _impact, _blood, _bloodMist, _dust, _haze, _water, _lava;
     private readonly PhysicsWorld _world;
     private readonly DeferredRenderer2D _lighting;
-    private readonly bool _rising;
-    private float _ambienceTimer = 0.0f;
 
     // How an emitter of a kind lets its particles go, they all fall out of it downwards.
     // The ones that let something glowing go come with a light as well, which every emitter gets a copy of.
-    private readonly record struct EmitterPreset(ParticleRenderer2D Renderer, float Spread, float MinSpeed, float MaxSpeed, Light2D? Light = null);
+    // Density is how many particles one of the rate a map gives an emitter stands for and Width how far to either
+    // side of it they come out, for a stream that is more than one drop wide
+    private readonly record struct EmitterPreset(ParticleRenderer2D Renderer, float Spread, float MinSpeed, float MaxSpeed, Light2D? Light = null, float Density = 1.0f, float Width = 0.0f);
 
     // A spot of the map that keeps letting particles go (a leaking pipe, a crack with lava running out of it)
     private sealed class Emitter(EmitterPreset preset, Vector2 position, float rate)
@@ -48,45 +68,34 @@ internal class FightEffects : GameObject
     private readonly List<Emitter> _emitters = [];
 
 
-    /// <param name="camera">The camera the fight is seen through, the ambience is kept around it.</param>
-    /// <param name="ambience">The parsed ambience definition properties.</param>
     /// <param name="lighting">The renderer the fight is lit by, which the flashes and the glow of what is hot are added to.</param>
-    public FightEffects(Camera2D camera, MapLoader.AmbienceDefinition ambience, PhysicsWorld world, DeferredRenderer2D lighting)
+    public FightEffects(PhysicsWorld world, DeferredRenderer2D lighting)
     {
         Name = "Fight Effects";
 
-        _camera = camera;
         _world = world;
         _lighting = lighting;
 
-        // We determine whether the particles spawn from the bottom or top based on gravity direction
-        _rising = ambience.Gravity.Y > 0;
-
-        // Petals sink on the wind, embers rise (customized heavily by maps now)
-        // These collide with the physics world (on the GPU), so they land on the map and the players can kick them about
-        var ambienceSimulator = new PhysicsParticleSimulator2D(world);
-        ambienceSimulator.Radius = 1.5f;
-        ambienceSimulator.Restitution = 0.25f;
-        ambienceSimulator.Friction = 5.0f;
-
-        // They drift along slowly, so they are only wafted aside (by a player or a shockwave) at about the speed they drift at
-        ambienceSimulator.Mass = 3.0f;
-        ambienceSimulator.BodyPushLimit = 70.0f;
         
-        var sparksSimulator = new PhysicsParticleSimulator2D(world);
-        sparksSimulator.Radius = 1.5f;
-        sparksSimulator.Restitution = 0.25f;
-        sparksSimulator.Friction = 5.0f;
+        // Blood doesn't bounce and doesn't slide: where a drop comes down is where it stays
+        var bloodSimulator = new PhysicsParticleSimulator2D(world);
+        bloodSimulator.Radius = 1.5f;
+        bloodSimulator.Restitution = 0.04f;
+        bloodSimulator.Friction = 22.0f;
+        bloodSimulator.LinearDrag = 0.5f;
 
-        // Weightless as far as pushes go: the shockwave of the hit they come from would only blow them all away
-        sparksSimulator.Mass = 0.0f;
+        // Weightless as far as pushes go: the shockwave of the hit it comes from would only blow it all away
+        bloodSimulator.Mass = 0.0f;
 
         // The liquids collide with themselves too, so they pool where they land and overflow once that is full.
         // Runny, it levels out quickly
         var waterSimulator = new PhysicsFluidParticleSimulator2D(world);
         waterSimulator.Particles.Radius = 2.5f;
         waterSimulator.Particles.Friction = 1.0f;
-        waterSimulator.MaxLife = 15;
+
+        // Twice what a map asks for comes out (see the emitter presets), so it stays half as long: the basins of the
+        // maps were made for that much water
+        waterSimulator.MaxLife = 8;
 
         // Enough for a splash when someone drops into it, wading through only parts it
         waterSimulator.Particles.BodyPush = 0.05f;
@@ -107,8 +116,11 @@ internal class FightEffects : GameObject
         {
             StartColor = new Vector3(3 / 255.0f, 98 / 255.0f, 252 / 255.0f),
             EndColor = new Vector3(3 / 255.0f, 169 / 255.0f, 252 / 255.0f),
-            ParticleSize = 1.5f,
-            MaxAge = 20.0f,
+            // A touch bigger than the room a drop takes up, or a pool would be a grid of dots
+            ParticleSize = waterSimulator.Particles.Radius * WATER_OVERLAP,
+            Stretch = WATER_STRETCH,
+            MaxStretch = WATER_MAX_STRETCH,
+            MaxAge = 9.0f,
             Gravity = new Vector2(0, -300)
         });
 
@@ -129,7 +141,9 @@ internal class FightEffects : GameObject
         // The names are the ones a map gives its emitters ("emitter_type")
         _emitterPresets = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["water"] = new EmitterPreset(_water, 0.5f, 10, 45),
+            // Two drops wide, and no more of them than fit out of there side by side: let go on top of one another
+            // they only burst apart. What keeps it a stream all the way down is how they are drawn out as they fall
+            ["water"] = new EmitterPreset(_water, 0.2f, 40, 60, Density: 2.0f, Width: 2.5f),
             ["lava"] = new EmitterPreset(_lava, 0.25f, 4, 18, new Light2D
             {
                 Color = new Vector3(1.0f, 0.45f, 0.12f),
@@ -141,15 +155,43 @@ internal class FightEffects : GameObject
             })
         };
 
-        // Hot and short lived, they arc away from a hit
-        _sparks = AddEntity(new ParticleRenderer2D(8192, sparksSimulator)
+        // Heavy drops that arc away from a hit and stay where they land, drying darker until they are gone.
+        // The end colour is drawn at twice what it says here, see the shader of the particles
+        _blood = AddEntity(new ParticleRenderer2D(8192, bloodSimulator)
         {
-            StartColor = new Vector3(1.0f, 0.95f, 0.6f),
-            EndColor = new Vector3(0.5f, 0.1f, 0.0f),
+            StartColor = new Vector3(0.74f, 0.02f, 0.04f),
+            EndColor = new Vector3(0.14f, 0.0f, 0.01f),
             ParticleSize = 1.5f,
-            MaxAge = 0.45f,
-            Gravity = new Vector2(0, -900),
+            Stretch = BLOOD_STRETCH,
+            MaxAge = 3.2f,
+            Gravity = new Vector2(0, -1100),
+
+            // Seen for what it is in a dark map as well, without glowing in a bright one
+            StartEmissive = 0.3f,
+            EndEmissive = 0.1f
+        });
+
+        // The lines that burst out of where a blow lands
+        _impact = AddEntity(new ParticleRenderer2D(2048, new ComputeParticleSimulator2D())
+        {
+            StartColor = new Vector3(1.0f, 0.97f, 0.88f),
+            EndColor = new Vector3(0.5f, 0.32f, 0.12f),
+            ParticleSize = 1.0f,
+            Stretch = 0.05f,
+            MaxStretch = 30.0f,
+            MaxAge = 0.16f,
             Emissive = 1.0f
+        });
+
+        // The fine spray that hangs in the air for a moment where the blow landed
+        _bloodMist = AddEntity(new ParticleRenderer2D(4096, new ComputeParticleSimulator2D())
+        {
+            StartColor = new Vector3(0.85f, 0.05f, 0.07f),
+            EndColor = new Vector3(0.2f, 0.0f, 0.01f),
+            ParticleSize = 1.0f,
+            MaxAge = 0.5f,
+            Gravity = new Vector2(0, -260),
+            Emissive = 0.3f
         });
 
         // Pale and slow, it hangs around the feet
@@ -173,16 +215,6 @@ internal class FightEffects : GameObject
 
             // Whoever is stunned has to be seen to be, wherever they are standing
             Emissive = 0.7f
-        });
-
-
-        _ambience = AddEntity(new ParticleRenderer2D(4096, ambienceSimulator)
-        {
-            StartColor = ambience.StartColor,
-            EndColor = ambience.EndColor,
-            ParticleSize = 1.5f,
-            MaxAge = 9.0f,
-            Gravity = ambience.Gravity
         });
     }
 
@@ -228,26 +260,31 @@ internal class FightEffects : GameObject
     }
 
     /// <summary>
-    /// A kick has landed, heavy hits (the ones that launch) throw a lot more sparks.
+    /// A blow has landed and draws blood, heavy hits (the ones that launch) a lot more of it.
     /// </summary>
-    /// <param name="direction">The way the kick was going, -1 for left and 1 for right.</param>
+    /// <param name="direction">The way the blow was going, -1 for left and 1 for right.</param>
     public void Hit(Vector2 position, float direction, bool heavy)
     {
-        Spray(_sparks, position, new Vector2(direction, 0.5f), 1.4f, heavy ? 110 : 40, 60, heavy ? 480 : 300);
+        // The blow itself: a burst of lines every way, and the view jolted by it
+        Spray(_impact, position, new Vector2(direction, 0.0f), MathF.Tau, heavy ? 28 : 14, 280, heavy ? 760 : 540);
+        _jolt = MathF.Max(_jolt, heavy ? 5.0f : 2.5f);
+        _joltTime = 0.0f;
 
-        // The sparks light up whatever is around for as long as they last
-        _lighting.AddFlash(new Light2D
-        {
-            Position = position,
-            Color = FLASH_COLOUR,
-            Radius = heavy ? 230.0f : 140.0f,
-            Intensity = heavy ? 2.4f : 1.3f,
-            Glow = heavy ? 0.25f : 0.1f
-        }, heavy ? 0.35f : 0.2f);
+        // Most of it goes the way the blow went, in an arc that comes down a good way behind whoever took it
+        Spray(_blood, position, new Vector2(direction, 0.45f), 1.1f, heavy ? 45 : 16, 90, heavy ? 520 : 340);
+
+        // Some comes straight back at whoever threw it
+        Spray(_blood, position, new Vector2(-direction, 0.6f), 1.6f, heavy ? 22 : 8, 40, 180);
+
+        // And the fine spray, which goes every way and nowhere far
+        Spray(_bloodMist, position, new Vector2(direction, 0.2f), 2.6f, heavy ? 160 : 106, 20, 170, 3.0f);
 
         if (heavy)
         {
-            Spray(_dust, position, Vector2.UnitY, MathF.Tau, 40, 30, 160);
+            // What a blow that lifts somebody off their feet takes along upwards
+            Spray(_blood, position, new Vector2(direction * 0.35f, 1.0f), 0.9f, 42, 200, 500);
+
+            //Spray(_dust, position, Vector2.UnitY, MathF.Tau, 40, 30, 160);
             Shockwave(position - Vector2.UnitY * 40, 110, 260);
         }
     }
@@ -258,6 +295,11 @@ internal class FightEffects : GameObject
     /// <param name="direction">The way the kick was going, -1 for left and 1 for right.</param>
     public void Block(Vector2 position, float direction)
     {
+        // A few lines back off the guard, and hardly a jolt
+        Spray(_impact, position, new Vector2(-direction, 0.3f), 1.8f, 8, 200, 420);
+        _jolt = MathF.Max(_jolt, 1.5f);
+        _joltTime = 0.0f;
+
         Spray(_dust, position, new Vector2(-direction, 0.3f), 1.0f, 24, 60, 220);
     }
 
@@ -308,46 +350,34 @@ internal class FightEffects : GameObject
 
     public override void UpdateState(float dt)
     {
-        const float spawnInterval = 1.0f / 14.0f;
-
-        _ambienceTimer += dt;
-        while (_ambienceTimer >= spawnInterval)
-        {
-            _ambienceTimer -= spawnInterval;
-            SpawnAmbience();
-        }
+        // The jolt of a blow, a few pixels and gone within a couple of frames
+        _jolt *= MathF.Exp(-JOLT_FADE * dt);
+        _joltTime += dt;
+        Shake = _jolt < 0.5f ? Vector2.Zero : new Vector2(
+            MathF.Round(MathF.Sin(_joltTime * JOLT_SPEED) * _jolt),
+            MathF.Round(MathF.Sin(_joltTime * JOLT_SPEED * 1.3f + 0.9f) * _jolt * 0.6f));
 
         foreach (var emitter in _emitters)
         {
             // However many are due by now, so the rate holds no matter how long the frame was
+            float rate = emitter.Rate * emitter.Preset.Density;
+
             emitter.Timer += dt;
-            int due = (int)(emitter.Timer * emitter.Rate);
+            int due = (int)(emitter.Timer * rate);
             if (due < 1) continue;
 
-            emitter.Timer -= due / emitter.Rate;
-            Spray(emitter.Preset.Renderer, emitter.Position, -Vector2.UnitY, emitter.Preset.Spread, due, emitter.Preset.MinSpeed, emitter.Preset.MaxSpeed);
+            emitter.Timer -= due / rate;
+            Spray(emitter.Preset.Renderer, emitter.Position, -Vector2.UnitY, emitter.Preset.Spread, due, emitter.Preset.MinSpeed, emitter.Preset.MaxSpeed, emitter.Preset.Width);
         }
 
         base.UpdateState(dt);
     }
 
-    private void SpawnAmbience()
-    {
-        // Spawns over the top or from underneath the view dynamically based on gravity definition
-        var view = _camera.Bounds;
-        float x = view.X - AMBIENCE_MARGIN + Random.Shared.NextSingle() * (view.Width + AMBIENCE_MARGIN * 2);
-        float y = _rising ? view.Y - 8 : view.Y + view.Height + 8;
-
-        float sway = Random.Shared.NextSingle() - 0.5f;
-        Vector2 direction = Vector2.Normalize(_rising ? new Vector2(sway, 1) : new Vector2(sway - 0.4f, -1));
-
-        _ambience.Add(new Particle2D(direction, new Vector2(x, y), 30 + Random.Shared.NextSingle() * 40));
-    }
-
     /// <summary>
     /// Helper method to spray particles in a cone, each at its own speed so they don't fly out as one ring.
     /// </summary>
-    private static void Spray(ParticleRenderer2D renderer, Vector2 position, Vector2 direction, float spread, int count, float minSpeed, float maxSpeed)
+    /// <param name="scatter">How far from the position a particle can start, 0 for all of them from the one spot.</param>
+    private static void Spray(ParticleRenderer2D renderer, Vector2 position, Vector2 direction, float spread, int count, float minSpeed, float maxSpeed, float scatter = 0.0f)
     {
         float centre = MathF.Atan2(direction.Y, direction.X);
         Span<Particle2D> particles = stackalloc Particle2D[Math.Min(count, MaxSprayCount)];
@@ -357,7 +387,13 @@ internal class FightEffects : GameObject
             float angle = centre + (Random.Shared.NextSingle() - 0.5f) * spread;
             var (sin, cos) = MathF.SinCos(angle);
 
-            particles[i] = new Particle2D(new Vector2(cos, sin), position, minSpeed + Random.Shared.NextSingle() * (maxSpeed - minSpeed));
+            Vector2 start = position;
+            if (scatter > 0.0f)
+            {
+                start += new Vector2(Random.Shared.NextSingle() - 0.5f, Random.Shared.NextSingle() - 0.5f) * (scatter * 2.0f);
+            }
+
+            particles[i] = new Particle2D(new Vector2(cos, sin), start, minSpeed + Random.Shared.NextSingle() * (maxSpeed - minSpeed));
         }
 
         renderer.AddRange(particles);

@@ -1,91 +1,82 @@
-﻿let moves = {
+﻿// The moves for getting around. See fighting_moves.hor for how a move is written down.
+
+let moves = {
     idle: {
-        binding: "none",
-        direction: "any",
+        stances: "standing",
+        interruptible: true,
         stance: "standing",
-        damage: 0,
-        interruptible: true,
-        animation: { name: "idle", hit: 0 }
-    },
-    jump: {
-        binding: "dpadup",
-        direction: "any",
-        stance: "standing",
-        damage: 0,
-        interruptible: true,
-        animation: { name: "jump", hit: 0 },
-        callback: func() { player.jump() },
-        loopable: true
-    },
-    
-    /* --- EVASION --- */
-    dodge_roll: {
-        binding: "dpadleft | dpadright",
-        double_tap: true,
-        direction: "any",
-        stance: "standing",
-        damage: 0,
-        interruptible: true,
-        animation: { name: "roll", hit: 0 },
-        callback: func() { player.dash() }
-    },
-    
-    /* --- HEAVY LANDING --- */
-    heavy_land: {
-        binding: "none",
-        direction: "any",
-        stance: "standing", 
-        damage: 0,
-        interruptible: false,
-        animation: { name: "hard_landing", hit: 0 }
-    },
-    
-    /* --- CROUSH STATE MACHINE --- */
-    crouch_start: {
-        binding: "dpaddown",
-        direction: "any",
-        stance: "crouching",
-        damage: 0,
-        interruptible: true,
-        next_move: "crouch",
-        animation: { name: "crouch_start", hit: 0 }
-    },
-    crouch: {
-        binding: "dpaddown",
-        direction: "any",
-        stance: "standing",
-        damage: 0,
-        interruptible: true,
-        loopable: true,
-        animation: { name: "crouch_loop", hit: 0 }
+        phases: {
+            stand: { animation: "idle", loop_while: "always", interrupt: 0 }
+        }
     },
 
-    /* --- RUNNING STATE MACHINE --- */
-    run_start: {
-        binding: "dpadleft | dpadright",
-        direction: "any",
-        stance: "standing",
-        damage: 0,
+    crouch: {
+        input: "DPadDown",
+        trigger: "held",
+        priority: 60,
+        stances: "crouching | standing",
         interruptible: true,
-        next_move: "running",
-        animation: { name: "run_loop", hit: 0 }
+        steering: false,
+        stance: "crouching",
+        stance_after: "standing",
+        phases: {
+            duck: { animation: "crouch_start" },
+            stay: { animation: "crouch_loop", loop_while: "held", interrupt: 0 }
+        }
     },
-    running: {
-        binding: "dpadleft | dpadright",
-        direction: "any",
-        stance: "standing",
-        damage: 0,
+
+    fall: {
+        stances: "falling",
         interruptible: true,
-        loopable: true,
-        release_move: "run_stop", 
-        animation: { name: "run_loop", hit: 0 }
+        stance: "falling",
+        stance_after: "standing",
+        phases: {
+            drop: { animation: "fall", loop_while: "falling", interrupt: 0 }
+        }
     },
-    run_stop: {
-        binding: "none",
-        direction: "any",
-        stance: "standing",
-        damage: 0,
-        interruptible: false,
-        animation: { name: "run_stop", hit: 0 }
+
+    run: {
+        input: "DPadLeft | DPadRight",
+        trigger: "held",
+        priority: 70,
+        stances: "standing",
+        interruptible: true,
+        repeat: "held",
+        finish_reroutes: {
+            standing: "idle"
+        },
+        phases: {
+            stride: { animation: "run_loop", loop_while: "held", interrupt: 0 },
+            stop: { animation: "run_stop", until: "held", interrupt: 0 }
+        }
+    },
+
+    jump: {
+        input: "DPadUp",
+        trigger: "held",
+        priority: 50,
+        stances: "standing | crouching",
+        interruptible: true,
+        finish_reroutes: {
+            falling: "fall"
+        },
+        phases: {
+            launch: { animation: "jump", impulse: vec(0, 3500), effect: "jump" },
+            rise: { loop_while: "jumping", interrupt: 0 }
+        }
+    },
+
+    dodge_roll: {
+        input: "DPadLeft | DPadRight",
+        trigger: "double_tap",
+        priority: 10,
+        stances: "standing | crouching",
+        interruptible: true,
+        steering: false,
+        status: "invulnerable",
+        phases: {
+            dive: { animation: "roll", frames: 5, impulse: vec(3500, 0), effect: "roll", effect_frames: 5 },
+            recover: { frames: 4, interrupt: 0 }
+        }
     }
 }

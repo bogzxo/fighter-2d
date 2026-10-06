@@ -15,9 +15,7 @@ using Button = Horizon.Rendering.UIX.Components.Button;
 namespace Fighter2D.Scenes;
 
 /// <summary>
-/// Scene where the bindings of one gamepad are changed, every action of the fight has a row that shows what it is on.
-/// Picking a row and pressing A waits for the next button on that gamepad and moves the action onto it, X adds the button to the ones it has.
-/// Buttons that are held together are bound together, which is how an action ends up on A + B.
+/// Scene where the bindings of one gamepad can be changed.
 /// Leaving the scene saves the bindings of every gamepad, see <see cref="GameInput.Save"/>.
 /// </summary>
 internal class BindingsScene(int slot, MatchSetup setup) : Scene
@@ -27,12 +25,15 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
     // How long we wait for a button before giving up on it
     private const float LISTEN_TIME = 5.0f;
 
-    private const string HINT_BROWSE = "[icon:dpad] choose    [icon:pad_a] change    [icon:pad_x] add another    [icon:pad_b] done";
+    private const string HINT_BROWSE = "[icon:dpad] choose    [icon:pad_a] change    [icon:pad_x] add another    [icon:pad_y] clear    [icon:pad_b] done";
     private const string TEXT_LISTENING = "press a button...";
 
     private static readonly Vector4 HintColor = new(0.58f, 0.6f, 0.66f, 1.0f);
 
     public override Camera ActiveCamera { get; protected set; }
+
+    // The glass everything is seen through
+    private Renderer2D screen = null!;
 
     // The rows of the actions come first, the two buttons underneath them last
     private readonly List<Button> entries = [];
@@ -51,6 +52,10 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
     private uint capturedMask;
     private bool captureArmed;
 
+    // The actions are in the columns of the layout, the next one starts where the one before it is full
+    private int rowsPerColumn = 1;
+    private int RowsPerColumn => rowsPerColumn;
+
     private int ResetIndex => GameInput.Actions.Length;
     private int DoneIndex => GameInput.Actions.Length + 1;
 
@@ -60,6 +65,8 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
 
         // The selector only sends us here for a gamepad that exists
         GameInput.Manager.TryGet(slot, out gamepad);
+
+        screen = Screen.For(this);
 
         CompositeImages();
         CompositeUi();
@@ -99,6 +106,14 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
         {
             Select(selectedIndex - 1);
         }
+        else if (GameInput.MenuRightPressed(gamepad))
+        {
+            SelectAcross(1);
+        }
+        else if (GameInput.MenuLeftPressed(gamepad))
+        {
+            SelectAcross(-1);
+        }
         else if (gamepad.WasPressed(GamepadInput.A))
         {
             Activate(selectedIndex, add: false);
@@ -107,10 +122,26 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
         {
             Activate(selectedIndex, add: true);
         }
+        else if (gamepad.WasPressed(GamepadInput.Y))
+        {
+            Clear(selectedIndex);
+        }
         else if (gamepad.WasPressed(GamepadInput.B))
         {
             Leave();
         }
+    }
+
+    /// <summary>
+    /// Helper method to take an action off every button it is on, the action stays and can be put back on one.
+    /// </summary>
+    private void Clear(int index)
+    {
+        if (index >= GameInput.Actions.Length) return;
+
+        gamepad.Bindings.Bind(GameInput.Actions[index].Name);
+        entries[index].Shake(5.0f, 0.2f);
+        Refresh();
     }
 
     private void UpdateListening(float dt)
@@ -138,9 +169,17 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
 
         if (capturedMask != 0)
         {
-            Bind(GameInput.Actions[listeningIndex].Name, capturedMask);
-            entries[listeningIndex].Punch(0.06f, 0.3f);
+            int bound = listeningIndex;
+            bool changed = Bind(GameInput.Actions[bound].Name, capturedMask);
+
+            entries[bound].Punch(0.06f, 0.3f);
             StopListening();
+
+            // On to the next action, so a whole column can be set by pressing A and a button over and over
+            if (changed && bound + 1 < GameInput.Actions.Length)
+            {
+                Select(bound + 1);
+            }
         }
         else if (listenTimer <= 0)
         {
@@ -148,11 +187,14 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
         }
     }
 
-    private void Bind(string action, uint combination)
+    /// <summary>
+    /// Helper method to put an action on the buttons that were just pressed, returns false if they meant never mind instead.
+    /// </summary>
+    private bool Bind(string action, uint combination)
     {
         // Start and back stay out of the fight, here they are the way out of changing your mind
         const uint reserved = (1u << (int)GamepadInput.Start) | (1u << (int)GamepadInput.Back);
-        if ((combination & reserved) != 0) return;
+        if ((combination & reserved) != 0) return false;
 
         if (listeningToAdd)
         {
@@ -163,6 +205,8 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
             // Whatever else was on exactly these buttons loses them, the same buttons doing two things is never what you want
             gamepad.Bindings.Rebind(action, combination);
         }
+
+        return true;
     }
 
     /// <summary>
@@ -183,7 +227,7 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
             // Every row gives a nod, they have all just changed
             for (int i = 0; i < GameInput.Actions.Length; i++)
             {
-                entries[i].Punch(0.04f, 0.25f).SetDelay(i * 0.03f);
+                entries[i].Punch(0.04f, 0.25f).SetDelay((i % RowsPerColumn) * 0.03f);
             }
         }
         else if (index == DoneIndex)
@@ -215,6 +259,21 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
         Engine.SetScene(new GamepadSelectorScene(setup));
     }
 
+    /// <summary>
+    /// Helper method to step sideways: to the same row of the other column, or between the two buttons underneath.
+    /// </summary>
+    private void SelectAcross(int direction)
+    {
+        if (selectedIndex >= ResetIndex)
+        {
+            Select(direction > 0 ? DoneIndex : ResetIndex);
+            return;
+        }
+
+        int target = selectedIndex + direction * RowsPerColumn;
+        if (target >= 0 && target < GameInput.Actions.Length) Select(target);
+    }
+
     private void Select(int index)
     {
         selectedIndex = Math.Clamp(index, 0, entries.Count - 1);
@@ -240,7 +299,7 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
 
     private void CompositeImages()
     {
-        var spriteBatch = AddEntity<SpriteBatch>();
+        var spriteBatch = screen.AddEntity<SpriteBatch>();
 
         if (Engine.ObjectManager.Textures.TryCreateOrGet("gpselbg", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/backgrounds/player_select_bg.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_bg))
         {
@@ -254,52 +313,53 @@ internal class BindingsScene(int slot, MatchSetup setup) : Scene
 
     private void CompositeUi()
     {
-        var compositor = AddComponent(new UICompositor((Camera2D)ActiveCamera, Constants.UI_THEME));
-        panel = compositor.CreateModule().AddComponent(new StackPanel
-        {
-            Background = "panel",
-            Padding = new UIEdges(40, 34),
-            Spacing = 20
-        });
+        // The screen is laid out in Assets/ui/layouts/bindings.hor, the row of an action in binding_row.hor
+        UILayout layout = MenuLayouts.Load(this, (Camera2D)ActiveCamera, MenuLayouts.BINDINGS);
+        panel = layout.Get<StackPanel>("panel");
 
         // The player is whoever picked this gamepad, which is not the same thing as the slot it is plugged into
         int player = Math.Max(0, setup.Slots.IndexOf(slot));
-        panel.Add(new Label($"Bindings of player {player + 1}") { TextScale = 0.6f });
-        panel.Add(new Label(gamepad?.Name ?? string.Empty) { TextScale = 0.25f, Color = HintColor });
+        layout.Get<Label>("title").Text = $"Bindings of player {player + 1}";
+        layout.Get<Label>("gamepad_name").Text = gamepad?.Name ?? string.Empty;
 
-        var list = panel.Add(new StackPanel { Spacing = 8 });
-        for (int i = 0; i < GameInput.Actions.Length; i++)
+        // The actions are shared out over however many columns the layout has, there are more of them than fit underneath each other
+        var columns = new List<StackPanel>();
+        while (layout.TryGet($"column_{columns.Count + 1}", out StackPanel? column))
         {
-            int index = i;
-            var row = list.Add(new StackPanel { Direction = UIDirection.Horizontal, Spacing = 16 });
+            columns.Add(column);
+        }
 
-            row.Add(new Label(GameInput.Actions[i].Label) { Size = new Vector2(230, 0), Align = Origin.Left, TextScale = 0.3f });
+        if (columns.Count == 0) columns.Add(layout.Get<StackPanel>("column_1"));
 
-            // Clicking a row does what A does on it, the button to bind still has to come from the gamepad
-            entries.Add(row.Add(new Button
+        rowsPerColumn = (GameInput.Actions.Length + columns.Count - 1) / columns.Count;
+
+        for (int c = 0; c < columns.Count; c++)
+        {
+            int first = c * rowsPerColumn;
+            var items = layout.Populate(columns[c], Math.Clamp(GameInput.Actions.Length - first, 0, rowsPerColumn));
+
+            for (int i = 0; i < items.Count; i++)
             {
-                Style = "button_flat",
-                Size = new Vector2(520, 0),
-                LabelScale = 0.3f,
-                OnPressed = () => Activate(index, add: false)
-            }));
+                int index = first + i;
+                items[i].Get<Label>("action").Text = GameInput.Actions[index].Label;
+
+                // Clicking a row does what A does on it, the button to bind still has to come from the gamepad
+                var entry = items[i].Get<Button>("binding");
+                entry.OnPressed = () => Activate(index, add: false);
+
+                entries.Add(entry);
+            }
         }
 
-        var actions = panel.Add(new StackPanel { Direction = UIDirection.Horizontal, Spacing = 16 });
-        entries.Add(actions.Add(new Button("Defaults") { Size = new Vector2(240, 0), OnPressed = () => Activate(ResetIndex, add: false) }));
-        entries.Add(actions.Add(new Button("Done") { Size = new Vector2(180, 0), OnPressed = () => Activate(DoneIndex, add: false) }));
+        var defaults = layout.Get<Button>("btn_defaults");
+        defaults.OnPressed = () => Activate(ResetIndex, add: false);
+        entries.Add(defaults);
 
-        hint = panel.Add(new Label
-        {
-            TextScale = 0.25f,
-            Color = HintColor
-        });
+        var done = layout.Get<Button>("btn_done");
+        done.OnPressed = () => Activate(DoneIndex, add: false);
+        entries.Add(done);
 
-        // The panel pops up and the rows slide in from the side one after the other
-        panel.PopIn(0.4f);
-        for (int i = 0; i < list.Children.Count; i++)
-        {
-            list.Children[i].SlideIn(new Vector2(-140, 0), 0.3f, 0.15f + i * 0.04f);
-        }
+        // How the panel pops up and the rows slide in from the side one after the other is in the layouts
+        hint = layout.Get<Label>("hint");
     }
 }

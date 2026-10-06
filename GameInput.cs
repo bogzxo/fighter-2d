@@ -25,6 +25,20 @@ internal static class GameInput
     public const string ACTION_KICK_RIGHT = "kick_right";
     public const string ACTION_BLOCK = "block";
 
+    public const string ACTION_X = "punch_left";
+    public const string ACTION_Y = "punch_right";
+
+    // No move of ours is on these yet, they are there for the move files to use
+    public const string ACTION_LEFT_BUMPER = "left_bumper";
+    public const string ACTION_LEFT_TRIGGER = "left_trigger";
+    public const string ACTION_RIGHT_TRIGGER = "right_trigger";
+
+    // Two buttons at once on a single one, for whoever would rather not press both. Holding the two buttons themselves does the same
+    public const string ACTION_A_B = "combo_a_b";
+    public const string ACTION_X_Y = "combo_x_y";
+    public const string ACTION_A_X = "combo_a_x";
+    public const string ACTION_B_Y = "combo_b_y";
+
     /// <summary>
     /// An action of the fight, what it is called on screen and the button of the move list it stands for.
     /// </summary>
@@ -40,6 +54,16 @@ internal static class GameInput
         new(ACTION_KICK_LEFT, "Left kick", InputFlags.A),
         new(ACTION_KICK_RIGHT, "Right kick", InputFlags.B),
         new(ACTION_BLOCK, "Block", InputFlags.RightBumper),
+        new(ACTION_LEFT_BUMPER, "Left bumper", InputFlags.LeftBumper),
+
+        new(ACTION_X, "Left punch", InputFlags.X),
+        new(ACTION_Y, "Right punch", InputFlags.Y),
+        new(ACTION_LEFT_TRIGGER, "Left trigger", InputFlags.LeftTrigger),
+        new(ACTION_RIGHT_TRIGGER, "Right trigger", InputFlags.RightTrigger),
+        new(ACTION_A_B, "A + B at once", InputFlags.A | InputFlags.B),
+        new(ACTION_X_Y, "X + Y at once", InputFlags.X | InputFlags.Y),
+        new(ACTION_A_X, "A + X at once", InputFlags.A | InputFlags.X),
+        new(ACTION_B_Y, "B + Y at once", InputFlags.B | InputFlags.Y),
     ];
 
     public static GamepadInputManager Manager { get; private set; } = null!;
@@ -96,7 +120,18 @@ internal static class GameInput
             .Bind(ACTION_CROUCH, GamepadInput.DPadDown, GamepadInput.LeftStickDown)
             .Bind(ACTION_KICK_LEFT, GamepadInput.A)
             .Bind(ACTION_KICK_RIGHT, GamepadInput.B)
-            .Bind(ACTION_BLOCK, GamepadInput.RightBumper);
+            .Bind(ACTION_BLOCK, GamepadInput.RightBumper)
+            .Bind(ACTION_LEFT_BUMPER, GamepadInput.LeftBumper)
+            .Bind(ACTION_X, GamepadInput.X)
+            .Bind(ACTION_Y, GamepadInput.Y)
+            .Bind(ACTION_LEFT_TRIGGER, GamepadInput.LeftTrigger)
+            .Bind(ACTION_RIGHT_TRIGGER, GamepadInput.RightTrigger)
+
+            // Not on anything until somebody wants them
+            .Bind(ACTION_A_B)
+            .Bind(ACTION_X_Y)
+            .Bind(ACTION_A_X)
+            .Bind(ACTION_B_Y);
     }
 
     /// <summary>
@@ -123,28 +158,19 @@ internal static class GameInput
     // Only true on the update the direction was pushed, for menus that move one entry at a time
     public static bool MenuUpPressed(Gamepad gamepad) => gamepad.WasPressed(GamepadInput.DPadUp) || gamepad.WasPressed(GamepadInput.LeftStickUp);
     public static bool MenuDownPressed(Gamepad gamepad) => gamepad.WasPressed(GamepadInput.DPadDown) || gamepad.WasPressed(GamepadInput.LeftStickDown);
+    public static bool MenuLeftPressed(Gamepad gamepad) => gamepad.WasPressed(GamepadInput.DPadLeft) || gamepad.WasPressed(GamepadInput.LeftStickLeft);
+    public static bool MenuRightPressed(Gamepad gamepad) => gamepad.WasPressed(GamepadInput.DPadRight) || gamepad.WasPressed(GamepadInput.LeftStickRight);
 
-    // The icons of the skin are named after the buttons of an Xbox gamepad, these are the same buttons on a PlayStation one
-    private static readonly (string Xbox, string PlayStation)[] PlayStationIcons =
-    [
-        ("icon:pad_a]", "icon:ps_cross]"),
-        ("icon:pad_b]", "icon:ps_circle]"),
-        ("icon:pad_x]", "icon:ps_square]"),
-        ("icon:pad_y]", "icon:ps_triangle]"),
-        ("icon:pad_lb]", "icon:ps_l1]"),
-        ("icon:pad_rb]", "icon:ps_r1]"),
-        ("icon:pad_lt]", "icon:ps_l2]"),
-        ("icon:pad_rt]", "icon:ps_r2]"),
-        ("icon:pad_ls]", "icon:ps_l3]"),
-        ("icon:pad_rs]", "icon:ps_r3]"),
-    ];
+    // What a text starts with to be shown with the icons of a PlayStation gamepad. Which icons those are is the skins
+    // to say (icon_sets in skin.hor), the texts themselves are all written with the buttons of an Xbox gamepad
+    private const string PLAYSTATION_ICONS = "[icons:playstation]";
 
     // Hints are asked for on every update, so every text is only ever translated once
     private static readonly Dictionary<string, string> playStationTexts = [];
 
     /// <summary>
-    /// Helper method to make a text show the buttons of the gamepad it is about: texts are written with the icons of an Xbox gamepad
-    /// (pad_a, pad_rb) and come back with the ones of a PlayStation gamepad if that is what the player is holding.
+    /// Helper method to make text show the icons of the correct gamepad, all texts are written with the icons of an Xbox gamepad
+    /// (pad_a, pad_rb) and come back saying they are for a PlayStation gamepad if that is what it is for
     /// </summary>
     /// <param name="gamepad">The gamepad the text is for, null leaves the text as it is.</param>
     public static string Localize(string text, Gamepad? gamepad)
@@ -155,16 +181,8 @@ internal static class GameInput
         {
             if (playStationTexts.TryGetValue(text, out string? known)) return known;
 
-            string translated = text;
-            foreach (var (xbox, playStation) in PlayStationIcons)
-            {
-                translated = translated.Replace(xbox, playStation);
-            }
-
             // Nothing on a PlayStation gamepad is called start
-            translated = translated.Replace("start cancels", "options cancels");
-
-            return playStationTexts[text] = translated;
+            return playStationTexts[text] = PLAYSTATION_ICONS + text.Replace("start cancels", "options cancels");
         }
     }
 

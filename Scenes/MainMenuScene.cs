@@ -6,12 +6,12 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
+using Fighter2D.Effects;
+using Fighter2D.Networking;
 using Horizon.Core.Tweening;
 using Horizon.Engine;
 using Horizon.Input2;
 using Horizon.Rendering;
-using Horizon.Rendering.Particles;
-using Horizon.Rendering.Particles.Simulation;
 using Horizon.Rendering.Spriting;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
@@ -22,89 +22,27 @@ namespace Fighter2D.Scenes;
 
 /// <summary>
 /// The first scene of the game, where the kind of fight is picked (or the options, once there are any).
-/// Behind the menu two fighters go at each other forever: they run in, one kicks, the other blocks, and both slide back out in a shower of sparks.
+/// Behind the menu two fighters go at each other forever, see <see cref="MenuDuel"/>.
 /// </summary>
 internal class MainMenuScene : Scene
 {
     private const float INPUT_DELAY = 0.25f;
     private const string HINT = "[icon:dpad] choose    [icon:pad_a] pick";
 
-    // The duel in the background, everything is in the units of the camera (pixels of the window)
-    private const float FIGHTER_SIZE = 448;
-    private const float DUEL_CENTER_X = 330;
-    private const float DUEL_GROUND_Y = -330;
-    private const float DUEL_GAP_FAR = 620;
-    private const float DUEL_GAP_NEAR = 170;
+    // Where the fighters of the background meet and the ground they stand on, in the units of the camera (pixels of the window)
+    private static readonly Vector2 DuelCenter = new(330, -330);
 
     private static readonly Vector4 HintColor = new(0.58f, 0.6f, 0.66f, 1.0f);
-    private static readonly Vector4 TintBlue = new(0.45f, 0.7f, 1.0f, 1.0f);
-    private static readonly Vector4 TintRed = new(1.0f, 0.5f, 0.5f, 1.0f);
-
-    /// <summary>
-    /// The steps of the duel, in the order they follow each other.
-    /// </summary>
-    private enum DuelPhase
-    {
-        Approach,
-        Strike,
-        Recoil,
-        Rest
-    }
-
-    // How long every step of the duel takes, in seconds
-    private static readonly float[] PhaseDurations = [0.85f, 0.55f, 0.8f, 1.1f];
-
-    /// <summary>
-    /// A fighter of the background, the same sprite sheet the players use but shown frame by frame by the scene.
-    /// </summary>
-    private sealed class MenuFighter() : Sprite(new Vector2(FIGHTER_SIZE))
-    {
-        public Vector4 BaseTint;
-
-        // How much of the flash of a hit is left, 1 right after it
-        public float Flash;
-
-        public override void Initialize()
-        {
-            base.Initialize();
-
-            var (_, sheet, manager) = SpriteSheet.LoadSpriteSheetFromDirectory("Assets/sprites/player");
-
-            this.Spritesheet = sheet;
-            this.AnimationManager = manager;
-
-            // The scene decides which frame is shown
-            AnimationManager.AnimateFrames = false;
-            SetAnimation("idle");
-        }
-
-        public void Show(string animation, int frame)
-        {
-            // The sheet is loaded on the render thread, which can be after the first update
-            if (AnimationManager is null) return;
-
-            SetAnimation(animation);
-            AnimationManager.SetFrame(animation, (uint)frame);
-        }
-    }
 
     public override Camera ActiveCamera { get; protected set; } = null!;
     private Camera2D camera = null!;
 
+    // The glass everything is seen through
+    private Renderer2D screen = null!;
+
     // Background
     private SpriteBatch spriteBatch = null!;
     private Sprite logo = null!;
-    private Vector2 logoPosition;
-    private MenuFighter fighterLeft = null!, fighterRight = null!;
-    private ParticleRenderer2D particlesDust, sparksBlue, sparksRed;
-
-    private DuelPhase duelPhase = DuelPhase.Rest;
-    private float phaseTime = 0;
-    private bool leftAttacks = false;
-    private bool struck = false;
-
-    // How hard the logo is still shaking from the last hit
-    private float shake = 0;
 
     // UI Elements
     private readonly List<Button> buttons = [];
@@ -123,7 +61,9 @@ internal class MainMenuScene : Scene
         // Other scenes leave their own clear colour behind
         Engine.GL.ClearColor(System.Drawing.Color.Black);
 
-        ActiveCamera = camera = AddEntity<Camera2D>(new(new System.Numerics.Vector2(Engine.WindowManager.WindowSize.X, Engine.WindowManager.WindowSize.Y)));
+        ActiveCamera = camera = AddEntity<Camera2D>(new(Engine.WindowManager.ViewportSize));
+
+        screen = Screen.For(this);
 
         CompositeBackground();
         CompositeUi();
@@ -135,102 +75,66 @@ internal class MainMenuScene : Scene
 
     private void CompositeBackground()
     {
-        spriteBatch = AddEntity<SpriteBatch>();
+        // The backdrop goes in a batch of its own so it ends up behind everything else
+        var backdropBatch = screen.AddEntity<SpriteBatch>();
 
-        // The fighter on the left is the blue corner, the one on the right the red one
-        fighterLeft = AddEntity(new MenuFighter { BaseTint = TintBlue, Tint = TintBlue });
-        fighterRight = AddEntity(new MenuFighter { BaseTint = TintRed, Tint = TintRed });
-        fighterRight.Flipped = true;
-
-        spriteBatch.Add(fighterLeft);
-        spriteBatch.Add(fighterRight);
-
-        if (Engine.ObjectManager.Textures.TryCreateOrGet("main_logo", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/ui/logo.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_logo))
+        if (Engine.ObjectManager.Textures.TryCreateOrGet("main_menu_bg", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/backgrounds/background_layer_albedo.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_bg))
         {
-            const uint logoScalar = 3;
+            // Scaled up until it covers the window whatever its shape, whatever sticks out is simply off screen
+            Vector2 window = Engine.WindowManager.WindowSize;
+            float scale = MathF.Max(window.X / result_bg.Asset.Width, window.Y / result_bg.Asset.Height);
+
+            var bg = backdropBatch.AddEntity(new Sprite(new Vector2(result_bg.Asset.Width, result_bg.Asset.Height) * scale));
+            bg.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_bg.Asset, new Vector2(result_bg.Asset.Width, result_bg.Asset.Height)), "bg");
+
+            backdropBatch.Add(bg);
+        }
+
+        // The right of the screen belongs to the duel, which looks after itself
+        var duel = screen.AddEntity(new MenuDuel(DuelCenter));
+
+        spriteBatch = screen.AddEntity<SpriteBatch>();
+
+        if (Engine.ObjectManager.Textures.TryCreateOrGet("main_logo", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/ui/new_logo.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_logo))
+        {
+            const uint logoScalar = 2;
 
             logo = spriteBatch.AddEntity(new Sprite(new System.Numerics.Vector2(result_logo.Asset.Width * logoScalar, result_logo.Asset.Height * logoScalar)));
             logo.Transform.Origin = Origin.TopLeft;
-            logo.Transform.Position = logoPosition = new Vector2(Engine.WindowManager.WindowSize.X / -2, Engine.WindowManager.WindowSize.Y / 2);
+            logo.Transform.Position = new Vector2(Engine.WindowManager.WindowSize.X / -2, Engine.WindowManager.WindowSize.Y / 2);
             logo.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_logo.Asset, new System.Numerics.Vector2(result_logo.Asset.Width, result_logo.Asset.Height)), "logo");
 
             spriteBatch.Add(logo);
 
-            // The logo grows out of its corner
+            // The logo grows out of its corner, and takes every hit of the duel along with whoever blocked it
             logo.PopIn(0.7f, 0.15f);
+            duel.Struck += () => logo.Shake(8.0f, 0.35f);
         }
-
-        // Whatever the duel throws up is drawn in front of the fighters
-        particlesDust = AddEntity(new ParticleRenderer2D(8192)
-        {
-            ParticleSize = 5,
-            MaxAge = 0.7f,
-            StartColor = new Vector3(0.55f, 0.5f, 0.45f),
-            EndColor = new Vector3(0.08f, 0.07f, 0.06f),
-            Gravity = new Vector2(0, 160)
-        });
-        sparksBlue = AddEntity(new ParticleRenderer2D(16384)
-        {
-            ParticleSize = 4,
-            MaxAge = 1.1f,
-            StartColor = new Vector3(0.7f, 0.95f, 1.0f),
-            EndColor = new Vector3(0.0f, 0.2f, 0.9f),
-            Gravity = new Vector2(0, -900)
-        });
-        sparksRed = AddEntity(new ParticleRenderer2D(16384)
-        {
-            ParticleSize = 4,
-            MaxAge = 1.1f,
-            StartColor = new Vector3(1.0f, 0.95f, 0.7f),
-            EndColor = new Vector3(0.9f, 0.1f, 0.0f),
-            Gravity = new Vector2(0, -900)
-        });
     }
 
     private void CompositeUi()
     {
-        var compositor = AddComponent(new UICompositor(camera, Constants.UI_THEME));
+        // The menu is laid out in Assets/ui/layouts/main_menu.hor (how it slides in and its buttons pop up as well),
+        // what its buttons do is decided here
+        UILayout layout = MenuLayouts.Load(this, camera, MenuLayouts.MAIN_MENU);
 
-        // The menu sits on the left, the right of the screen belongs to the duel
-        // It needs a panel of its own behind it, text is not readable on top of the fire
-        var menu = compositor.CreateModule().AddComponent(new StackPanel
-        {
-            Anchor = Origin.Left,
-            Position = new Vector2(90, -110),
-            Background = "panel",
-            Padding = new UIEdges(36, 32),
-            Spacing = 16
-        });
-
-        AddButton(menu, "PVP", () => Play(MatchMode.Pvp));
-        AddButton(menu, "Practice", () => Play(MatchMode.Practice));
-        AddButton(menu, "Options", OpenOptions);
+        AddButton(layout, "btn_pvp", () => Play(MatchMode.Pvp));
+        AddButton(layout, "btn_practice", () => Play(MatchMode.Practice));
+        AddButton(layout, "btn_host", HostServer);
+        AddButton(layout, "btn_join", JoinMultiplayer);
+        AddButton(layout, "btn_options", OpenOptions);
 
         // The skin draws the buttons of the gamepad where the text asks for them
-        hint = menu.Add(new Label(HINT)
-        {
-            Size = new Vector2(0, 30),
-            TextScale = 0.25f,
-            Color = HintColor
-        });
-
-        menu.Add(new Label(Constants.VERSION_LABEL)
-        {
-            TextScale = 0.2f,
-            Color = HintColor
-        });
-
-        // The menu comes in from the side, and its buttons pop up one after the other once it is there
-        menu.SlideIn(new Vector2(-520, 0), 0.55f, 0.2f).SetEasing(Easing.OutBack);
-        for (int i = 0; i < buttons.Count; i++)
-        {
-            buttons[i].PopIn(0.35f, 0.55f + i * 0.1f);
-        }
+        hint = layout.Get<Label>("hint");
+        layout.Get<Label>("version").Text = Constants.VERSION_LABEL;
     }
 
-    private void AddButton(StackPanel menu, string label, Action pressed)
+    private void AddButton(UILayout layout, string name, Action pressed)
     {
-        buttons.Add(menu.Add(new Button(label) { Size = new Vector2(360, 0), OnPressed = pressed }));
+        var button = layout.Get<Button>(name);
+        button.OnPressed = pressed;
+
+        buttons.Add(button);
     }
 
     private void Select(int index)
@@ -248,6 +152,29 @@ internal class MainMenuScene : Scene
         Engine.SetScene(new GamepadSelectorScene(new MatchSetup(mode)));
     }
 
+    private void HostServer()
+    {
+        // The server is up before the lobby is, whoever joins waits there with us
+        var session = NetSession.Host();
+        if (session.HasFailed)
+        {
+            session.Dispose();
+
+            hintIsMessage = true;
+            hint.Text = $"port {NetSession.PORT} is taken";
+            hint.Shake(6.0f);
+            return;
+        }
+
+        Engine.SetScene(new GamepadSelectorScene(MatchSetup.Online(session)));
+    }
+
+    private void JoinMultiplayer()
+    {
+        // Which server is asked there, the lobby comes after
+        Engine.SetScene(new JoinServerScene());
+    }
+
     private void OpenOptions()
     {
         // @bogz the options screen goes here, Engine.SetScene(new OptionsScene()) once there is one
@@ -260,7 +187,6 @@ internal class MainMenuScene : Scene
     {
         _delayTimer += dt;
 
-        UpdateDuel(dt);
         base.UpdateState(dt);
 
         // The hint shows the buttons of whichever gamepad was touched last
@@ -291,120 +217,5 @@ internal class MainMenuScene : Scene
                 return;
             }
         }
-    }
-
-    private void UpdateDuel(float dt)
-    {
-        phaseTime += dt;
-
-        float duration = PhaseDurations[(int)duelPhase];
-        if (phaseTime >= duration)
-        {
-            phaseTime -= duration;
-            duelPhase = (DuelPhase)(((int)duelPhase + 1) % PhaseDurations.Length);
-
-            if (duelPhase == DuelPhase.Approach)
-            {
-                // They take turns, nobody likes a one sided fight
-                leftAttacks = !leftAttacks;
-                struck = false;
-            }
-        }
-
-        // How far through the current step we are, from 0 to 1
-        float t = phaseTime / PhaseDurations[(int)duelPhase];
-        float gap = DUEL_GAP_FAR;
-
-        MenuFighter attacker = leftAttacks ? fighterLeft : fighterRight;
-        MenuFighter defender = leftAttacks ? fighterRight : fighterLeft;
-
-        switch (duelPhase)
-        {
-            case DuelPhase.Approach:
-                // Slow at both ends of the run
-                gap = float.Lerp(DUEL_GAP_FAR, DUEL_GAP_NEAR, t * t * (3 - 2 * t));
-
-                int stride = (int)(phaseTime * 16) % 12;
-                attacker.Show("run_loop", stride);
-                defender.Show("run_loop", (stride + 6) % 12);
-
-                KickUpDust(1);
-                break;
-
-            case DuelPhase.Strike:
-                gap = DUEL_GAP_NEAR;
-
-                attacker.Show("kick", Math.Min(4, (int)(t * 6)));
-                defender.Show("block", Math.Min(6, (int)(t * 9)));
-
-                if (!struck && t > 0.35f)
-                {
-                    struck = true;
-                    Strike(defender);
-                }
-                break;
-
-            case DuelPhase.Recoil:
-                // Fast at first, the way something slides to a halt
-                gap = float.Lerp(DUEL_GAP_NEAR, DUEL_GAP_FAR, 1 - (1 - t) * (1 - t));
-
-                attacker.Show("run_stop", Math.Min(4, (int)(t * 5)));
-                defender.Show("run_stop", Math.Min(4, (int)(t * 5)));
-
-                if (t < 0.6f) KickUpDust(2);
-                break;
-
-            default:
-                attacker.Show("idle", 0);
-                defender.Show("idle", 0);
-                break;
-        }
-
-        float y = DUEL_GROUND_Y + FIGHTER_SIZE / 2;
-        fighterLeft.Transform.Position = new Vector2(DUEL_CENTER_X - gap / 2, y);
-        fighterRight.Transform.Position = new Vector2(DUEL_CENTER_X + gap / 2, y);
-
-        FadeFlash(fighterLeft, dt);
-        FadeFlash(fighterRight, dt);
-
-        // The logo takes the hit as well
-        shake = MathF.Max(0, shake - dt * 3.0f);
-        if (logo is not null)
-        {
-            logo.Transform.Position = logoPosition + new Vector2(Random.Shared.NextSingle() - 0.5f, Random.Shared.NextSingle() - 0.5f) * shake * 14.0f;
-        }
-    }
-
-    /// <summary>
-    /// Helper method for the moment the kick lands on the block, sparks in the colour of whoever threw it.
-    /// </summary>
-    private void Strike(MenuFighter defender)
-    {
-        var sparks = leftAttacks ? sparksBlue : sparksRed;
-        var impact = new Vector2(DUEL_CENTER_X, DUEL_GROUND_Y + FIGHTER_SIZE * 0.42f);
-
-        // Most of it sprays past the one who blocked, the rest goes everywhere
-        sparks.AddCone(impact, new Vector2(leftAttacks ? 1 : -1, 0.5f), MathF.PI / 1.5f, 500, 620);
-        sparks.AddBurst(impact, 250, 380);
-
-        defender.Flash = 1.0f;
-        shake = 1.0f;
-    }
-
-    /// <summary>
-    /// Helper method to throw dust out from under the feet of both fighters, away from the middle.
-    /// </summary>
-    private void KickUpDust(int count)
-    {
-        float feet = DUEL_GROUND_Y + 14;
-
-        particlesDust.AddCone(new Vector2(fighterLeft.Transform.Position.X, feet), new Vector2(-1, 0.6f), MathF.PI / 3.0f, count, 140 + 120 * Random.Shared.NextSingle());
-        particlesDust.AddCone(new Vector2(fighterRight.Transform.Position.X, feet), new Vector2(1, 0.6f), MathF.PI / 3.0f, count, 140 + 120 * Random.Shared.NextSingle());
-    }
-
-    private static void FadeFlash(MenuFighter fighter, float dt)
-    {
-        fighter.Flash = MathF.Max(0, fighter.Flash - dt * 4.0f);
-        fighter.Tint = Vector4.Lerp(fighter.BaseTint, Vector4.One, fighter.Flash);
     }
 }

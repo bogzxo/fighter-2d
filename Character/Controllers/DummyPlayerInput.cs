@@ -102,7 +102,8 @@ internal class DummyPlayerInput : IPlayerInput
     /// </summary>
     private void WatchForDodgeRoll(Vector2 toOpponent)
     {
-        bool isRolling = Opponent.Controller.CurrentMove.Id == MoveId.DodgeRoll;
+        // Whatever the roll is called in the move list of the day, it is the move nothing can hit
+        bool isRolling = Opponent.Controller.StateTracker.CurrentStatus == PlayerStatusType.Invulnerable;
         bool justStarted = isRolling && !_sawRoll;
         _sawRoll = isRolling;
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="96" height="96" tilewidth="24" tileheight="24" infinite="0" nextlayerid="5" nextobjectid="6">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="96" height="96" tilewidth="24" tileheight="24" infinite="0" nextlayerid="6" nextobjectid="8">
  <properties>
   <property name="IsCollidable" type="bool" value="true"/>
  </properties>
@@ -308,55 +308,18 @@
 </data>
  </layer>
  <objectgroup id="4" name="lights">
-  <object id="1" name="lamp" x="252" y="1018">
+  <object id="1" name="lamp" template="objects/lamp.tx" x="252" y="1018"/>
+  <object id="2" name="lamp" template="objects/lamp.tx" x="540" y="1018"/>
+  <object id="3" name="lamp" template="objects/lamp.tx" x="828" y="1018"/>
+  <object id="4" name="lamp" template="objects/lamp.tx" x="1728" y="850"/>
+  <object id="5" name="lamp" template="objects/lamp.tx" x="2016" y="850"/>
+ </objectgroup>
+ <objectgroup id="5" name="spawns">
+  <object id="6" name="player 1" template="objects/spawn.tx" x="492" y="948"/>
+  <object id="7" name="player 2" template="objects/spawn.tx" x="748" y="948">
    <properties>
-    <property name="light_colour" type="color" value="#ffffd9a8"/>
-    <property name="light_flicker" type="float" value="0"/>
-    <property name="light_glow" type="float" value="0"/>
-    <property name="light_intensity" type="float" value="1.4"/>
-    <property name="light_radius" type="float" value="200"/>
+    <property name="player" type="int" value="2"/>
    </properties>
-   <point/>
-  </object>
-  <object id="2" name="lamp" x="540" y="1018">
-   <properties>
-    <property name="light_colour" type="color" value="#ffffd9a8"/>
-    <property name="light_flicker" type="float" value="0"/>
-    <property name="light_glow" type="float" value="0"/>
-    <property name="light_intensity" type="float" value="1.4"/>
-    <property name="light_radius" type="float" value="200"/>
-   </properties>
-   <point/>
-  </object>
-  <object id="3" name="lamp" x="828" y="1018">
-   <properties>
-    <property name="light_colour" type="color" value="#ffffd9a8"/>
-    <property name="light_flicker" type="float" value="0"/>
-    <property name="light_glow" type="float" value="0"/>
-    <property name="light_intensity" type="float" value="1.4"/>
-    <property name="light_radius" type="float" value="200"/>
-   </properties>
-   <point/>
-  </object>
-  <object id="4" name="lamp" x="1728" y="850">
-   <properties>
-    <property name="light_colour" type="color" value="#ffffd9a8"/>
-    <property name="light_flicker" type="float" value="0"/>
-    <property name="light_glow" type="float" value="0"/>
-    <property name="light_intensity" type="float" value="1.4"/>
-    <property name="light_radius" type="float" value="200"/>
-   </properties>
-   <point/>
-  </object>
-  <object id="5" name="lamp" x="2016" y="850">
-   <properties>
-    <property name="light_colour" type="color" value="#ffffd9a8"/>
-    <property name="light_flicker" type="float" value="0"/>
-    <property name="light_glow" type="float" value="0"/>
-    <property name="light_intensity" type="float" value="1.4"/>
-    <property name="light_radius" type="float" value="200"/>
-   </properties>
-   <point/>
   </object>
  </objectgroup>
 </map>

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 
+using Fighter2D.Networking;
 using Horizon.Engine;
 using Horizon.Input2;
 using Horizon.Rendering;
@@ -17,6 +19,8 @@ namespace Fighter2D.Scenes;
 /// <summary>
 /// Scene where the players pick their gamepads, one after the other: player one presses any button on the gamepad they want, then player two does.
 /// A gamepad that has been picked can change its bindings from here as well, see <see cref="BindingsScene"/>.
+/// For an online fight this is the lobby too: the host waits here for the other player, both pick a corner and say they are ready,
+/// and the host goes on to choose the map while the other player stays here until the fight starts.
 /// </summary>
 internal class GamepadSelectorScene(MatchSetup setup) : Scene
 {
@@ -25,9 +29,12 @@ internal class GamepadSelectorScene(MatchSetup setup) : Scene
 
     private const string TEXT_WAITING = "press any button";
     private const string HINT_READY = "[icon:pad_a] continue    [icon:pad_y] bindings    [icon:pad_b] undo";
+    private const string HINT_CORNER = "[icon:dpad] switch corners    [icon:pad_a] ready";
 
     private static readonly Vector4 HintColor = new(0.58f, 0.6f, 0.66f, 1.0f);
     private static readonly Vector4 NameColor = new(0.0f, 0.86f, 1.0f, 1.0f);
+    private static readonly Vector4 ReadyColor = new(0.33f, 0.85f, 0.45f, 1.0f);
+    private static readonly Vector4 ErrorColor = new(1.0f, 0.45f, 0.4f, 1.0f);
 
     /// <summary>
     /// Everything on screen that belongs to one player.
@@ -40,18 +47,42 @@ internal class GamepadSelectorScene(MatchSetup setup) : Scene
 
     public override Camera ActiveCamera { get; protected set; }
 
+    // The glass everything is seen through
+    private Renderer2D screen = null!;
+
     private Card[] cards = [];
     private StackPanel panel;
     private Label hint;
     private float _delayTimer = 0.0f;
     private float totalTime = 0.0f;
 
+    // The lobby as it was when we last looked, so the cards can jump when something about it changes
+    private int lobbyRevision;
+    private bool lobbyHadPeer;
+    private string hostAddresses = string.Empty;
+
     public override void Initialize()
     {
         ActiveCamera = AddEntity(new Camera2D(Engine.WindowManager.WindowSize));
+        Engine.GL.ClearColor(System.Drawing.Color.PaleVioletRed);
+
+        screen = Screen.For(this);
 
         CompositeImages();
         CompositeUi();
+
+        if (setup.Lobby is { } lobby)
+        {
+            hostAddresses = NetSession.DescribeLocalAddresses();
+
+            // The host answers with how things stand in the lobby (and is back from choosing the map, if that is where we come from)
+            lobby.SayHello();
+            lobby.SetChoosingMap(false);
+            lobby.SetCharacter(setup.GetCharacter(0));
+
+            lobbyRevision = lobby.Revision;
+            lobbyHadPeer = lobby.PeerPresent;
+        }
 
         base.Initialize();
     }
@@ -62,7 +93,16 @@ internal class GamepadSelectorScene(MatchSetup setup) : Scene
         totalTime += dt;
 
         DropUnplugged();
-        UpdateCards();
+
+        if (setup.Lobby is { } lobby)
+        {
+            if (UpdateLobby(lobby)) return;
+            UpdateLobbyCards(lobby);
+        }
+        else
+        {
+            UpdateCards();
+        }
 
         base.UpdateState(dt);
 
@@ -89,6 +129,11 @@ internal class GamepadSelectorScene(MatchSetup setup) : Scene
             return true;
         }
 
+        if (setup.Lobby is { } lobby)
+        {
+            return UpdatePickedOnline(gamepad, lobby);
+        }
+
         if (gamepad.WasPressed(GamepadInput.B))
         {
             // The last player to pick goes back to picking
@@ -99,7 +144,67 @@ internal class GamepadSelectorScene(MatchSetup setup) : Scene
 
         if (setup.IsReady && gamepad.WasPressed(GamepadInput.A))
         {
-            Engine.SetScene(new MapSelectionScene(setup));
+            // Everybody has a gamepad, next they pick who they play
+            Engine.SetScene(new CharacterSelectScene(setup));
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Called for our gamepad in the lobby of an online fight, returns whether it did anything.
+    /// </summary>
+    private bool UpdatePickedOnline(Gamepad gamepad, OnlineLobby lobby)
+    {
+        if (gamepad.WasPressed(GamepadInput.B))
+        {
+            // One step back at a time: not ready any more first, then the gamepad goes back to being anybodys
+            if (lobby.LocalReady)
+            {
+                lobby.SetReady(false);
+            }
+            else
+            {
+                setup.Slots.Clear();
+            }
+            return true;
+        }
+
+        if (gamepad.WasPressed(GamepadInput.X) && !lobby.LocalReady)
+        {
+            // Who we play is ours to pick whenever we like, as long as we havent said we are ready
+            Engine.SetScene(new CharacterSelectScene(setup));
+            return true;
+        }
+
+        // Corners and being ready are between two players, there is nothing to settle while we are alone
+        if (!lobby.PeerPresent) return false;
+
+        if (GameInput.MenuLeftPressed(gamepad))
+        {
+            lobby.RequestSide(0);
+            return true;
+        }
+
+        if (GameInput.MenuRightPressed(gamepad))
+        {
+            lobby.RequestSide(1);
+            return true;
+        }
+
+        if (gamepad.WasPressed(GamepadInput.A))
+        {
+            if (!lobby.LocalReady)
+            {
+                lobby.SetReady(true);
+            }
+            else if (lobby.IsHost && lobby.BothReady)
+            {
+                // The map is the hosts to choose, the other player waits right here
+                lobby.SetChoosingMap(true);
+                Engine.SetScene(new MapSelectionScene(setup));
+            }
             return true;
         }
 
@@ -123,8 +228,53 @@ internal class GamepadSelectorScene(MatchSetup setup) : Scene
         setup.Slots.Add(gamepad.Slot);
 
         // The card of whoever just picked jumps, so there is no doubt it went to them
-        cards[setup.Slots.Count - 1].Box.Punch(0.1f, 0.3f);
+        cards[setup.Lobby?.LocalSide ?? setup.Slots.Count - 1].Box.Punch(0.1f, 0.3f);
         return true;
+    }
+
+    /// <summary>
+    /// Called every update of an online fight's lobby, returns whether we have left the scene.
+    /// </summary>
+    private bool UpdateLobby(OnlineLobby lobby)
+    {
+        if (lobby.IsClosed)
+        {
+            // The host is gone and the lobby with them
+            Back();
+            return true;
+        }
+
+        if (lobby.StartedMap is { } mapFile)
+        {
+            // The host has chosen, follow them into the fight
+            var mapDefinition = MapLoader.LoadDefinitions(Fighter2D.Content.GameContent.PathOf(Fighter2D.Content.GameContent.MAPS_FILE)).FirstOrDefault(map => map.FileName == mapFile);
+            if (mapDefinition.FileName is null)
+            {
+                Console.WriteLine($"[Lobby] The host started on '{mapFile}', which is not a map we have.");
+                Back();
+                return true;
+            }
+
+            Engine.SetScene(setup.CreateFight(mapDefinition));
+            return true;
+        }
+
+        // Everybody notices when somebody walks in (or out), and when the corners or who is ready change
+        if (lobby.PeerPresent != lobbyHadPeer)
+        {
+            lobbyHadPeer = lobby.PeerPresent;
+            cards[1 - lobby.LocalSide].Box.Punch(0.1f, 0.3f);
+        }
+        else if (lobby.Revision != lobbyRevision)
+        {
+            foreach (Card card in cards)
+            {
+                card.Box.Punch(0.05f, 0.25f);
+            }
+        }
+
+        lobbyRevision = lobby.Revision;
+        return false;
     }
 
     /// <summary>
@@ -137,6 +287,9 @@ internal class GamepadSelectorScene(MatchSetup setup) : Scene
             if (GameInput.Manager.TryGet(setup.Slots[i], out Gamepad gamepad) && gamepad.IsConnected) continue;
 
             setup.Slots.RemoveRange(i, setup.Slots.Count - i);
+
+            // Nobody can be ready without a gamepad
+            setup.Lobby?.SetReady(false);
             return;
         }
     }
@@ -156,12 +309,7 @@ internal class GamepadSelectorScene(MatchSetup setup) : Scene
             }
             else if (i == setup.Slots.Count)
             {
-                // The player whose turn it is gets a text that pulses
-                float pulse = 0.65f + 0.35f * MathF.Sin(totalTime * 6.0f);
-
-                card.Status.Text = TEXT_WAITING;
-                card.Status.Color = new Vector4(pulse, pulse, pulse, 1.0f);
-                card.Detail.Text = "on your gamepad";
+                ShowWaitingForButton(card);
             }
             else
             {
@@ -188,14 +336,113 @@ internal class GamepadSelectorScene(MatchSetup setup) : Scene
         }
     }
 
+    /// <summary>
+    /// Helper method to show the lobby of an online fight: the cards are the two corners, each with whoever is standing in it.
+    /// </summary>
+    private void UpdateLobbyCards(OnlineLobby lobby)
+    {
+        Gamepad? gamepad = null;
+        if (setup.Slots.Count > 0) GameInput.Manager.TryGet(setup.Slots[0], out gamepad);
+
+        Card ours = cards[lobby.LocalSide];
+        Card theirs = cards[1 - lobby.LocalSide];
+
+        if (gamepad is null)
+        {
+            ShowWaitingForButton(ours);
+        }
+        else
+        {
+            ours.Status.Text = $"you - {Shorten(gamepad.Name)}";
+            ours.Status.Color = gamepad.AnyDown ? Vector4.One : NameColor;
+            ShowReady(ours, lobby.LocalReady, lobby.PeerPresent ? GameInput.Localize(HINT_CORNER, gamepad) : string.Empty);
+
+            // Nobody gets to be ready before the files of the fight are here
+            if (!lobby.IsHost && lobby.Content.Phase != ContentPhase.Ready)
+            {
+                ours.Detail.Text = DescribeContent(lobby.Content);
+                ours.Detail.Color = lobby.Content.Phase == ContentPhase.Failed ? ErrorColor : HintColor;
+            }
+        }
+
+        if (lobby.PeerPresent)
+        {
+            theirs.Status.Text = "your opponent";
+            theirs.Status.Color = Vector4.One;
+            ShowReady(theirs, lobby.RemoteReady, "making up their mind");
+
+            // The host sees how far along the other player is with getting its files
+            if (lobby.IsHost && !lobby.Content.PeerVerified)
+            {
+                theirs.Detail.Text = lobby.Content.IsTransferring
+                    ? $"sending them the game files {lobby.Content.Progress * 100:0}%"
+                    : "checking their game files";
+            }
+        }
+        else
+        {
+            // Only the host ever sees this, somebody who joined has the host for company
+            float pulse = 0.65f + 0.35f * MathF.Sin(totalTime * 3.0f);
+
+            theirs.Status.Text = "waiting for a player";
+            theirs.Status.Color = new Vector4(pulse, pulse, pulse, 1.0f);
+            theirs.Detail.Text = "to join";
+            theirs.Detail.Color = HintColor;
+        }
+
+        if (!lobby.PeerPresent)
+        {
+            hint.Text = $"They can find you at {hostAddresses}";
+        }
+        else if (lobby.BothReady)
+        {
+            hint.Text = lobby.IsHost
+                ? GameInput.Localize("[icon:pad_a] choose the map    [icon:pad_b] not ready", gamepad)
+                : lobby.ChoosingMap ? "The host is choosing the map" : "Waiting for the host to choose the map";
+        }
+        else
+        {
+            hint.Text = GameInput.Localize("[icon:pad_x] fighter    [icon:pad_y] bindings    [icon:pad_b] back", gamepad);
+        }
+    }
+
+    /// <summary>
+    /// Helper method to say how the other player is doing with getting the files of the host.
+    /// </summary>
+    private static string DescribeContent(ContentSync content) => content.Phase switch
+    {
+        ContentPhase.Downloading => $"getting the game files {content.Progress * 100:0}%",
+        ContentPhase.Failed => $"no fight: {content.Error}",
+        _ => "checking the game files"
+    };
+
+    private void ShowWaitingForButton(Card card)
+    {
+        // The player whose turn it is gets a text that pulses
+        float pulse = 0.65f + 0.35f * MathF.Sin(totalTime * 6.0f);
+
+        card.Status.Text = TEXT_WAITING;
+        card.Status.Color = new Vector4(pulse, pulse, pulse, 1.0f);
+        card.Detail.Text = "on your gamepad";
+        card.Detail.Color = HintColor;
+    }
+
+    private static void ShowReady(Card card, bool ready, string otherwise)
+    {
+        card.Detail.Text = ready ? "ready!" : otherwise;
+        card.Detail.Color = ready ? ReadyColor : HintColor;
+    }
+
     private void Back()
     {
+        // Leaving the lobby is hanging up on whoever is in it
+        setup.Close();
         Engine.SetScene(new MainMenuScene());
     }
 
     private void CompositeImages()
     {
-        var spriteBatch = AddEntity<SpriteBatch>();
+        var spriteBatch = screen.AddEntity<SpriteBatch>();
 
         if (Engine.ObjectManager.Textures.TryCreateOrGet("gpselbg", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/backgrounds/player_select_bg.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_bg))
         {
@@ -209,60 +456,41 @@ internal class GamepadSelectorScene(MatchSetup setup) : Scene
 
     private void CompositeUi()
     {
-        var compositor = AddComponent(new UICompositor((Camera2D)ActiveCamera, Constants.UI_THEME));
-        panel = compositor.CreateModule().AddComponent(new StackPanel
-        {
-            Background = "panel",
-            Padding = new UIEdges(40, 34),
-            Spacing = 24
-        });
+        // The screen is laid out in Assets/ui/layouts/gamepad_select.hor, the cards in player_card.hor
+        // How the panel pops up and the cards follow one after the other is in there as well
+        UILayout layout = MenuLayouts.Load(this, (Camera2D)ActiveCamera, MenuLayouts.GAMEPAD_SELECT);
 
-        panel.Add(new Label(setup.Title) { TextScale = 0.6f });
+        panel = layout.Get<StackPanel>("panel");
+        layout.Get<Label>("title").Text = setup.Title;
 
-        // One card per player, side by side
-        var row = panel.Add(new StackPanel { Direction = UIDirection.Horizontal, Spacing = 24 });
-        cards = new Card[setup.PlayerCount];
+        // One card per player, side by side. Online there are always two of them, one for each corner of the fight
+        var items = layout.Populate("cards", setup.IsOnline ? 2 : setup.PlayerCount);
+        cards = new Card[items.Count];
         for (int i = 0; i < cards.Length; i++)
         {
-            cards[i] = CompositeCard(row, i);
+            cards[i] = CompositeCard(items[i], setup.IsOnline ? (i == 0 ? "Blue corner" : "Red corner") : $"Player {i + 1}");
         }
 
         // The skin draws the buttons of the gamepad where the text asks for them
-        hint = panel.Add(new Label
-        {
-            Size = new Vector2(0, 24),
-            TextScale = 0.25f,
-            Color = HintColor
-        });
+        hint = layout.Get<Label>("hint");
+        hint.Text = string.Empty;
 
         // For the mouse, a gamepad goes back with B
-        panel.Add(new Button("Back") { Size = new Vector2(180, 0), OnPressed = Back });
-
-        // The panel pops up, the cards follow one after the other
-        panel.PopIn(0.4f);
-        for (int i = 0; i < cards.Length; i++)
-        {
-            cards[i].Box.PopIn(0.35f, 0.2f + i * 0.12f);
-        }
+        layout.Get<Button>("btn_back").OnPressed = Back;
     }
 
-    private static Card CompositeCard(StackPanel row, int player)
+    /// <summary>
+    /// Helper method to pick the parts of a card out of the layout it was made from.
+    /// </summary>
+    private static Card CompositeCard(UILayout item, string title)
     {
-        var box = row.Add(new StackPanel
-        {
-            Background = "button_flat",
-            Padding = new UIEdges(28, 26),
-            Spacing = 14
-        });
+        item.Get<Label>("title").Text = title;
 
-        box.Add(new Label($"Player {player + 1}") { TextScale = 0.45f });
-
-        // Kept at a fixed size so the cards dont jump around as the texts change
         return new Card
         {
-            Box = box,
-            Status = box.Add(new Label { Size = new Vector2(400, 30), TextScale = 0.3f }),
-            Detail = box.Add(new Label { Size = new Vector2(400, 24), TextScale = 0.25f, Color = HintColor })
+            Box = item.Get<StackPanel>("box"),
+            Status = item.Get<Label>("status"),
+            Detail = item.Get<Label>("detail")
         };
     }
 

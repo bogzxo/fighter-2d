@@ -1,8 +1,6 @@
 ﻿using Fighter2D.Logic;
 using Fighter2D.Logic.Moves;
 using System.Numerics;
-using Egui;
-using Egui.Containers;
 
 namespace Fighter2D.Character.Controllers;
 
@@ -61,7 +59,7 @@ internal sealed class LocalPlayerController(IPlayerInput input) : PlayerControll
 
         // Check stance reroutes (hitting kick while in the air -> jumpkick)
         if (move.StanceReroutes != null &&
-            move.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out MoveId rerouteId))
+            move.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out string? rerouteId))
         {
             ChangeToMove(rerouteId);
             return;
@@ -71,6 +69,8 @@ internal sealed class LocalPlayerController(IPlayerInput input) : PlayerControll
     }
 
     public override bool IsHeld(InputFlags buttons) => _input.IsHeld(buttons);
+
+    protected override void ReleaseInputs() => _input.Push(InputFlags.None);
 
     public override void PrepareForHit() => input.OnOpponentAttack();
 
@@ -90,26 +90,14 @@ internal sealed class LocalPlayerController(IPlayerInput input) : PlayerControll
         float direction = GetSteeringDirection();
         if (direction == 0) return;
 
-        var targetVelocity = direction * PlayerConfig.WALK_SPEED * input.WalkSpeedScale;
+        var targetVelocity = direction * Player.Character.WalkSpeed * input.WalkSpeedScale;
         var currentVelocityX = Player.PhysicsBody.Velocity.X;
         var velocityDiff = targetVelocity - currentVelocityX;
 
         Player.PhysicsBody.ApplyForce(new Vector2(velocityDiff * Player.PhysicsBody.Mass * 5f, 0));
     }
 
-    // Here we can use EGUI to show debug info
-    public override void RenderUi(Ui root)
-    {
-        new Window(input.Name)
-            .Show(root.Ctx, ui =>
-            {
-                ui.Heading("Player Information");
-                ui.Label($"Current Move: {CurrentMove.Id}");
-                ui.Label($"Current Stance: {StateTracker.CurrentStance}");
-                ui.Label($"Current Status: {StateTracker.CurrentStatus}");
-                ui.Label($"Is Grounded: {StateTracker.IsGrounded}");
-                ui.Label($"CanInterrupt: {CanInterrupt}");
-                ui.Label($"Held Inputs: {_input.Held}");
-            });
-    }
+    // Whether the window below is shown, its close button takes it away
+    private bool _showDebug = true;
+
 }

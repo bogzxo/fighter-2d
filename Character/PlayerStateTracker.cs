@@ -77,7 +77,8 @@ internal class PlayerStateTracker
 
 		if (IsGrounded)
 		{
-			CurrentStance = (Player.Controller.CurrentMove.Id == MoveId.Crouch) ? Stance.Crouching : Stance.Standing;
+			// A move that puts us in a stance (crouching) keeps us in it for as long as we are on the ground
+			CurrentStance = Player.Controller.CurrentMove.Stance == Stance.Crouching ? Stance.Crouching : Stance.Standing;
 		}
 		else
         {

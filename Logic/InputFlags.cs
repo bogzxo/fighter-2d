@@ -16,6 +16,9 @@ namespace Fighter2D.Logic
         DPadDown = 1 << 5,
         DPadLeft = 1 << 6,
         DPadRight = 1 << 7,
-        RightBumper = 1 << 8
+        RightBumper = 1 << 8,
+        LeftBumper = 1 << 9,
+        LeftTrigger = 1 << 10,
+        RightTrigger = 1 << 11
     }
 }

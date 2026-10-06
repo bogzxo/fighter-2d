@@ -1,6 +1,4 @@
-﻿global using static Horizon.Rendering.Tiling<Fighter2D.Map.MapTileTexID>;
-
-using System;
+﻿using System;
 using System.Linq;
 
 using Fighter2D.Scenes;
@@ -13,24 +11,35 @@ namespace Fighter2D;
 internal class Program
 {
     private const string ARGUMENT_MAP = "--map";
+    private const string ARGUMENT_CHARACTER = "--character";
 
     private static void Main(string[] args)
     {
+        // Unpack native libraries and shaders to the same folder as the executable, so that the game can find them
+        Fighter2D.Content.PackedFiles.Unpack();
+
         var eng = new GameEngine(new GameEngineConfiguration
         {
             InitialScene = typeof(MainMenuScene),
             WindowConfiguration = WindowManagerConfiguration.Default1600x900 with
             {
                 WindowTitle = Constants.WINDOW_TITLE,
+                //WindowSize = new System.Numerics.Vector2(1920,1080),
+                //Fullscreen = true,
             }
         });
 
         // Every scene reads its gamepads from here, so it has to be there before the first one
         GameInput.Attach(eng);
 
+        // Keeps the connection of an online fight going from the lobby into the fight
+        eng.AddEntity(new Fighter2D.Networking.NetPump());
+
         if (TryGetMap(args, out var map))
         {
-            eng.SetScene(new FightScene(map, 0));
+            // As whoever was asked for (--character cammy), or the first character there is
+            int character = Array.IndexOf(args, ARGUMENT_CHARACTER);
+            eng.SetScene(new FightScene(map, 0) { CharacterId = character >= 0 && character + 1 < args.Length ? args[character + 1] : null });
         }
         else
         {
@@ -53,7 +62,7 @@ internal class Program
 
         // Either the name of the file or the one it goes by in the definitions
         string name = args[index + 1];
-        foreach (var definition in MapLoader.LoadDefinitions("Assets/data/maps.hor"))
+        foreach (var definition in MapLoader.LoadDefinitions(Fighter2D.Content.GameContent.PathOf(Fighter2D.Content.GameContent.MAPS_FILE)))
         {
             if (definition.FileName.Equals(name + ".tmx", StringComparison.OrdinalIgnoreCase) ||
                 definition.FileName.Equals(name, StringComparison.OrdinalIgnoreCase) ||

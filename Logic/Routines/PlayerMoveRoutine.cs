@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 using Fighter2D.Character.Controllers;
@@ -7,189 +8,136 @@ using Fighter2D.Scenes;
 
 namespace Fighter2D.Logic.Routines;
 
-internal class PlayerMoveRoutines
+/// <summary>
+/// Plays a move frame by frame the way its file describes it: one phase after the other, each with its animation, the frame it hits on,
+/// the frame it can be cut short from and what it waits for. There is one of these for every move, whatever the move is.
+/// </summary>
+internal static class MoveRoutine
 {
-    private readonly Character.Player _player;
-    private readonly PlayerController _controller;
+    // The effects a phase can ask for by name
+    private const string EFFECT_JUMP = "jump";
+    private const string EFFECT_ROLL = "roll";
+    private const string EFFECT_HAZE = "haze";
 
-    public PlayerMoveRoutines(Character.Player player, PlayerController controller)
+    /// <summary>
+    /// The routine of a move, every step of it is one frame of animation.
+    /// </summary>
+    public static IEnumerator<uint> Run(FightingMove move, PlayerController controller)
     {
-        _player = player;
-        _controller = controller;
-    }
+        var player = controller.Player;
+        var state = controller.StateTracker;
 
-    // Shared by both kicks until they get animations of their own
-    public IEnumerator<uint> Kick()
-    {
-        // Total animation length is 5 frames
-        _controller.StateTracker.CurrentStatus = PlayerStatusType.Attacking;
-        _controller.PlayAnimation("kick");
-        _controller.Opponent.Controller.PrepareForHit();
-
-        // Hit happens on frame 4 (index 3)
-        yield return 3;
-        _controller.TryHit();
-        yield return 2;
-    }
-
-    public IEnumerator<uint> HitStun()
-    {
-        // The status and its timer are set by the controller, we only show it for as long as it lasts
-        while (_controller.StateTracker.CurrentStatus == PlayerStatusType.Stunned)
-        {
-            // Hunched over (first frame of the landing) with a haze around the head
-            _controller.PlayAnimation("hard_landing");
-            FightScene.Effects.Haze(_player.HeadPosition);
-            yield return 1;
-        }
-    }
-
-    public IEnumerator<uint> JumpKick()
-    {
-        // Total animation length is 8 frames
-        _controller.StateTracker.CurrentStatus = PlayerStatusType.Attacking;
-        _controller.PlayAnimation("jump_kick");
-        _controller.Opponent.Controller.PrepareForHit();
-
-        yield return 4;
-        _controller.TryHit();
-        yield return 4;
-    }
-
-    public IEnumerator<uint> Block()
-    {
-        // Total animation length is 7 frames
-        _controller.StateTracker.CurrentStatus = PlayerStatusType.Guarding;
-        _controller.PlayAnimation("block");
-
-        // The AnimationManager's modulo math (%) will safely loop the 7 frames
-        while (_controller.IsHeld(InputFlags.RightBumper))
-        {
-            _controller.PlayAnimation("block");
-            yield return 7;
-        }
-    }
-
-    public IEnumerator<uint> Jump()
-    {
-        // Total animation length is 4 frames
-        _controller.PlayAnimation("jump");
-
-        FightScene.Effects.Dust(_player.FeetPosition, 0);
-        FightScene.Effects.Shockwave(_player.FeetPosition, 45, 110);
-        _player.PhysicsBody.ApplyImpulse(new Vector2(0, PlayerConfig.JUMP_IMPULSE));
-        _controller.StateTracker.ResetFallDuration();
-
-        yield return 4;
-
-        // This is a mid-routine interrupt allowance
-        _controller.CanInterrupt = true;
-
-        while (_controller.StateTracker.CurrentStance == Stance.Jumping)
-            yield return 1;
-    }
-
-    public IEnumerator<uint> DodgeRoll()
-    {
-        // Total animation length is 9 frames
-        _controller.StateTracker.CurrentStatus = PlayerStatusType.Invulnerable;
-        _controller.PlayAnimation("roll");
-
-        float direction = _player.Flipped ? -1.0f : 1.0f;
-        _player.PhysicsBody.ApplyImpulse(new Vector2(direction * PlayerConfig.WALK_SPEED * PlayerConfig.DASH_MULTIPLIER, 0));
-
-        // The roll leaves a trail of dust behind it for as long as it is at speed
-        for (int frame = 0; frame < 5; frame++)
-        {
-            FightScene.Effects.Dust(_player.FeetPosition, -direction, 8);
-
-            // Every frame of it, so what stays underfoot gets all of them: each one has to be gentle
-            FightScene.Effects.Shockwave(_player.FeetPosition, 70, 45);
-            yield return 1;
-        }
-
-        // Allow the player to cancel out of the end of the roll early
-        _controller.CanInterrupt = true;
-
-        yield return 4;
-    }
-
-    public IEnumerator<uint> Run()
-    {
-        _controller.CanInterrupt = true;
+        if (move.Status is { } status) state.CurrentStatus = status;
+        if (move.Stance is { } stance) state.CurrentStance = stance;
+        if (move.Warns) controller.Opponent.Controller.PrepareForHit();
 
         do
         {
-            while (IsRunHeld())
+            bool tookTime = false;
+
+            foreach (MovePhase phase in move.Phases)
             {
-                // Length is 12 frames, letting go ends the loop on the spot
-                _controller.PlayAnimation("run_loop");
-                for (int frame = 0; frame < 12 && IsRunHeld(); frame++)
+                // A phase that waits on something which isn't the case never starts (letting go of block before it is up)
+                if (phase.While != MoveCondition.None && !Test(phase.While, move, controller)) continue;
+
+                if (phase.Impulse != Vector2.Zero)
                 {
-                    yield return 1;
+                    // X is the way we are facing
+                    float direction = player.Flipped ? -1.0f : 1.0f;
+                    player.PhysicsBody.ApplyImpulse(new Vector2(direction * phase.Impulse.X, phase.Impulse.Y));
+
+                    // Going up is the start of a new fall
+                    if (phase.Impulse.Y > 0) state.ResetFallDuration();
                 }
+
+                bool ended = false;
+                uint effectFrame = 0;
+
+                do
+                {
+                    if (phase.Animation is not null) controller.PlayAnimation(phase.Animation);
+
+                    uint frames = phase.Frames > 0 ? phase.Frames : controller.GetAnimationLength(phase.Animation);
+
+                    for (uint frame = 0; frame < frames; frame++)
+                    {
+                        if (phase.While != MoveCondition.None && !Test(phase.While, move, controller)) { ended = true; break; }
+                        if (phase.Until != MoveCondition.None && Test(phase.Until, move, controller)) { ended = true; break; }
+
+                        if (frame == phase.Interrupt) controller.CanInterrupt = true;
+                        if (frame == phase.Lock) controller.CanInterrupt = false;
+                        if (phase.Status is { } phaseStatus && frame == phase.StatusFrame) state.CurrentStatus = phaseStatus;
+                        if (frame == phase.Hit) controller.TryHit(frame);
+
+                        if (phase.Effect is not null && (phase.EffectFrames == 0 || effectFrame < phase.EffectFrames))
+                        {
+                            PlayEffect(phase.Effect, controller);
+                        }
+                        effectFrame++;
+
+                        tookTime = true;
+                        yield return 1;
+                    }
+                } while (!ended && phase.While != MoveCondition.None);
             }
 
-            // Length is 5 frames, picking the run back up cuts the stop short
-            _controller.PlayAnimation("run_stop");
-            for (int frame = 0; frame < 5 && !IsRunHeld(); frame++)
-            {
-                yield return 1;
-            }
-        } while (IsRunHeld());
+            // A move that starts over without any of its phases running would never let go of the frame
+            if (!tookTime) yield return 1;
+        } while (move.Repeat != MoveCondition.None && Test(move.Repeat, move, controller));
+
+        // We update the stance change here so the controller knows the move let go of it (landed, stood up)
+        if (move.StanceAfter is { } after) state.CurrentStance = after;
     }
 
-    private bool IsRunHeld() =>
-        _controller.IsHeld(InputFlags.DPadLeft) || _controller.IsHeld(InputFlags.DPadRight);
-
-    public IEnumerator<uint> Fall()
+    private static bool Test(MoveCondition condition, FightingMove move, PlayerController controller) => condition switch
     {
-        // Total animation length is 1 frame
-        _controller.CanInterrupt = true;
-        _controller.StateTracker.CurrentStance = Stance.Falling;
+        MoveCondition.Held => IsHeld(move, controller),
+        MoveCondition.Stunned => controller.StateTracker.CurrentStatus == PlayerStatusType.Stunned,
+        MoveCondition.Jumping => controller.StateTracker.CurrentStance == Stance.Jumping,
+        MoveCondition.Falling => controller.StateTracker.FallDuration > 0,
+        MoveCondition.Always => true,
+        _ => false
+    };
 
-        while (_controller.StateTracker.FallDuration > 0)
+    /// <summary>
+    /// Helper method to test if any of the inputs that start the move is (still) held down.
+    /// </summary>
+    private static bool IsHeld(FightingMove move, PlayerController controller)
+    {
+        foreach (InputFlags signature in move.InputSignatures)
         {
-            _controller.PlayAnimation("fall");
-            yield return 1;
+            if (signature != InputFlags.None && controller.IsHeld(signature)) return true;
         }
 
-        // We update the stance change here so the controller knows we landed
-        _controller.StateTracker.CurrentStance = Stance.Standing;
+        return false;
     }
 
-    public IEnumerator<uint> Idle()
+    private static void PlayEffect(string effect, PlayerController controller)
     {
-        // Total animation length is 1 frame
-        _controller.StateTracker.CurrentStance = Stance.Standing;
-        _controller.CanInterrupt = true;
+        var player = controller.Player;
+        float direction = player.Flipped ? -1.0f : 1.0f;
 
-        while (true)
+        switch (effect)
         {
-            _controller.PlayAnimation("idle");
-            yield return 1;
+            case EFFECT_JUMP:
+                FightScene.Effects.Dust(player.FeetPosition, 0);
+                FightScene.Effects.Shockwave(player.FeetPosition, 45, 110);
+                break;
+
+            case EFFECT_ROLL:
+                // A trail of dust behind us. Every frame of it, so what stays underfoot gets all of them: each one has to be gentle
+                FightScene.Effects.Dust(player.FeetPosition, -direction, 8);
+                FightScene.Effects.Shockwave(player.FeetPosition, 70, 45);
+                break;
+
+            case EFFECT_HAZE:
+                FightScene.Effects.Haze(player.HeadPosition);
+                break;
         }
     }
 
-    public IEnumerator<uint> Crouch()
-    {
-        _controller.StateTracker.CurrentStance = Stance.Crouching;
-
-        // crouch_start length is 3 frames
-        _controller.PlayAnimation("crouch_start");
-        yield return 3;
-
-        // From here on we can kick, jump and roll out of the crouch
-        _controller.CanInterrupt = true;
-
-        // crouch_loop length is 1 frame
-        while (_controller.IsHeld(InputFlags.DPadDown))
-        {
-            _controller.PlayAnimation("crouch_loop");
-            yield return 1;
-        }
-
-        // We keep the stance change here so the physics engine knows we stood up
-        _controller.StateTracker.CurrentStance = Stance.Standing;
-    }
+    /// <summary>
+    /// Whether a phase can ask for an effect by this name, for telling whoever wrote the file when it can't.
+    /// </summary>
+    public static bool IsEffect(string effect) => effect is EFFECT_JUMP or EFFECT_ROLL or EFFECT_HAZE;
 }
