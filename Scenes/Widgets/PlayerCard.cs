@@ -3,7 +3,7 @@ using System.Numerics;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Scenes.Widgets;
 
 /// <summary>
 /// The card of one player on the gamepad select screen. It has a title, a status line and a line of detail under that.

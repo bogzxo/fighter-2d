@@ -1,7 +1,5 @@
 using System.Numerics;
 
-using Fighter2D.Character;
-
 using Horizon.Physics;
 using Horizon.Physics.Fixtures;
 using Horizon.Rendering.Spriting;

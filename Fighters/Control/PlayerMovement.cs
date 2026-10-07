@@ -1,9 +1,7 @@
 using System;
 using System.Numerics;
 
-using Fighter2D.Logic.Moves;
-
-namespace Fighter2D.Character.Controllers;
+namespace Fighter2D.Fighters.Control;
 
 /// <summary>
 /// Everything about where a player is and which way they face. That is turning around, walking, landing, and nudging a network player back to where they belong.
@@ -71,7 +69,7 @@ internal sealed class PlayerMovement(PlayerController controller)
     /// </summary>
     public void CheckLanding()
     {
-        var state = controller.StateTracker;
+        var state = controller.State;
         if (!state.JustLanded) return;
 
         // Even a short drop throws up a bit of dust

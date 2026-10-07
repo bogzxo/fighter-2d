@@ -1,8 +1,6 @@
 using System;
 using System.Numerics;
 
-using Fighter2D.Map;
-
 using Horizon.Engine;
 using Horizon.Physics;
 using Horizon.Physics.Simulation;

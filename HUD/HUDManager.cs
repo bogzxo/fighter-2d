@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-using Fighter2D.Match;
-using Fighter2D.Scenes;
-
 using Horizon.Core;
 using Horizon.Core.Components;
 using Horizon.Engine;

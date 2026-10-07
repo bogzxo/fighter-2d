@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-using Fighter2D.Content;
-
 using Horizon.HIDL.Runtime;
 
 namespace Fighter2D.Map;

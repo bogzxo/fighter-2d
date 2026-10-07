@@ -1,4 +1,4 @@
-namespace Fighter2D.Logic;
+namespace Fighter2D.Input;
 
 /// <summary>
 /// How the input of a move has to be entered for the move to come out.

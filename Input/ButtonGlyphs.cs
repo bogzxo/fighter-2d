@@ -1,11 +1,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-using Fighter2D.Logic;
-
 using Horizon.Input;
 
-namespace Fighter2D;
+namespace Fighter2D.Input;
 
 /// <summary>
 /// Turns buttons into text with icons in it, for labels. The UI skin draws [icon:pad_a] as the A button and so on.

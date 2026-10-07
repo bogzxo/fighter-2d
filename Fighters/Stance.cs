@@ -1,6 +1,6 @@
 using System;
 
-namespace Fighter2D.Logic;
+namespace Fighter2D.Fighters;
 
 /// <summary>
 /// How a player is standing (or not standing). Moves say which stances they can be started from, so it is a flag.

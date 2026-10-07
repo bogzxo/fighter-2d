@@ -1,8 +1,6 @@
 using System;
 
-using Fighter2D.Logic;
-
-namespace Fighter2D.Character.Controllers.Dummy;
+namespace Fighter2D.Fighters.Inputs.Dummy;
 
 /// <summary>
 /// The defensive half of the dummy's brain. It blocks attacks it sees coming and drops the block the moment the hit has been thrown.
@@ -26,7 +24,7 @@ internal sealed class DummyGuard(PlayerController controller)
     public void OnOpponentAttack()
     {
         // Can't block while in hitstun, in the air or in the middle of something else
-        if (!controller.IsInControl || !controller.CanStartMove || !controller.StateTracker.IsGrounded) return;
+        if (!controller.IsInControl || !controller.CanStartMove || !controller.State.IsGrounded) return;
 
         var toOpponent = controller.Opponent.Transform.Position - controller.Player.Transform.Position;
         if (MathF.Abs(toOpponent.X) > DummyConfig.BLOCK_RANGE || MathF.Abs(toOpponent.Y) > DummyConfig.BLOCK_RANGE) return;

@@ -7,7 +7,7 @@ using Horizon.Rendering;
 using Horizon.Rendering.Spriting;
 using Horizon.Rendering.UIX;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Scenes.Menus;
 
 /// <summary>
 /// Base class for every menu of the game. It sets up the camera, the CRT renderer, the backdrop and the layout, which every menu used to copy paste.

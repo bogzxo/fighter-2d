@@ -5,7 +5,7 @@ using Horizon.Core;
 using Horizon.Engine;
 using Horizon.Rendering.UIX;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Scenes.Menus;
 
 /// <summary>
 /// Where the menus get their UI from. Every one of them is a layout file in Assets/ui/layouts, drawn up with Horizon.Hex.

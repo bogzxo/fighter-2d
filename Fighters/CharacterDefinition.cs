@@ -2,12 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using Fighter2D.Content;
-using Fighter2D.Logic;
-
 using Horizon.HIDL.Runtime;
 
-namespace Fighter2D.Character;
+namespace Fighter2D.Fighters;
 
 /// <summary>
 /// What a character is made of, which is its sprites, its moves and how it handles.

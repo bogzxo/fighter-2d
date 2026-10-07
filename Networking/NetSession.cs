@@ -4,8 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 
-using Fighter2D.Content;
-
 using Riptide;
 
 namespace Fighter2D.Networking;

@@ -4,7 +4,7 @@ using System.Numerics;
 using Horizon.Physics;
 using Horizon.Physics.Fixtures;
 
-namespace Fighter2D.Character;
+namespace Fighter2D.Fighters;
 
 /// <summary>
 /// The hurtbox and hitbox of a player in the world, kept in step with whatever frame they are showing.

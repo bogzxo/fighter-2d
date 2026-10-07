@@ -1,8 +1,6 @@
 using System;
 
-using Fighter2D.Logic;
-
-namespace Fighter2D.Character.Controllers.Dummy;
+namespace Fighter2D.Fighters.Inputs.Dummy;
 
 /// <summary>
 /// The offensive half of the dummy's brain. Throws attacks when the other player is in range, punishes whiffs and follows up on hitstun.
@@ -37,7 +35,7 @@ internal sealed class DummyOffence(PlayerController controller, DummyHands hands
     /// <returns>True if it pressed something.</returns>
     private bool FollowUp(in DummyView view)
     {
-        bool hitstun = view.Them.StateTracker.IsInHitstun;
+        bool hitstun = view.Them.State.IsInHitstun;
 
         // Decided once when the hitstun starts, either it goes for the combo or it doesn't
         if (!hitstun) _followUps = 0;
@@ -93,7 +91,7 @@ internal sealed class DummyOffence(PlayerController controller, DummyHands hands
         }
 
         // No point swinging at somebody with i-frames or with our back to them
-        if (_attackTimer > 0 || view.FacingAway || view.Them.StateTracker.CurrentStatus == PlayerStatusType.Invulnerable) return;
+        if (_attackTimer > 0 || view.FacingAway || view.Them.State.CurrentStatus == FighterStatus.Invulnerable) return;
 
         // Press one of the attacks, then leave a gap for the player to hit back
         hands.Press(Random.Shared.NextSingle() < DummyConfig.PUNCH_CHANCE ? DummyHands.Punch() : DummyHands.Kick());

@@ -1,8 +1,5 @@
 using System;
 
-using Fighter2D.Character.Controllers;
-using Fighter2D.Logic;
-
 using Riptide;
 
 namespace Fighter2D.Networking;

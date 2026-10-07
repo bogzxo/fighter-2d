@@ -1,20 +1,16 @@
 using System;
 using System.Numerics;
 
-using Fighter2D.Combat;
-using Fighter2D.Logic;
-using Fighter2D.Logic.Moves;
-
 using Horizon.Core;
 using Horizon.Core.Components;
 using Horizon.Rendering.Spriting;
 
-namespace Fighter2D.Character.Controllers;
+namespace Fighter2D.Fighters.Control;
 
 /// <summary>
 /// The brain of a player. It reads the buttons of its input, matches them against the move list and plays the move they start.
 /// There is one of these per player and they are all the same, who presses the buttons is up to the <see cref="IPlayerInput"/> it is given.
-/// Everything runs on fixed ticks (see PlayerConfig.TICK_RATE) no matter how fast the game is drawn.
+/// Everything runs on fixed ticks (see FightTicks.TICK_RATE) no matter how fast the game is drawn.
 /// </summary>
 internal sealed class PlayerController(IPlayerInput input) : GameComponent
 {
@@ -31,7 +27,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     public PlayerInputs Inputs { get; } = new();
     public Player Player { get; private set; } = null!;
     public MoveList MoveList { get; private set; } = null!;
-    public PlayerStateTracker StateTracker { get; private set; } = null!;
+    public FighterState State { get; private set; } = null!;
     public MovePlayback Playback { get; private set; } = null!;
     public PlayerMovement Movement { get; private set; } = null!;
 
@@ -63,17 +59,17 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// </summary>
     public bool HitThrown { get; private set; }
 
-    public bool IsBlocking => StateTracker.CurrentStatus == PlayerStatusType.Blocking;
+    public bool IsBlocking => State.CurrentStatus == FighterStatus.Blocking;
 
     /// <summary>
     /// Whether we are in the startup of an attack. Getting hit now is a counter hit.
     /// </summary>
-    public bool IsInStartup => StateTracker.CurrentStatus == PlayerStatusType.Attacking && !HitThrown;
+    public bool IsInStartup => State.CurrentStatus == FighterStatus.Attacking && !HitThrown;
 
     /// <summary>
     /// Whether we are in the recovery of an attack, which is when we are wide open for a punish.
     /// </summary>
-    public bool IsRecovering => StateTracker.CurrentStatus == PlayerStatusType.Attacking && HitThrown;
+    public bool IsRecovering => State.CurrentStatus == FighterStatus.Attacking && HitThrown;
 
     /// <summary>
     /// Whether the player is out of health. Somebody who is stays down until the round is reset.
@@ -83,7 +79,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// <summary>
     /// Whether the player has the controls. Hitstun takes them away, and so does being knocked out.
     /// </summary>
-    public bool IsInControl => !StateTracker.IsInHitstun && !IsKnockedOut;
+    public bool IsInControl => !State.IsInHitstun && !IsKnockedOut;
 
     /// <summary>
     /// Whether a new move is allowed to start right now.
@@ -122,7 +118,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     {
         Player = (Parent as Player)!;
         MoveList = Player.MoveList;
-        StateTracker = new PlayerStateTracker(Player);
+        State = new FighterState(Player);
         Playback = new MovePlayback(this);
         Movement = new PlayerMovement(this);
 
@@ -132,7 +128,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
 
     public override void UpdateState(float dt)
     {
-        _tickParts += (long)Math.Round(dt * PlayerConfig.TICK_RATE * TICK_PARTS);
+        _tickParts += (long)Math.Round(dt * FightTicks.TICK_RATE * TICK_PARTS);
 
         for (int ticks = 0; _tickParts >= TICK_PARTS; ticks++)
         {
@@ -161,7 +157,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         Inputs.Push(Tick, ReadInput(frozen));
 
         // Update physiscs cues such as crouching, falling and grounded
-        StateTracker.UpdatePhysicsState(PlayerConfig.TICK_TIME);
+        State.UpdatePhysicsState(FightTicks.TICK_TIME);
 
         if (_hitstop > 0)
         {
@@ -172,7 +168,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         {
             // Somebody who is knocked out never gets out of hitstun, for everybody else the hitstun move lasts exactly as long as the hitstun does
             if (IsKnockedOut) StayDown();
-            else if (StateTracker.TickHitstun() && CurrentMove.Id == MoveIds.HIT_STUN) FinishMove();
+            else if (State.TickHitstun() && CurrentMove.Id == MoveIds.HIT_STUN) FinishMove();
 
             AdvanceMove();
         }
@@ -182,7 +178,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         if (frozen)
         {
             // Whatever we were in the middle of (running, crouching) ends here, but an attack that is already out gets to finish
-            if (!_frozen && IsInControl && StateTracker.CurrentStatus != PlayerStatusType.Attacking) ChangeToMove(MoveIds.IDLE);
+            if (!_frozen && IsInControl && State.CurrentStatus != FighterStatus.Attacking) ChangeToMove(MoveIds.IDLE);
             _frozen = true;
             return;
         }
@@ -226,7 +222,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// </summary>
     private void AdvanceMove()
     {
-        _frameProgress += Player.Character.FrameRate / PlayerConfig.TICK_RATE;
+        _frameProgress += Player.Character.FrameRate / FightTicks.TICK_RATE;
         _stepping = true;
 
         while (_frameProgress >= 1.0f)
@@ -247,12 +243,12 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     private void FinishMove()
     {
         // The statuses set by a move end with it (hitstun runs out on its own timer)
-        if (IsInControl) StateTracker.CurrentStatus = PlayerStatusType.Normal;
+        if (IsInControl) State.CurrentStatus = FighterStatus.Normal;
         CanCancel = true;
 
         // Handle stance reroutes || return to Idle automatically
         if (CurrentMove.FinishReroutes != null &&
-            CurrentMove.FinishReroutes.TryGetValue(StateTracker.CurrentStance, out var rerouteId))
+            CurrentMove.FinishReroutes.TryGetValue(State.CurrentStance, out var rerouteId))
         {
             ChangeToMove(rerouteId, forceRestart: true);
         }
@@ -275,7 +271,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         HitThrown = false;
 
         // The statuses set by a move end with it, even when it was cancelled (rolling -> kick)
-        if (IsInControl) StateTracker.CurrentStatus = PlayerStatusType.Normal;
+        if (IsInControl) State.CurrentStatus = FighterStatus.Normal;
 
         // A move that was asked for gets the whole of its first frame, however far along the last one was
         if (!_stepping) _frameProgress = 0.0f;
@@ -291,7 +287,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     private void TryStartMove()
     {
         // Find a match as per the order of precedence defined in the movelist
-        if (!MoveList.TryMatchInput(Inputs.Buffer, StateTracker.CurrentStance, out var move, out var signature)) return;
+        if (!MoveList.TryMatchInput(Inputs.Buffer, State.CurrentStance, out var move, out var signature)) return;
 
         // A press only ever starts one move, held inputs (run, crouch, block) keep matching for as long as they are held
         if (move.Trigger != InputTrigger.Held)
@@ -301,7 +297,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
 
         // Check stance reroutes (hitting kick while in the air -> jumpkick)
         if (move.StanceReroutes != null &&
-            move.StanceReroutes.TryGetValue(StateTracker.CurrentStance, out string? rerouteId))
+            move.StanceReroutes.TryGetValue(State.CurrentStance, out string? rerouteId))
         {
             ChangeToMove(rerouteId);
             return;
@@ -366,7 +362,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// <param name="damage">How much the hit that did it took off us, for the combo counter.</param>
     public void ApplyHitstun(int ticks, int damage = 0)
     {
-        StateTracker.ApplyHitstun(ticks, damage);
+        State.ApplyHitstun(ticks, damage);
 
         // Every hit restarts the move, so each hit of a combo is seen to land
         ChangeToMove(MoveIds.HIT_STUN, forceRestart: true);
@@ -386,7 +382,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     {
         if (Player is null) return;
 
-        StateTracker = new PlayerStateTracker(Player);
+        State = new FighterState(Player);
         CanCancel = false;
         _hitstop = 0;
         _frameProgress = 0.0f;

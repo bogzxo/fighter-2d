@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Fighter2D.Logic.Moves;
+namespace Fighter2D.Moves;
 
 /// <summary>
 /// One stretch of a move, which is an animation and what happens on which of its frames.
@@ -24,7 +24,7 @@ public class MovePhase
     public int CommitFrame { get; init; } = -1;
 
     // The status the player takes on during the phase and the frame it kicks in on, for a status that doesn't hold from the very start (block)
-    public PlayerStatusType? Status { get; init; }
+    public FighterStatus? Status { get; init; }
     public int StatusFrame { get; init; }
 
     // The phase starts over for as long as this holds and ends on the frame it stops holding

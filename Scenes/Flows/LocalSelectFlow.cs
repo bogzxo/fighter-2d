@@ -1,12 +1,10 @@
 using System.Numerics;
 
-using Fighter2D.Match;
-
 using Horizon.Input;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Scenes.Flows;
 
 /// <summary>
 /// The gamepad select screen of a match on one machine. The players pick their gamepads one after the other, then it is on to the characters.

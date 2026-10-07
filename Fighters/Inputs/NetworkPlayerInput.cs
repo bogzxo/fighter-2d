@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-using Fighter2D.Logic;
-
-namespace Fighter2D.Character.Controllers;
+namespace Fighter2D.Fighters.Inputs;
 
 /// <summary>
 /// Input for a network player. It plays back the buttons they held on every tick of their fight, in the order they held them.

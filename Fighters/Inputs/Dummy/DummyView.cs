@@ -1,9 +1,7 @@
 using System;
 using System.Numerics;
 
-using Fighter2D.Logic;
-
-namespace Fighter2D.Character.Controllers.Dummy;
+namespace Fighter2D.Fighters.Inputs.Dummy;
 
 /// <summary>
 /// What the dummy can see of the fight on one tick, worked out once so every part of its brain goes by the same picture.
@@ -27,7 +25,7 @@ internal readonly struct DummyView
         Distance = MathF.Abs(ToOpponent.X);
 
         InRange = Distance <= DummyConfig.ATTACK_RANGE && MathF.Abs(ToOpponent.Y) <= DummyConfig.ATTACK_RANGE;
-        Grounded = self.StateTracker.IsGrounded;
+        Grounded = self.State.IsGrounded;
         FacingAway = !self.Player.IsFacing(self.Opponent);
     }
 

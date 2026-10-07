@@ -2,14 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-using Fighter2D.Character;
-using Fighter2D.Content;
-
 using Horizon.Content;
 using Horizon.Rendering.Spriting;
 using Horizon.Rendering.UIX.Components;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Scenes.Widgets;
 
 /// <summary>
 /// A character playing one of its animations inside of an image of the UI, for the menus and the versus screen.

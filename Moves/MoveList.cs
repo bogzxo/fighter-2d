@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using Fighter2D.Logic.Moves;
-
-namespace Fighter2D.Logic;
+namespace Fighter2D.Moves;
 
 /// <summary>
 /// Every move a character has, read out of the move files of the game's content.

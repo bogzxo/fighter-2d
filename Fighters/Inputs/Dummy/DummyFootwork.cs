@@ -1,8 +1,6 @@
 using System;
 
-using Fighter2D.Logic;
-
-namespace Fighter2D.Character.Controllers.Dummy;
+namespace Fighter2D.Fighters.Inputs.Dummy;
 
 /// <summary>
 /// The legs of the dummy. Walks up to the other player, jumps whatever is in the way, rolls in from far away and hops over rolls coming at it.
@@ -74,7 +72,7 @@ internal sealed class DummyFootwork(PlayerController controller, DummyHands hand
         JumpIfStuck(walking);
 
         // They are up on something right next to us, walking around underneath them gets us nowhere
-        bool climb = view.ToOpponent.Y > DummyConfig.CLIMB_HEIGHT && view.Distance < DummyConfig.CLIMB_RANGE && view.Them.StateTracker.IsGrounded;
+        bool climb = view.ToOpponent.Y > DummyConfig.CLIMB_HEIGHT && view.Distance < DummyConfig.CLIMB_RANGE && view.Them.State.IsGrounded;
         if (climb) hands.Jump();
 
         return walking || climb ? view.Towards : InputFlags.None;
@@ -86,7 +84,7 @@ internal sealed class DummyFootwork(PlayerController controller, DummyHands hand
     public void WatchForDodgeRoll(in DummyView view)
     {
         // Whatever the roll is called in the move list of the day, it is the move nothing can hit
-        bool rolling = view.Them.StateTracker.CurrentStatus == PlayerStatusType.Invulnerable;
+        bool rolling = view.Them.State.CurrentStatus == FighterStatus.Invulnerable;
         bool justStarted = rolling && !_sawRoll;
         _sawRoll = rolling;
 

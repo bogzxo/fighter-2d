@@ -1,8 +1,5 @@
 using System.Text;
 
-using Fighter2D.Character;
-using Fighter2D.Match;
-
 using Horizon.Core.Tweening;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;

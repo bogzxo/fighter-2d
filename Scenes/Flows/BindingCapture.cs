@@ -1,6 +1,6 @@
 using Horizon.Input;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Scenes.Flows;
 
 internal enum CaptureState
 {

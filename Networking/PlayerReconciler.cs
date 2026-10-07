@@ -1,7 +1,5 @@
 using System;
 
-using Fighter2D.Character.Controllers;
-
 namespace Fighter2D.Networking;
 
 /// <summary>
@@ -19,7 +17,7 @@ internal static class PlayerReconciler
     public static void Apply(PlayerController controller, in PlayerSnapshot snapshot)
     {
         controller.Player.Flipped = snapshot.Flipped;
-        controller.StateTracker.Restore(snapshot.Status, snapshot.HitstunTicks, snapshot.ComboCount);
+        controller.State.Restore(snapshot.Status, snapshot.HitstunTicks, snapshot.ComboCount);
 
         if (!IsInStep(controller, snapshot) && controller.MoveList.TryGetMove(snapshot.MoveId, out var move))
         {

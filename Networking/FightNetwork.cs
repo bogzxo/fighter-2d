@@ -3,11 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-using Fighter2D.Character;
-using Fighter2D.Character.Controllers;
-using Fighter2D.Combat;
-using Fighter2D.Match;
-
 using Horizon.Core;
 using Horizon.Core.Components;
 
@@ -68,8 +63,8 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : Ga
     public bool RemotePaused { get; private set; }
 
     // Messages can show up before the scene has set the players up, a controller has no player until then
-    private PlayerController? Local => LocalPlayer?.Controller is { Player: not null, StateTracker: not null } controller ? controller : null;
-    private PlayerController? Remote => RemotePlayer?.Controller is { Player: not null, StateTracker: not null } controller ? controller : null;
+    private PlayerController? Local => LocalPlayer?.Controller is { Player: not null, State: not null } controller ? controller : null;
+    private PlayerController? Remote => RemotePlayer?.Controller is { Player: not null, State: not null } controller ? controller : null;
 
     public override void Initialize()
     {

@@ -6,7 +6,7 @@ using Horizon.Rendering.PostProcessing;
 using Horizon.Rendering.Transitions;
 using Horizon.Rendering.UIX;
 
-namespace Fighter2D;
+namespace Fighter2D.App;
 
 /// <summary>
 /// The look every scene shares, so the menus and the fights all seem to be on the same crusty old CRT.

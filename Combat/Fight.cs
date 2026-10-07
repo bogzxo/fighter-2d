@@ -1,10 +1,5 @@
-using Fighter2D.Character;
-using Fighter2D.Combat;
-using Fighter2D.Effects;
-using Fighter2D.Match;
-using Fighter2D.Networking;
 
-namespace Fighter2D;
+namespace Fighter2D.Combat;
 
 /// <summary>
 /// The fight that is on right now. Anything that needs to poke at the fight asks here instead of dragging the whole scene around.

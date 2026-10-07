@@ -7,7 +7,7 @@ using Horizon.Core;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Fighter2D.Character;
+namespace Fighter2D.Fighters;
 
 /// <summary>
 /// Works out the hurtbox, the hitbox and the outline of one frame of a sprite sheet by looking at its pixels.

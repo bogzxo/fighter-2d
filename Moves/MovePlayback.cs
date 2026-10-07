@@ -1,9 +1,7 @@
 using System;
 using System.Numerics;
 
-using Fighter2D.Character.Controllers;
-
-namespace Fighter2D.Logic.Moves;
+namespace Fighter2D.Moves;
 
 /// <summary>
 /// Plays a move frame by frame the way its file describes it, one phase after the other.
@@ -46,7 +44,7 @@ internal sealed class MovePlayback(PlayerController controller)
         Frame = Shown = _frames = _nextShown = _effectFrame = 0;
         _inPhase = _tookTime = IsFinished = false;
 
-        var state = controller.StateTracker;
+        var state = controller.State;
         if (move.Status is { } status) state.CurrentStatus = status;
         if (move.Stance is { } stance) state.CurrentStance = stance;
         if (move.Warns) controller.Opponent.Controller.OnOpponentAttack();
@@ -124,7 +122,7 @@ internal sealed class MovePlayback(PlayerController controller)
             }
 
             // Set the stance here so the controller knows the move let go of it (landed, stood up)
-            if (Move.StanceAfter is { } after) controller.StateTracker.CurrentStance = after;
+            if (Move.StanceAfter is { } after) controller.State.CurrentStance = after;
 
             IsFinished = true;
             return false;
@@ -168,7 +166,7 @@ internal sealed class MovePlayback(PlayerController controller)
             player.PhysicsBody.ApplyImpulse(new Vector2(player.Facing * phase.Impulse.X, phase.Impulse.Y));
 
             // Going up is the start of a new fall
-            if (phase.Impulse.Y > 0) controller.StateTracker.ResetFallDuration();
+            if (phase.Impulse.Y > 0) controller.State.ResetFallDuration();
         }
 
         _inPhase = true;
@@ -197,7 +195,7 @@ internal sealed class MovePlayback(PlayerController controller)
     {
         if (frame == phase.CancelFrame) controller.CanCancel = true;
         if (frame == phase.CommitFrame) controller.CanCancel = false;
-        if (phase.Status is { } status && frame == phase.StatusFrame) controller.StateTracker.CurrentStatus = status;
+        if (phase.Status is { } status && frame == phase.StatusFrame) controller.State.CurrentStatus = status;
 
         // The hitbox is read off the frame that is being drawn
         if (frame == phase.HitFrame) controller.ThrowHit(_nextShown);
@@ -212,9 +210,9 @@ internal sealed class MovePlayback(PlayerController controller)
     private bool Test(MoveCondition condition) => condition switch
     {
         MoveCondition.Held => IsHeld(),
-        MoveCondition.Hitstun => controller.StateTracker.IsInHitstun,
-        MoveCondition.Jumping => controller.StateTracker.CurrentStance == Stance.Jumping,
-        MoveCondition.Falling => controller.StateTracker.FallDuration > 0,
+        MoveCondition.Hitstun => controller.State.IsInHitstun,
+        MoveCondition.Jumping => controller.State.CurrentStance == Stance.Jumping,
+        MoveCondition.Falling => controller.State.FallDuration > 0,
         MoveCondition.Always => true,
         _ => false
     };

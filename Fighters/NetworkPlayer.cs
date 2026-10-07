@@ -1,6 +1,5 @@
-using Fighter2D.Character.Controllers;
 
-namespace Fighter2D.Character;
+namespace Fighter2D.Fighters;
 
 /// <summary>
 /// A player who sits at another machine. They are played like anybody else, just with the buttons their machine says they pressed.

@@ -1,7 +1,5 @@
 using System;
 
-using Fighter2D.Match;
-
 using Riptide;
 
 namespace Fighter2D.Networking;

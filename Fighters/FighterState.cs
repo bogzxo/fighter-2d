@@ -1,15 +1,13 @@
 using System;
 
-using Fighter2D.Logic;
-
 using Horizon.Physics.Fixtures;
 
-namespace Fighter2D.Character;
+namespace Fighter2D.Fighters;
 
 /// <summary>
 /// Handles Physics groundedness, Stance calculation, and the hitstun timer.
 /// </summary>
-internal class PlayerStateTracker(Player player)
+internal class FighterState(Player player)
 {
     // How fast (up or down) a player has to be going in the air for it to count as jumping or falling
     private const float AIR_SPEED_THRESHOLD = 0.1f;
@@ -21,7 +19,7 @@ internal class PlayerStateTracker(Player player)
     public bool WasGrounded { get; private set; }
 
     public Stance CurrentStance { get; set; } = Stance.Standing;
-    public PlayerStatusType CurrentStatus { get; set; } = PlayerStatusType.Normal;
+    public FighterStatus CurrentStatus { get; set; } = FighterStatus.Normal;
 
     // How long (in seconds) we have been falling for
     public float FallDuration { get; private set; }
@@ -41,7 +39,7 @@ internal class PlayerStateTracker(Player player)
     /// </summary>
     public int ComboDamage { get; private set; }
 
-    public bool IsInHitstun => CurrentStatus == PlayerStatusType.Hitstun;
+    public bool IsInHitstun => CurrentStatus == FighterStatus.Hitstun;
 
     /// <summary>
     /// Whether this is the tick we touched down on.
@@ -76,7 +74,7 @@ internal class PlayerStateTracker(Player player)
     /// <param name="damage">How much the hit that did it took off us, for the combo counter.</param>
     public void ApplyHitstun(int ticks, int damage)
     {
-        CurrentStatus = PlayerStatusType.Hitstun;
+        CurrentStatus = FighterStatus.Hitstun;
         HitstunTicks = Math.Max(1, ticks);
         ComboCount++;
         ComboDamage += damage;
@@ -85,9 +83,9 @@ internal class PlayerStateTracker(Player player)
     /// <summary>
     /// Sets the status to whatever the machine that plays this player says it is.
     /// </summary>
-    public void Restore(PlayerStatusType status, int hitstunTicks, int comboCount)
+    public void Restore(FighterStatus status, int hitstunTicks, int comboCount)
     {
-        bool hitstun = status == PlayerStatusType.Hitstun;
+        bool hitstun = status == FighterStatus.Hitstun;
 
         CurrentStatus = status;
         HitstunTicks = hitstun ? Math.Max(1, hitstunTicks) : 0;
@@ -97,7 +95,7 @@ internal class PlayerStateTracker(Player player)
 
     private void ClearHitstun()
     {
-        CurrentStatus = PlayerStatusType.Normal;
+        CurrentStatus = FighterStatus.Normal;
         HitstunTicks = 0;
         ComboCount = 0;
         ComboDamage = 0;

@@ -1,4 +1,3 @@
-using Fighter2D.Match;
 
 using Horizon.Input;
 using Horizon.Rendering.UIX;

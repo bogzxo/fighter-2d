@@ -1,11 +1,5 @@
 using System.Collections.Generic;
 
-using Fighter2D.Character;
-using Fighter2D.Character.Controllers;
-using Fighter2D.Map;
-using Fighter2D.Networking;
-using Fighter2D.Scenes;
-
 namespace Fighter2D.Match;
 
 internal enum MatchMode

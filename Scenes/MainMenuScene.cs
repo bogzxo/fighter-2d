@@ -1,10 +1,6 @@
 using System;
 using System.Numerics;
 
-using Fighter2D.Effects;
-using Fighter2D.Match;
-using Fighter2D.Networking;
-
 using Horizon.Rendering;
 using Horizon.Input;
 using Horizon.OpenGL.Assets;

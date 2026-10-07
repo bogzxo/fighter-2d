@@ -1,13 +1,11 @@
 using System.Numerics;
 
-using Fighter2D.Character;
-
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
 
 using Button = Horizon.Rendering.UIX.Components.Button;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Scenes.Widgets;
 
 /// <summary>
 /// One cell of the character select grid, a button with a character in it (or a question mark if there is nobody for it).

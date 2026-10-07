@@ -1,6 +1,6 @@
-namespace Fighter2D.Character.Controllers;
+namespace Fighter2D.Fighters.Control;
 
-internal static class PlayerConfig
+internal static class FightTicks
 {
     // How a character moves (walk speed, the impulse of its jump and its roll) is up to its definition and its move files
 

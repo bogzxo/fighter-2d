@@ -1,7 +1,7 @@
 namespace Fighter2D.Combat;
 
 /// <summary>
-/// Every number that decides what a hit is worth. All times are in ticks of the fight, see PlayerConfig.TICK_RATE.
+/// Every number that decides what a hit is worth. All times are in ticks of the fight, see FightTicks.TICK_RATE.
 /// This is the file to mess with when the game feels off.
 /// </summary>
 internal static class CombatRules

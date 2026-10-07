@@ -1,10 +1,6 @@
 using System;
 using System.Numerics;
 
-using Fighter2D.Character;
-using Fighter2D.Character.Controllers;
-using Fighter2D.Logic;
-
 using Riptide;
 
 namespace Fighter2D.Networking;
@@ -27,7 +23,7 @@ internal readonly record struct PlayerSnapshot(
     int Frame,
     string Animation,
     uint Shown,
-    PlayerStatusType Status,
+    FighterStatus Status,
     int HitstunTicks,
     int ComboCount,
     bool CanCancel,
@@ -52,9 +48,9 @@ internal readonly record struct PlayerSnapshot(
             (int)controller.Playback.Frame,
             controller.ActiveAnimation,
             controller.Playback.Shown,
-            controller.StateTracker.CurrentStatus,
-            controller.StateTracker.HitstunTicks,
-            controller.StateTracker.ComboCount,
+            controller.State.CurrentStatus,
+            controller.State.HitstunTicks,
+            controller.State.ComboCount,
             controller.CanCancel,
             controller.HitThrown,
             player.Health,
@@ -93,7 +89,7 @@ internal readonly record struct PlayerSnapshot(
         message.GetUShort(),
         message.GetString(),
         message.GetUShort(),
-        (PlayerStatusType)message.GetByte(),
+        (FighterStatus)message.GetByte(),
         message.GetUShort(),
         message.GetByte(),
         message.GetBool(),

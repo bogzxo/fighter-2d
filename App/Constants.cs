@@ -1,4 +1,4 @@
-namespace Fighter2D;
+namespace Fighter2D.App;
 
 internal static class Constants
 {

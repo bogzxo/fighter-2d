@@ -4,9 +4,6 @@ using System.Numerics;
 
 using Bogz.Logging;
 
-using Fighter2D.Content;
-using Fighter2D.Effects;
-
 using Horizon.Physics;
 using Horizon.Rendering;
 using Horizon.Rendering.Lighting;

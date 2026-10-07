@@ -1,6 +1,6 @@
 using System;
 
-namespace Fighter2D.Logic;
+namespace Fighter2D.Input;
 
 /// <summary>
 /// The buttons the move files are written with. Which physical button each one sits on is up to the bindings of the gamepad.

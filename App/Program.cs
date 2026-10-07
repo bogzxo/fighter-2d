@@ -1,16 +1,10 @@
 using Bogz.Logging;
 using System;
 
-using Fighter2D.Content;
-using Fighter2D.Map;
-using Fighter2D.Match;
-using Fighter2D.Networking;
-using Fighter2D.Scenes;
-
 using Horizon.Core;
 using Horizon.Engine;
 
-namespace Fighter2D;
+namespace Fighter2D.App;
 
 internal class Program
 {

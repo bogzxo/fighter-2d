@@ -1,8 +1,5 @@
 using System.Numerics;
 
-using Fighter2D.Character.Controllers;
-using Fighter2D.Logic.Moves;
-
 using Horizon.Rendering.Spriting;
 
 namespace Fighter2D.Combat;

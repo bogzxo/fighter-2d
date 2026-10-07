@@ -1,8 +1,7 @@
-using Fighter2D.Logic;
 
 using Horizon.Input;
 
-namespace Fighter2D.Character.Controllers;
+namespace Fighter2D.Fighters.Inputs;
 
 /// <summary>
 /// Input for players driven by a gamepad, all it does is read what the gamepad in a slot is holding.

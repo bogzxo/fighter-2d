@@ -1,4 +1,3 @@
-using Fighter2D.Map;
 
 namespace Fighter2D.Match;
 

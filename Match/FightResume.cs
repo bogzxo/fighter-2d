@@ -1,8 +1,5 @@
 using System.Numerics;
 
-using Fighter2D.Character;
-using Fighter2D.Networking;
-
 namespace Fighter2D.Match;
 
 /// <summary>

@@ -1,8 +1,6 @@
 using System;
 
-using Fighter2D.Logic;
-
-namespace Fighter2D.Character.Controllers.Dummy;
+namespace Fighter2D.Fighters.Inputs.Dummy;
 
 /// <summary>
 /// The fingers of the dummy. Presses a button for a few ticks and lets go of it again, the same way a thumb would.

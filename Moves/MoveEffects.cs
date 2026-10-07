@@ -1,6 +1,5 @@
-using Fighter2D.Character;
 
-namespace Fighter2D.Logic.Moves;
+namespace Fighter2D.Moves;
 
 /// <summary>
 /// The eye candy a phase of a move can ask for by name. None of it changes the fight, it only looks nice.

@@ -1,4 +1,4 @@
-namespace Fighter2D.Logic.Moves;
+namespace Fighter2D.Moves;
 
 /// <summary>
 /// The moves the game itself reaches for, by the name they need to have in the move files.

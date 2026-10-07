@@ -1,4 +1,4 @@
-namespace Fighter2D.Logic.Moves;
+namespace Fighter2D.Moves;
 
 /// <summary>
 /// What a phase of a move waits on, or keeps looping for.

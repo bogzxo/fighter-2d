@@ -1,11 +1,6 @@
 using System;
 using System.Numerics;
 
-using Fighter2D.Character;
-using Fighter2D.Character.Controllers;
-using Fighter2D.Logic;
-using Fighter2D.Logic.Moves;
-
 namespace Fighter2D.Combat;
 
 /// <summary>
@@ -72,7 +67,7 @@ internal static class HitResolver
 
         HitFeedback.Play(attacker, victim, move, result, direction, impact, lethal);
 
-        var state = victim.StateTracker;
+        var state = victim.State;
         Fight.CombatLog.Report(new AttackReport(attacker.Player, move, result, landed ? state.ComboCount : 0, landed ? state.ComboDamage : 0));
 
         return result;
@@ -99,7 +94,7 @@ internal static class HitResolver
     private static HitResult Judge(PlayerController victim, float direction)
     {
         // Dodge rolls go straight through hits
-        if (victim.StateTracker.CurrentStatus == PlayerStatusType.Invulnerable) return HitResult.Whiff;
+        if (victim.State.CurrentStatus == FighterStatus.Invulnerable) return HitResult.Whiff;
 
         // Blocking only covers the front. A hit from behind travels the same way the victim is facing
         if (victim.IsBlocking && direction * victim.Player.Facing < 0) return HitResult.Blocked;
@@ -131,7 +126,7 @@ internal static class HitResolver
     /// </summary>
     private static int HitstunFor(PlayerController victim, FightingMove move, bool counter)
     {
-        var state = victim.StateTracker;
+        var state = victim.State;
 
         int hitstun = move.FrameData.Hitstun;
         if (counter) hitstun = (int)MathF.Round(hitstun * CombatRules.COUNTER_HITSTUN_SCALE);

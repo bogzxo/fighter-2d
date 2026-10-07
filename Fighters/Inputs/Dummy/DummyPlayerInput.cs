@@ -1,6 +1,5 @@
-using Fighter2D.Logic;
 
-namespace Fighter2D.Character.Controllers.Dummy;
+namespace Fighter2D.Fighters.Inputs.Dummy;
 
 /// <summary>
 /// Input for the AI opponent. It walks (or rolls) up to the player, throws kicks and punches, blocks what it sees coming and punishes whiffs.

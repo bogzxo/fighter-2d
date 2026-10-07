@@ -1,7 +1,5 @@
 using System;
 
-using Fighter2D.Scenes;
-
 using Horizon.Core;
 using Horizon.Core.Components;
 using Horizon.Core.Threading;

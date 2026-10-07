@@ -10,7 +10,7 @@ using Horizon.Rendering.Spriting;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Fighter2D.Character;
+namespace Fighter2D.Fighters;
 
 /// <summary>
 /// The boxes of one frame of animation, plus the outline of what is drawn on it (as line pieces of two points each).

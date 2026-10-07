@@ -2,14 +2,10 @@ using System.Numerics;
 
 using Bogz.Logging;
 
-using Fighter2D.Character.Controllers;
-using Fighter2D.Content;
-using Fighter2D.Logic;
-
 using Horizon.Physics;
 using Horizon.Rendering.Spriting;
 
-namespace Fighter2D.Character;
+namespace Fighter2D.Fighters;
 
 /// <summary>
 /// A fighter in the arena. This is the sprite, the physics body and the health bar's worth of health.

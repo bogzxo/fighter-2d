@@ -6,7 +6,7 @@ using System.Numerics;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Scenes.Menus;
 
 /// <summary>
 /// Rows of settings on a menu, each one a title with a selector next to it. Up and down picks a row, left and right changes what it is set to.

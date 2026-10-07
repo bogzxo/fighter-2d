@@ -1,7 +1,5 @@
 using System.Numerics;
 
-using Fighter2D.Effects;
-
 using Horizon.Core.Tweening;
 using Horizon.Engine;
 using Horizon.Physics;

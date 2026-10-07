@@ -1,8 +1,6 @@
 using System;
 using System.Numerics;
 
-using Fighter2D.Character;
-
 using Horizon.Rendering;
 using Horizon.Rendering.Lighting;
 

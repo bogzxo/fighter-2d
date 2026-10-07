@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using Fighter2D.Content;
-
 namespace Fighter2D.Networking;
 
 /// <summary>

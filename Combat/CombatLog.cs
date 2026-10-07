@@ -1,8 +1,5 @@
 using System;
 
-using Fighter2D.Character;
-using Fighter2D.Logic.Moves;
-
 namespace Fighter2D.Combat;
 
 /// <summary>

@@ -1,9 +1,8 @@
-using Fighter2D.Match;
 
 using Horizon.Input;
 using Horizon.Rendering.UIX.Components;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Scenes.Flows;
 
 /// <summary>
 /// What the gamepad select screen does once the gamepads are picked.

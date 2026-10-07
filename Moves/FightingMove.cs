@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace Fighter2D.Logic.Moves;
+namespace Fighter2D.Moves;
 
 /// <summary>
 /// One move out of a move file. Everything about it is data, the code only knows how to play it (see MovePlayback).
@@ -19,7 +19,7 @@ public class FightingMove
     public float Hitstun { get; init; } = -1.0f;
 
     // The stances the move can be started from
-    public Stance Stances { get; init; } = Fighter2D.Logic.Stance.Standing;
+    public Stance Stances { get; init; } = Fighters.Stance.Standing;
 
     // Any one of these starts the move, None means the move can only be reached through reroutes
     public InputFlags[] InputSignatures { get; init; } = [InputFlags.None];
@@ -38,7 +38,7 @@ public class FightingMove
     public bool AllowsTurning { get; init; } = true;
 
     // What the player is for as long as the move lasts (attacking, blocking, invulnerable), null leaves that alone
-    public PlayerStatusType? Status { get; init; }
+    public FighterStatus? Status { get; init; }
 
     // The stance the move puts the player in and the one it leaves them in after, null leaves that to the physics
     public Stance? Stance { get; init; }

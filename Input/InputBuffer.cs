@@ -1,8 +1,6 @@
 using System;
 
-using Fighter2D.Logic.Moves;
-
-namespace Fighter2D.Logic;
+namespace Fighter2D.Input;
 
 /// <summary>
 /// Helper class which remembers the last few ticks of player input.

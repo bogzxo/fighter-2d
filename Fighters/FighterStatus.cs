@@ -1,9 +1,9 @@
-namespace Fighter2D.Logic;
+namespace Fighter2D.Fighters;
 
 /// <summary>
 /// What a player is busy with as far as getting hit goes. The moves set these, apart from hitstun which the hit that caused it sets.
 /// </summary>
-public enum PlayerStatusType
+public enum FighterStatus
 {
     Normal,
     Attacking,     // in a move that throws a hit

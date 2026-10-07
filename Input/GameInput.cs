@@ -2,12 +2,10 @@ using Bogz.Logging;
 using System;
 using System.IO;
 
-using Fighter2D.Logic;
-
 using Horizon.Engine;
 using Horizon.Input;
 
-namespace Fighter2D;
+namespace Fighter2D.Input;
 
 /// <summary>
 /// The gamepads of the game and what their buttons are bound to, shared by every scene.

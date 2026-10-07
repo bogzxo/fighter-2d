@@ -2,16 +2,6 @@ using Bogz.Logging;
 using System;
 using System.Numerics;
 
-using Fighter2D.Character;
-using Fighter2D.Character.Controllers;
-using Fighter2D.Character.Controllers.Dummy;
-using Fighter2D.Combat;
-using Fighter2D.Effects;
-using Fighter2D.HUD;
-using Fighter2D.Map;
-using Fighter2D.Match;
-using Fighter2D.Networking;
-
 using Horizon.Core.Tweening;
 using Horizon.Engine;
 using Horizon.Input;
@@ -501,7 +491,6 @@ internal class FightScene : Scene
 
         base.UpdatePhysics(dt);
 
-
         if (Fight.PlayerOne is { } us && Fight.PlayerTwo is { } them)
         {
             // They walk through each other as far as the physics goes, this is what keeps them apart
@@ -510,7 +499,6 @@ internal class FightScene : Scene
             _camera?.Follow(us.Transform.Position, them.Transform.Position, dt);
         }
     }
-
 
     /// <summary>
     /// Called by the rounds once the match is over and its result has been up for long enough, and by the pause menu for whoever has had enough.

@@ -1,4 +1,4 @@
-namespace Fighter2D.Character.Controllers.Dummy;
+namespace Fighter2D.Fighters.Inputs.Dummy;
 
 /// <summary>
 /// Every number that decides how good the dummy is at the game. Times are in seconds, distances in world units and chances from 0 to 1.
@@ -7,7 +7,7 @@ namespace Fighter2D.Character.Controllers.Dummy;
 internal static class DummyConfig
 {
     // The dummy thinks once per tick of the fight, this is how long one of those is
-    public const float TICK = PlayerConfig.TICK_TIME;
+    public const float TICK = FightTicks.TICK_TIME;
 
     /* Getting around */
 

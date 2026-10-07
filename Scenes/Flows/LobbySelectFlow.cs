@@ -2,14 +2,10 @@ using Bogz.Logging;
 using System;
 using System.Numerics;
 
-using Fighter2D.Map;
-using Fighter2D.Match;
-using Fighter2D.Networking;
-
 using Horizon.Input;
 using Horizon.Rendering.UIX.Components;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Scenes.Flows;
 
 /// <summary>
 /// The gamepad select screen of an online fight, which doubles as its lobby. The two cards are the two corners with whoever is standing in each.

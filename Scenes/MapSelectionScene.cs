@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 
-using Fighter2D.Map;
-using Fighter2D.Match;
-
 using Horizon.Engine;
 using Horizon.Input;
 using Horizon.Physics;

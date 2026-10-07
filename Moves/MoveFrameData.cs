@@ -1,12 +1,9 @@
 using System;
 
-using Fighter2D.Character.Controllers;
-using Fighter2D.Combat;
-
-namespace Fighter2D.Logic.Moves;
+namespace Fighter2D.Moves;
 
 /// <summary>
-/// The frame data of a move, in ticks of the fight (see PlayerConfig.TICK_RATE) and not in frames of its animation.
+/// The frame data of a move, in ticks of the fight (see FightTicks.TICK_RATE) and not in frames of its animation.
 /// Characters animate at different rates so animation frames can't be compared between them, ticks can.
 /// </summary>
 /// <param name="Startup">How long after the move starts its hit comes out, 0 for a move that doesn't hit.</param>
@@ -26,7 +23,7 @@ public readonly record struct MoveFrameData(int Startup, int Recovery, int Hitst
     /// <param name="frameRate">How many frames of animation a second the character plays at.</param>
     public static MoveFrameData Of(FightingMove move, Func<string?, uint> animationLength, float frameRate)
     {
-        float ticksPerFrame = PlayerConfig.TICK_RATE / MathF.Max(1.0f, frameRate);
+        float ticksPerFrame = FightTicks.TICK_RATE / MathF.Max(1.0f, frameRate);
 
         // A phase that loops counts once, nobody knows how often it comes round until it is played
         uint total = 0;

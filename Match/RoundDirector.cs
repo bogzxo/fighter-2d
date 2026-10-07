@@ -1,8 +1,5 @@
 using System;
 
-using Fighter2D.Character;
-using Fighter2D.Networking;
-
 using Horizon.Core;
 using Horizon.Core.Components;
 

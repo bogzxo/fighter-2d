@@ -1,6 +1,6 @@
 using Horizon.Input;
 
-namespace Fighter2D;
+namespace Fighter2D.Input;
 
 /// <summary>
 /// The directions of the menus, on the d-pad or the left stick. Menus can't be rebound, otherwise a bad binding could lock somebody out of the screen that fixes it.

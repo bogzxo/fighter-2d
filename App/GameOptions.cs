@@ -4,12 +4,9 @@ using System.IO;
 using System.Numerics;
 using System.Text;
 
-using Fighter2D.Character.Controllers;
-using Fighter2D.Content;
-
 using Horizon.Core;
 
-namespace Fighter2D;
+namespace Fighter2D.App;
 
 /// <summary>
 /// How one scene hands over to the next, for whoever has an opinion on that.
@@ -37,7 +34,7 @@ internal static class GameOptions
     public const string FILE = "options.hor";
 
     // The fight runs on ticks and every tick ought to make it to the screen, so no limit on the frames goes under the tick rate
-    public const int MIN_FRAME_LIMIT = (int)PlayerConfig.TICK_RATE;
+    public const int MIN_FRAME_LIMIT = (int)FightTicks.TICK_RATE;
     public const int NO_FRAME_LIMIT = 0;
 
     // The limits there are to pick from

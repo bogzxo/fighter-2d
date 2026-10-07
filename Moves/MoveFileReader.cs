@@ -2,11 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-using Fighter2D.Content;
-
 using Horizon.HIDL.Runtime;
 
-namespace Fighter2D.Logic.Moves;
+namespace Fighter2D.Moves;
 
 /// <summary>
 /// Turns a move file (.hor) into moves. What every key means is written down at the top of Assets/data/fighting_moves.hor.
@@ -79,7 +77,7 @@ internal static class MoveFileReader
             Cancellable = HorReader.Bool(move, "cancellable", true),
             AllowsSteering = steering,
             AllowsTurning = HorReader.Bool(move, "turning", steering),
-            Status = ReadOptional<PlayerStatusType>(move, "status"),
+            Status = ReadOptional<FighterStatus>(move, "status"),
             Stance = ReadOptional<Stance>(move, "stance"),
             StanceAfter = ReadOptional<Stance>(move, "stance_after"),
 
@@ -156,7 +154,7 @@ internal static class MoveFileReader
             HitFrame = (int)HorReader.Number(phase, "hit", -1),
             CancelFrame = (int)HorReader.Number(phase, "cancel", -1),
             CommitFrame = (int)HorReader.Number(phase, "commit", -1),
-            Status = ReadOptional<PlayerStatusType>(phase, "status"),
+            Status = ReadOptional<FighterStatus>(phase, "status"),
             StatusFrame = (int)HorReader.Number(phase, "status_frame", 0),
             LoopWhile = HorReader.Named(phase, "loop_while", MoveCondition.None),
             Until = HorReader.Named(phase, "until", MoveCondition.None),

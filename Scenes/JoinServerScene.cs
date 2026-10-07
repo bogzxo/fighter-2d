@@ -1,8 +1,5 @@
 using System.Net;
 
-using Fighter2D.Match;
-using Fighter2D.Networking;
-
 using Horizon.Input;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;

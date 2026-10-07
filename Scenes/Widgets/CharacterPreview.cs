@@ -1,9 +1,8 @@
-using Fighter2D.Character;
 
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Scenes.Widgets;
 
 /// <summary>
 /// The big preview on the left of the character select screen. Shows whoever is being looked at along with their name and stat bars.

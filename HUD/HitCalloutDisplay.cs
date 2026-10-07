@@ -1,10 +1,6 @@
 using System;
 using System.Numerics;
 
-using Fighter2D.Combat;
-using Fighter2D.Logic.Moves;
-using Fighter2D.Match;
-
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
 
