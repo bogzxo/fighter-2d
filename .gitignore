@@ -487,3 +487,4 @@ FodyWeavers.xsd
 **/*.sync-conflict*
 /bin/x64/Debug/net10.0/Assets/backgrounds/menu.png
 /bin/x64/Debug/net10.0/Assets/ui/logo.png
+/TmpDriver.cs
