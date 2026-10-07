@@ -18,7 +18,10 @@ internal enum DummyMode
     Block,
 
     // Holds a crouching block, which stops lows and mids and gets hit by overheads
-    CrouchBlock
+    CrouchBlock,
+
+    // Does whatever the script it was given says, see DummyScript
+    Script
 }
 
 internal static class DummyModes

@@ -15,13 +15,24 @@ namespace Fighter2D.HUD;
 /// </summary>
 internal class HUDManager : GameComponent
 {
+    // The calls across the screen are on a layer of their own, so they can get out of the way of the pause countdown
+    private const string BANNER_LAYER = "banner";
+
     private readonly List<IHudDisplay> _displays = [];
     private UICompositor _compositor = null!;
+    private UILayout _layout = null!;
+
+    /// <summary>
+    /// Asked every update whether the calls across the screen (ROUND 1, FIGHT!) are to stay off it. The pause menu
+    /// counts down in the same spot, nobody wants the two on top of each other.
+    /// </summary>
+    public Func<bool>? BannerHidden { get; init; }
 
     public override void Initialize()
     {
         (UILayout layout, _compositor) = MenuLayouts.Load(MenuLayouts.FIGHT_HUD);
         _compositor.Initialize();
+        _layout = layout;
 
         // The fight sets its director up before its HUD, there is nothing to show without one
         RoundDirector round = Fight.Round ?? throw new InvalidOperationException("The HUD of a fight needs its RoundDirector, which FightScene adds first.");
@@ -42,6 +53,7 @@ internal class HUDManager : GameComponent
             display.Update(dt);
         }
 
+        _layout.Module.SetLayerVisible(BANNER_LAYER, BannerHidden?.Invoke() != true);
         _compositor.UpdateState(dt);
     }
 

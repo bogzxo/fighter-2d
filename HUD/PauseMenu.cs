@@ -171,10 +171,11 @@ internal sealed class PauseMenu : GameComponent
     {
         if (Training is not { } training) return;
 
+        // The built in modes and whatever behaviours the scripts of the content have to offer
         var dummy = _layout.Get<Selector>("dummy");
-        dummy.Options = [.. DummyModes.All.Select(DummyModes.Describe)];
-        dummy.Index = Array.IndexOf(DummyModes.All, training.Dummy);
-        dummy.OnChanged = _ => training.Dummy = DummyModes.All[dummy.Index];
+        dummy.Options = training.DummyChoices;
+        dummy.Index = training.DummyChoice;
+        dummy.OnChanged = _ => training.DummyChoice = dummy.Index;
 
         var refill = _layout.Get<Selector>("refill");
         refill.Options = ["Off", "On"];

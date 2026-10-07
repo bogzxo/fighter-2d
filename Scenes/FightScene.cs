@@ -252,7 +252,8 @@ internal class FightScene : Scene
             });
         }
 
-        _hud = AddComponent<HUDManager>();
+        // The calls across the screen make way for the pause countdown, which lands in the same spot
+        _hud = AddComponent(new HUDManager { BannerHidden = () => _pause is { HoldsFight: true } });
         AddPauseMenu();
 
         if (Content is not null) _transfer = AddComponent(new ContentTransferDisplay(Content, Session is { IsHost: true }));

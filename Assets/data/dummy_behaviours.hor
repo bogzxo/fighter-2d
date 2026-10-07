@@ -1,0 +1,100 @@
+// Things the training dummy can be told to do, on top of fighting back, standing there and blocking. Each one is a
+// function the game calls once a tick (120 a second) with what the dummy sees, and whatever it hands back is what the
+// dummy holds down that tick. They show up on the dummy row of the training menu under the names they have here, so
+// anybody can teach the dummy a new habit without a compiler. The file is read again with the rest of the data.
+//
+// What a behaviour hands back is the name of a button, a list of them, or nothing:
+//   "towards" and "away"    walk at the player or away from them
+//   "jump", "crouch"        up and down on the d-pad
+//   "block"                 the block button (the right bumper)
+//   "A", "B", "X", "Y", "DPadLeft", "LeftBumper" and the rest of the buttons of the move files
+// A button that is held stays held. A move that wants a fresh press (most attacks) needs the button let go of in
+// between, which is what the pressing helper below is for.
+//
+// What a behaviour can look at (view):
+//   tick            how many ticks it has been running for
+//   distance        how far away the player is, along the ground
+//   dx, dy          where the player is from the dummy, right and up
+//   in_range        whether the player is close enough to hit
+//   can_reach       in range and facing them
+//   grounded        whether the dummy is on the floor
+//   facing_away     whether its back is to the player
+//   in_control      whether it can do anything at all (not in hitstun, not knocked out)
+//   can_start_move  whether a new move would come out right now
+//   health, meter   its own, out of 100
+//   move            the move it is in the middle of, "idle" for none
+//   them            the same about the player: health, meter, attacking (the hit is on its way), recovering (the hit
+//                   has been thrown, this is the moment to punish), in_hitstun, blocking, grounded, invulnerable, move
+//
+// Anything a behaviour wants to remember between ticks goes in a variable up here.
+
+// Holds a button for a few ticks and lets go for a few, so every attack is a fresh press
+let pressed_for = 0;
+let pressing = "none";
+func press(button) {
+    pressing = button;
+    pressed_for = 10;
+}
+func held() {
+    if (pressed_for <= 0) { return "none"; }
+    pressed_for -= 1;
+    return pressed_for > 4 ? pressing : "none";
+}
+func can_press() { return pressed_for <= 0; }
+
+let behaviours = {
+    // Walks in and hits buttons until something sticks. The shape of a first night online
+    "Masher": func(view) {
+        if (!view.in_control) { return "none"; }
+
+        if (view.in_range) {
+            if (can_press() && view.can_start_move) {
+                press(math.pick(["A", "B", "X", "Y"]));
+            }
+            return held();
+        }
+
+        return "towards";
+    },
+
+    // Hops about and kicks on the way down, for practising anti-airs
+    "Jumper": func(view) {
+        if (!view.in_control) { return "none"; }
+
+        if (view.grounded) {
+            if (view.distance > 220) { return "towards"; }
+            return ["towards", "jump"];
+        }
+
+        if (view.distance < 120 && can_press()) { press("A"); }
+        return ["towards", held()];
+    },
+
+    // Sits in block and only pokes when you whiff in front of it, for learning what is safe
+    "Turtle": func(view) {
+        if (!view.in_control) { return "none"; }
+
+        if (view.them.recovering && view.can_reach && can_press() && view.can_start_move) {
+            press("X");
+        }
+
+        let poke = held();
+        if (poke != "none") { return poke; }
+
+        if (view.distance > 90) { return "towards"; }
+        return view.facing_away ? "towards" : "block";
+    },
+
+    // Runs away and only fights with its back to the wall, for practising chasing somebody down
+    "Runner": func(view) {
+        if (!view.in_control) { return "none"; }
+
+        if (view.distance < 160 && math.abs(view.dx) > 0) {
+            if (view.in_range && can_press() && view.can_start_move) { press("B"); }
+            let hit = held();
+            return hit != "none" ? hit : "away";
+        }
+
+        return "none";
+    }
+};

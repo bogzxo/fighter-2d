@@ -19,6 +19,11 @@ internal class DummyPlayerInput : IPlayerInput
     /// </summary>
     public DummyMode Mode { get; set; } = DummyMode.Fight;
 
+    /// <summary>
+    /// The behaviour written in HIDL it follows while its mode is <see cref="DummyMode.Script"/>, see <see cref="DummyScript"/>.
+    /// </summary>
+    public DummyScript? Script { get; set; }
+
     public float WalkSpeedScale => DummyConfig.WALK_SPEED_SCALE;
 
     public void Attach(PlayerController controller)
@@ -42,6 +47,7 @@ internal class DummyPlayerInput : IPlayerInput
         _hands.Tick();
         _footwork.Tick();
 
+        if (Mode == DummyMode.Script) return RunScript(view);
         if (Mode != DummyMode.Fight) return Pose(view);
 
         _footwork.WatchForDodgeRoll(view);
@@ -67,6 +73,17 @@ internal class DummyPlayerInput : IPlayerInput
         _offence.Update(view);
 
         return direction | _hands.Held;
+    }
+
+    /// <summary>
+    /// Helper method for a dummy that is being told what to do by a script. Its hands and feet are the script's.
+    /// </summary>
+    private InputFlags RunScript(in DummyView view)
+    {
+        _footwork.Stop();
+        _guard.Drop();
+
+        return Script?.Read(_controller, view) ?? InputFlags.None;
     }
 
     /// <summary>

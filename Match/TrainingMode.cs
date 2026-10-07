@@ -12,6 +12,9 @@ internal sealed class TrainingMode(DummyPlayerInput dummy, Player playerOne, Pla
 
     private float _calm;
 
+    // The behaviours written in HIDL, after the built in modes on the menu
+    private readonly List<DummyScript> _scripts = DummyScript.LoadAll();
+
     /// <summary>
     /// What the dummy does with itself, see <see cref="DummyMode"/>.
     /// </summary>
@@ -19,6 +22,33 @@ internal sealed class TrainingMode(DummyPlayerInput dummy, Player playerOne, Pla
     {
         get => dummy.Mode;
         set => dummy.Mode = value;
+    }
+
+    /// <summary>
+    /// Everything the dummy can be told to do, as the training menu lists it. The built in modes first, then the scripts.
+    /// </summary>
+    public string[] DummyChoices => [.. DummyModes.All.Select(DummyModes.Describe), .. _scripts.Select(script => script.Name)];
+
+    /// <summary>
+    /// Which of <see cref="DummyChoices"/> the dummy is on.
+    /// </summary>
+    public int DummyChoice
+    {
+        get => dummy.Mode == DummyMode.Script && dummy.Script is { } script
+            ? DummyModes.All.Length + Math.Max(0, _scripts.IndexOf(script))
+            : Math.Max(0, Array.IndexOf(DummyModes.All, dummy.Mode));
+        set
+        {
+            if (value < DummyModes.All.Length)
+            {
+                dummy.Mode = DummyModes.All[Math.Max(0, value)];
+                return;
+            }
+
+            int script = Math.Clamp(value - DummyModes.All.Length, 0, _scripts.Count - 1);
+            dummy.Script = _scripts[script];
+            dummy.Mode = DummyMode.Script;
+        }
     }
 
     /// <summary>
