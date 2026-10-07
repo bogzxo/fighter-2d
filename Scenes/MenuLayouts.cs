@@ -23,6 +23,7 @@ internal static class MenuLayouts
     public const string OPTIONS = "options.hor";
     public const string FIGHT_HUD = "fight_overlay.hor";
     public const string PAUSE_MENU = "pause_menu.hor";
+    public const string CONTENT_TRANSFER = "content_transfer.hor";
 
     private const string DIRECTORY = "Assets/ui/layouts";
 

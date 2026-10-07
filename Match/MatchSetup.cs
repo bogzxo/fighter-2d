@@ -100,11 +100,18 @@ internal class MatchSetup(MatchMode mode)
     /// <summary>
     /// Helper method to make the fight everything was set up for. Where the players spawn is up to the scene, it knows the map.
     /// </summary>
-    public FightScene CreateFight(MapDefinition mapDefinition)
+    /// <param name="resume">Where a fight that is being built again was, null for one that starts from the top.</param>
+    public FightScene CreateFight(MapDefinition mapDefinition, FightResume? resume = null)
     {
         return new FightScene(mapDefinition, MenuSlot, CreateOpponent())
         {
             Session = Session,
+            Content = Lobby?.Content,
+            Resume = resume,
+
+            // The same fight from where it was, with everything read from disk again. The map as well, by the file it is in
+            Reload = from => CreateFight(MapLoader.TryFind(mapDefinition.FileName, out MapDefinition fresh) ? fresh : mapDefinition, from),
+
             StartsOnTheRight = Lobby is { LocalSide: 1 },
             CharacterId = GetCharacter(0),
 

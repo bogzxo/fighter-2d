@@ -128,7 +128,7 @@ internal sealed class ContentClient
     private void Resolve()
     {
         // Having the same content as the host is the usual case and needs nothing at all
-        if (ContentManifest.Hash(ContentManifest.Build()) == _manifestHash)
+        if (ContentManifest.Hash(ContentManifest.Build(GameContent.Home)) == _manifestHash)
         {
             GameContent.UseLocal();
             Finish("our own");

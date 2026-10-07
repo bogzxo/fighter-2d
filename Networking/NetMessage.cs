@@ -22,5 +22,9 @@ internal enum NetMessage : ushort
     PlayerState,
     Hit,
     Whiff,
-    RoundState
+    RoundState,
+    Pause,
+    Reload,
+    ReloadCheck,
+    Reloaded
 }

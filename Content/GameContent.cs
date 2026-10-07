@@ -26,7 +26,13 @@ internal static class GameContent
     private const int MAX_PATH_LENGTH = 200;
 
     /// <summary>
-    /// The folder the content is loaded from, empty for the one the game came with.
+    /// The folder our own content is in, empty for the one the game came with. Started with --content it is wherever that says,
+    /// which is how the files get worked on where they are kept instead of in a copy next to the exe (see Program).
+    /// </summary>
+    public static string Home { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// The folder the content is loaded from right now. Our own (see <see cref="Home"/>), or in an online fight the copy of the host's.
     /// </summary>
     public static string Root { get; private set; } = string.Empty;
 
@@ -41,8 +47,17 @@ internal static class GameContent
     /// </summary>
     public static void UseLocal()
     {
-        if (Root.Length > 0) Console.WriteLine("[Content] Back to our own content.");
-        Root = string.Empty;
+        if (Root != Home) Console.WriteLine("[Content] Back to our own content.");
+        Root = Home;
+    }
+
+    /// <summary>
+    /// Says where our own content is from here on, for a game that was started with --content.
+    /// </summary>
+    public static void UseHome(string home)
+    {
+        Console.WriteLine($"[Content] Our own content is in '{home}'.");
+        Home = Root = home;
     }
 
     /// <summary>

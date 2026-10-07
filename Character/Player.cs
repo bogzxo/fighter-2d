@@ -23,6 +23,9 @@ internal class Player() : Sprite(SIZE)
     // The tag of the fixture under the feet, the state tracker asks it whether we are on the ground
     public const string FEET_TAG = "feet";
 
+    // The collision group every fighter is in. They don't run into each other (or stand on each other), see Pushboxes for what keeps them apart
+    private const int FIGHTER_GROUP = 1;
+
     // The size a character is drawn at before its own scale
     private static readonly Vector2 SIZE = new(128);
 
@@ -171,6 +174,7 @@ internal class Player() : Sprite(SIZE)
         PhysicsBody.CreateCircleFixture(new Vector2(0, -32 * Scale), 16.0f * Scale);
         PhysicsBody.CreateCircleFixture(Vector2.UnitY * (-64 * Scale), 12.0f * Scale, true, FEET_TAG);
 
+        PhysicsBody.CollisionGroup = FIGHTER_GROUP;
         PhysicsBody.LinearDrag = 16.0f;
         PhysicsBody.Mass = 1.0f;
         PhysicsBody.Restitution = 0.3f;

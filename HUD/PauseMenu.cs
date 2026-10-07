@@ -16,21 +16,35 @@ namespace Fighter2D.HUD;
 /// <summary>
 /// The menu that comes up when somebody presses start in the middle of a fight. Carry on, start the match over or sod off to the main menu.
 /// This only is the menu. Holding the fight still while it is up is the job of the scene, which asks <see cref="HoldsFight"/>.
-/// Only fights on one machine get one, there is no pausing somebody who is sat at another.
+/// Online a pause is a pause for both machines. Whoever didn't press start gets told who did and waits for them to carry on,
+/// only the one who paused can unpause (see <see cref="HeldByOther"/>).
+/// Nobody is dropped straight back into the fight either. Once the pause is over (or the data has been reloaded) it counts
+/// down from three first, and the fight stays held until it gets to the end of that.
 /// </summary>
 internal sealed class PauseMenu : IGameComponent
 {
     private const string HINT = "[icon:dpad] choose    [icon:pad_a] pick    [icon:pad_b] carry on";
 
-    // The longest (in seconds) the fight waits for everybody to let go of their buttons once the menu is gone
-    private const float LONGEST_RELEASE_WAIT = 0.5f;
+    // The layout is three layers. The menu of whoever paused, what the other machine shows while it waits for them,
+    // and the countdown both of them get before the fight is back on
+    private const string MENU_LAYER = "menu";
+    private const string WAITING_LAYER = "waiting";
+    private const string COUNTDOWN_LAYER = "countdown";
+
+    // What the countdown counts from, a second for each
+    private const int COUNTDOWN_FROM = 3;
 
     private readonly ButtonList _buttons = new();
     private UICompositor _compositor = null!;
     private UILayout _layout = null!;
-    private Label _hint = null!;
+    private Label _hint = null!, _count = null!;
 
-    private float _releaseWait;
+    // How much of the countdown is left in seconds, and the number of it that is on screen
+    private float _countdown;
+    private int _shownCount;
+
+    // Whether the fight was paused (by anybody) on the last update, which is how the end of a pause is noticed
+    private bool _wasPaused;
     private bool _leaving;
 
     /// <summary>
@@ -39,9 +53,32 @@ internal sealed class PauseMenu : IGameComponent
     public bool IsOpen { get; private set; }
 
     /// <summary>
-    /// Whether the fight is to hold still. That is while the menu is up, and for a moment after while somebody is still holding the button they closed it with.
+    /// Whether the other machine has the fight paused, asked on every update. Null for a fight that has no other machine.
     /// </summary>
-    public bool HoldsFight => IsOpen || _releaseWait > 0.0f;
+    public Func<bool>? HeldByOther { get; init; }
+
+    private bool Waiting => HeldByOther?.Invoke() == true;
+
+    /// <summary>
+    /// Whether there is anything of the pause on screen, the menu or the wait for the other player.
+    /// </summary>
+    public bool IsShowing => IsOpen || Waiting;
+
+    /// <summary>
+    /// Whether the fight is to hold still. That is while the menu is up or the other machine has paused,
+    /// and after that for as long as the countdown takes.
+    /// </summary>
+    public bool HoldsFight => IsShowing || _countdown > 0.0f;
+
+    /// <summary>
+    /// Counts down from three before the fight carries on. The end of a pause does this by itself,
+    /// this is for whoever else has held the fight up (the data being reloaded).
+    /// </summary>
+    public void StartCountdown()
+    {
+        _countdown = COUNTDOWN_FROM;
+        _shownCount = 0;
+    }
 
     /// <summary>
     /// Asked when somebody presses start, false keeps the menu shut. For whoever knows whether this is a good moment.
@@ -56,9 +93,17 @@ internal sealed class PauseMenu : IGameComponent
 
     /// <summary>
     /// What starting the match over and leaving for the main menu come to, the menu only has the buttons for them.
+    /// Without a rematch (online there is none) the button for it isn't there.
     /// </summary>
-    public required Action Rematch { get; init; }
+    public Action? Rematch { get; init; }
     public required Action Quit { get; init; }
+
+    /// <summary>
+    /// The tools of the host, a list of its own under the menu. Reading all the data again from disk and drawing the hitboxes.
+    /// Null for whoever isn't the host (the machine that joined an online fight), who doesn't get the list at all.
+    /// </summary>
+    public Action? ReloadData { get; init; }
+    public Func<bool>? ToggleHitboxes { get; init; }
 
     public bool Enabled { get; set; } = true;
     public string Name { get; set; } = "Pause Menu";
@@ -73,10 +118,40 @@ internal sealed class PauseMenu : IGameComponent
         _compositor.Initialize();
 
         AddButton("btn_resume", Close);
-        AddButton("btn_rematch", () => Leave(Rematch));
+
+        if (Rematch is { } rematch) AddButton("btn_rematch", () => Leave(rematch));
+        else _layout.Get<Button>("btn_rematch").Visible = false;
+
         AddButton("btn_quit", () => Leave(Quit));
+        AddHostTools();
 
         _hint = _layout.Get<Label>("hint");
+        _count = _layout.Get<Label>("count");
+
+        // None of it is up until somebody pauses
+        _layout.Module.SetLayerVisible(MENU_LAYER, false);
+        _layout.Module.SetLayerVisible(WAITING_LAYER, false);
+        _layout.Module.SetLayerVisible(COUNTDOWN_LAYER, false);
+    }
+
+    /// <summary>
+    /// Helper method to set up the tools of the host, or to take them off the menu for whoever isn't.
+    /// </summary>
+    private void AddHostTools()
+    {
+        var reload = _layout.Get<Button>("btn_reload");
+        var hitboxes = _layout.Get<Button>("btn_hitboxes");
+
+        if (ReloadData is null || ToggleHitboxes is null)
+        {
+            _layout.Get<Label>("tools_title").Visible = false;
+            reload.Visible = hitboxes.Visible = false;
+            return;
+        }
+
+        // The menu stays up while the data is read again, the fight that comes back from it has no pause on
+        AddButton("btn_reload", ReloadData);
+        AddButton("btn_hitboxes", () => hitboxes.Label = ToggleHitboxes() ? "Hitboxes: on" : "Hitboxes: off");
     }
 
     private void AddButton(string name, Action pressed)
@@ -100,7 +175,6 @@ internal sealed class PauseMenu : IGameComponent
     private void Close()
     {
         IsOpen = false;
-        _releaseWait = LONGEST_RELEASE_WAIT;
 
         Closed?.Invoke();
     }
@@ -120,16 +194,18 @@ internal sealed class PauseMenu : IGameComponent
     {
         if (_leaving) return;
 
-        if (_releaseWait > 0.0f)
-        {
-            // The button that closed the menu is most likely somebody's kick as well. The fight waits until it is let go of, or it would come out
-            _releaseWait = AnybodyHolding() ? _releaseWait - dt : 0.0f;
-            return;
-        }
+        UpdateCountdown(dt);
+
+        _layout.Module.SetLayerVisible(MENU_LAYER, IsOpen);
+        _layout.Module.SetLayerVisible(WAITING_LAYER, !IsOpen && Waiting);
+        _layout.Module.SetLayerVisible(COUNTDOWN_LAYER, !IsShowing && _countdown > 0.0f);
 
         if (!IsOpen)
         {
             if (StartPressed() && CanOpen?.Invoke() != false) Open();
+
+            // Nothing to press while waiting for the other player or for the countdown, but what they say still has to be laid out
+            if (HoldsFight) _compositor.UpdateState(dt);
             return;
         }
 
@@ -157,6 +233,30 @@ internal sealed class PauseMenu : IGameComponent
         }
     }
 
+    /// <summary>
+    /// Helper method to run the countdown. It starts the moment nobody has the fight paused any more,
+    /// and starts over from the top if somebody pauses again before it is done.
+    /// </summary>
+    private void UpdateCountdown(float dt)
+    {
+        bool paused = IsShowing;
+
+        if (_wasPaused && !paused) StartCountdown();
+        _wasPaused = paused;
+
+        if (paused || _countdown <= 0.0f) return;
+
+        _countdown = MathF.Max(0.0f, _countdown - dt);
+
+        // Every number lands with a thump
+        int count = (int)MathF.Ceiling(_countdown);
+        if (count == _shownCount || count <= 0) return;
+
+        _shownCount = count;
+        _count.Text = count.ToString();
+        _count.Punch(0.4f, 0.3f);
+    }
+
     private static bool StartPressed()
     {
         foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
@@ -167,20 +267,10 @@ internal sealed class PauseMenu : IGameComponent
         return false;
     }
 
-    private static bool AnybodyHolding()
-    {
-        foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
-        {
-            if (gamepad.IsConnected && gamepad.AnyDown) return true;
-        }
-
-        return false;
-    }
-
     public void UpdatePhysics(float dt) { }
 
     public void Render(float dt, object? obj = null)
     {
-        if (IsOpen) _compositor.Render(dt);
+        if (HoldsFight) _compositor.Render(dt);
     }
 }

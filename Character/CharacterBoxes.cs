@@ -33,6 +33,14 @@ internal sealed class CharacterBoxes
     private readonly Dictionary<string, FrameBoxes[]> _animations = [];
 
     /// <summary>
+    /// Forgets every sheet that was traced, for when the art on disk has changed. The next fight traces what it needs again.
+    /// </summary>
+    public static void Forget()
+    {
+        lock (cache) cache.Clear();
+    }
+
+    /// <summary>
     /// Helper method to read the boxes of a character off its sprite sheet, null if the sheet can't be read.
     /// </summary>
     /// <param name="directory">The folder the sprite sheet is in.</param>

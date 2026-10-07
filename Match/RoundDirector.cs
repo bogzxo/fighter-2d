@@ -243,6 +243,22 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
     }
 
     /// <summary>
+    /// Puts the match back to how it stood, no questions asked. For a fight that was taken apart and built again
+    /// in the middle of a match (see FightScene.ReloadData), on either machine.
+    /// </summary>
+    public void Restore(in RoundSnapshot snapshot)
+    {
+        Score.Restore(snapshot.Rounds, snapshot.Forfeit);
+        LastOutcome = snapshot.LastOutcome;
+        TimedOut = snapshot.TimedOut;
+        TimeLeft = snapshot.TimeLeft;
+
+        Phase = snapshot.Phase;
+        PhaseTime = snapshot.PhaseTime;
+        PhaseChanged?.Invoke(Phase);
+    }
+
+    /// <summary>
     /// Helper method to say how far into a match a phase is, the later the higher.
     /// A round is called (which adds it to the ones that were played), then the next one is got ready for and fought.
     /// </summary>

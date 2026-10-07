@@ -2,6 +2,7 @@ using System;
 
 using Fighter2D.Content;
 using Fighter2D.Map;
+using Fighter2D.Match;
 using Fighter2D.Networking;
 using Fighter2D.Scenes;
 
@@ -17,6 +18,10 @@ internal class Program
     private const string ARGUMENT_MAP = "--map";
     private const string ARGUMENT_CHARACTER = "--character";
 
+    // "--content C:/wherever/Fighter2D" loads the moves, characters, maps and art from that folder (the one with Assets in it)
+    // instead of from the copy next to the exe. With the host tools of the pause menu that is edit a file, reload, see it, no build in between
+    private const string ARGUMENT_CONTENT = "--content";
+
     private static void Main(string[] args)
     {
         // Unpack native libraries and shaders to the same folder as the executable, so that the game can find them
@@ -24,6 +29,12 @@ internal class Program
 
         // Whatever the player set on the options screen last time, the window is made the way they left it
         GameOptions.Load();
+
+        if (TryGetArgument(args, ARGUMENT_CONTENT, out string content))
+        {
+            if (Directory.Exists(Path.Combine(content, GameContent.MAPS_DIRECTORY))) GameContent.UseHome(content);
+            else Console.WriteLine($"There is no content in '{content}', going with what the game came with.");
+        }
 
         var engine = new GameEngine(new GameEngineConfiguration
         {
@@ -48,14 +59,18 @@ internal class Program
         // Keeps the connection of an online fight alive from the lobby into the fight
         engine.AddEntity(new NetPump());
 
+        TmpDriver.Attach(engine); // TMP-HOOK
+
         if (TryGetArgument(args, ARGUMENT_MAP, out string mapName) && TryFindMap(mapName, out MapDefinition map))
         {
             TryGetArgument(args, ARGUMENT_CHARACTER, out string character);
 
-            FightScene CreateFight() => new(map, 0)
+            FightScene CreateFight(FightResume? resume = null) => new(MapLoader.TryFind(map.FileName, out MapDefinition fresh) ? fresh : map, 0)
             {
                 CharacterId = character.Length > 0 ? character : null,
-                Rematch = CreateFight
+                Resume = resume,
+                Rematch = () => CreateFight(),
+                Reload = CreateFight
             };
 
             engine.SetScene(CreateFight(), Screen.IntoFight);

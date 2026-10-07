@@ -50,6 +50,11 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
 
     public bool IsConnected => session.IsConnected;
 
+    /// <summary>
+    /// Whether the other machine has the fight paused. For as long as it does nothing moves here either, see FightScene.
+    /// </summary>
+    public bool RemotePaused { get; private set; }
+
     // Messages can show up before the scene has set the players up, a controller has no player until then
     private PlayerController? Local => LocalPlayer?.Controller is { Player: not null, StateTracker: not null } controller ? controller : null;
     private PlayerController? Remote => RemotePlayer?.Controller is { Player: not null, StateTracker: not null } controller ? controller : null;
@@ -150,6 +155,73 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
         session.Send(message);
     }
 
+    /// <summary>
+    /// Called on the machine that didn't host when the host says to read all the data again.
+    /// By then it has whatever the host changed, the host waits for that before it says so.
+    /// </summary>
+    public Action? ReloadRequested { get; set; }
+
+    // Whether the fight has handed the connection on to the fight that takes its place, which is then not ours to close
+    private bool _detached;
+
+    /// <summary>
+    /// Host only. Whether the other machine has said it is done reloading and back in the fight.
+    /// </summary>
+    public bool PeerReloaded { get; private set; }
+
+    // The other machine only. Whether we are done reloading, which the host gets told once and again every time it asks
+    private bool _reloaded;
+
+    /// <summary>
+    /// Called on the machine that didn't host once its reloaded fight is up and its fighters are back where they were.
+    /// The host holds still until it hears this.
+    /// </summary>
+    public void SayReloaded()
+    {
+        _reloaded = true;
+        session.Send(NetSession.Reliable(NetMessage.Reloaded));
+    }
+
+    /// <summary>
+    /// Called by the host while it waits for the other machine to be done reloading. Asking again costs nothing,
+    /// and the answer to the first time may have arrived while there was no fight here to hear it (we were busy reloading ourselves).
+    /// </summary>
+    public void AskReloaded()
+    {
+        session.Send(NetSession.Reliable(NetMessage.ReloadCheck));
+    }
+
+    /// <summary>
+    /// Called by the host once the other machine has its data, both of them then build the fight again from what is on disk.
+    /// </summary>
+    public void SendReload()
+    {
+        session.Send(NetSession.Reliable(NetMessage.Reload));
+    }
+
+    /// <summary>
+    /// Stops listening to the connection without hanging up, for a fight that is about to be replaced by another one on the same connection.
+    /// </summary>
+    public void Detach()
+    {
+        if (_detached) return;
+        _detached = true;
+
+        session.Received -= OnMessageReceived;
+        session.PeerLeft -= OnPeerLeft;
+        round.PhaseChanged -= OnPhaseChanged;
+    }
+
+    /// <summary>
+    /// Called when our player pauses the fight or carries on with it, the other machine holds still for as long as we do.
+    /// </summary>
+    public void SendPause(bool paused)
+    {
+        var message = NetSession.Reliable(NetMessage.Pause);
+        message.AddBool(paused);
+        session.Send(message);
+    }
+
     /* Receiving */
 
     private void OnMessageReceived(NetMessage id, Message message)
@@ -171,6 +243,23 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
 
             case NetMessage.Whiff:
                 ReceiveWhiff(message.GetString());
+                break;
+
+            case NetMessage.Pause:
+                RemotePaused = message.GetBool();
+                break;
+
+            case NetMessage.Reload when !session.IsHost:
+                ReloadRequested?.Invoke();
+                break;
+
+            case NetMessage.ReloadCheck when !session.IsHost:
+                // Not yet is no answer at all, the host hears from us the moment we are
+                if (_reloaded) SayReloaded();
+                break;
+
+            case NetMessage.Reloaded when session.IsHost:
+                PeerReloaded = true;
                 break;
 
             case NetMessage.RoundState when !session.IsHost:
@@ -247,6 +336,9 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
     {
         Console.WriteLine("[FightNetwork] The other player rage quit!");
 
+        // Nobody is left to ever unpause it
+        RemotePaused = false;
+
         // Whoever stays has won, there is nobody left to fight
         round.Forfeit(winner: 0);
     }
@@ -256,6 +348,9 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
 
     public void Dispose()
     {
+        // Handed on to the next fight, which is still using it
+        if (_detached) return;
+
         session.Received -= OnMessageReceived;
         session.PeerLeft -= OnPeerLeft;
         round.PhaseChanged -= OnPhaseChanged;

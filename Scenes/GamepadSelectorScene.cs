@@ -48,6 +48,9 @@ internal class GamepadSelectorScene(MatchSetup setup) : MenuScene
         _flow = setup.Lobby is { } lobby
             ? new LobbySelectFlow(this, setup, lobby, _cards, hint)
             : new LocalSelectFlow(this, setup, _cards, hint);
+
+        // Online the game files may have to go from the host to whoever joined, which gets a progress bar of its own
+        if (setup.Lobby is { } online) AddComponent(new HUD.ContentTransferDisplay(online.Content, online.IsHost));
     }
 
     protected override void UpdateMenu(float dt)

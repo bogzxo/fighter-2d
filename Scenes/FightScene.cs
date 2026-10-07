@@ -39,6 +39,13 @@ internal class FightScene : Scene
     private const float PAUSE_BLUR_TIME = 0.16f;
     private const float PAUSE_CLEAR_TIME = 0.22f;
 
+    // How long (in seconds) the host waits for the other machine to say it has the data before a reload is called off,
+    // and how long it holds the reloaded fight for the other machine to be back in it before it carries on regardless
+    private const float RELOAD_PATIENCE = 8.0f;
+
+    // How often (in seconds) the host asks the other machine whether it is done reloading
+    private const float RELOAD_ASK_INTERVAL = 0.5f;
+
     public override Camera ActiveCamera { get; protected set; } = null!;
 
     /// <summary>
@@ -67,6 +74,21 @@ internal class FightScene : Scene
     /// </summary>
     public Func<FightScene>? Rematch { get; init; }
 
+    /// <summary>
+    /// Makes this same fight again from where it was, with everything read from disk again. For the host tools of the pause menu.
+    /// </summary>
+    public Func<FightResume, FightScene>? Reload { get; init; }
+
+    /// <summary>
+    /// Where the fight this one takes the place of was, null for a fight that starts from the top.
+    /// </summary>
+    public FightResume? Resume { get; init; }
+
+    /// <summary>
+    /// What gets the game files from the host to the other machine, for an online fight.
+    /// </summary>
+    public ContentSync? Content { get; init; }
+
     private MapDefinition _mapDefinition;
     private readonly int _gamepadIndex;
     private Player? _opponent;
@@ -83,7 +105,21 @@ internal class FightScene : Scene
 
     // Smears the arena while something is up in front of it that wants the attention
     private BlurEffect _backdropBlur = null!;
+    private HUDManager _hud = null!;
     private PauseMenu? _pause;
+    private bool _pauseBlurred;
+
+    // Reloading the data. How long the host still waits for the other machine to have it, the panel that shows the files going across,
+    // whether the fighters still have to be put back where they were, and whether the connection went on to the fight that replaces this one
+    private float _reloadWait;
+    private ContentTransferDisplay? _transfer;
+    private bool _resumePending;
+    private bool _handedOver;
+
+    // Host only, after a reload. Whether the fight is still held for the other machine to be done reloading as well,
+    // how long it has been, and how long until it is asked again
+    private bool _awaitingPeer;
+    private float _awaitTime, _askTimer;
 
     /// <param name="opponent">Whoever player two is, null to fight the dummy.</param>
     public FightScene(MapDefinition mapDefinition, int gamepadIndex, Player? opponent = null)
@@ -122,6 +158,7 @@ internal class FightScene : Scene
         _camera = new FightCamera(_sceneCamera, _stage, viewport, (ourSpawn + theirSpawn) / 2.0f);
 
         StartMatch();
+        ResumeMatch();
 
         base.Initialize();
     }
@@ -217,28 +254,198 @@ internal class FightScene : Scene
             });
         }
 
-        AddComponent<HUDManager>();
+        _hud = AddComponent<HUDManager>();
         AddPauseMenu();
+
+        if (Content is not null) _transfer = AddComponent(new ContentTransferDisplay(Content, Session is { IsHost: true }));
+        if (_network is not null) _network.ReloadRequested = ReloadNow;
     }
 
     /// <summary>
-    /// Helper method to give the fight its pause menu, which goes on top of the HUD. Online there is none, nobody gets to freeze somebody else's game.
+    /// Helper method to give the fight its pause menu, which goes on top of the HUD.
+    /// Online a pause holds both machines still, each tells the other when it pauses and when it carries on.
     /// </summary>
     private void AddPauseMenu()
     {
-        if (Session is not null || Rematch is null) return;
-
         _pause = AddComponent(new PauseMenu
         {
             // The versus screen and the result have the screen to themselves
             CanOpen = () => _round.Phase is RoundPhase.Ready or RoundPhase.Fight or RoundPhase.RoundOver,
 
-            Opened = () => _backdropBlur.BlurTo(PAUSE_BLUR, PAUSE_BLUR_TIME),
-            Closed = () => _backdropBlur.BlurTo(0.0f, PAUSE_CLEAR_TIME),
+            Opened = () => _network?.SendPause(true),
+            Closed = () => _network?.SendPause(false),
+            HeldByOther = _network is { } network ? () => network.RemotePaused : null,
 
-            Rematch = StartRematch,
-            Quit = LeaveFight
+            // Starting over is for fights on one machine, the other one would have to want it as well
+            Rematch = Rematch is null || Session is not null ? null : StartRematch,
+            Quit = LeaveFight,
+
+            // The tools are the host's. On one machine that is whoever is playing
+            ReloadData = IsHost && Reload is not null ? ReloadData : null,
+            ToggleHitboxes = IsHost ? () => _world.RenderDebug = !_world.RenderDebug : null
         });
+    }
+
+    private bool IsHost => Session is null || Session.IsHost;
+
+    /* Reloading the data in the middle of a fight */
+
+    /// <summary>
+    /// Called from the host tools of the pause menu. Everything the fight is made of (moves, characters, maps, art) is read from disk again.
+    /// Online the other machine gets whatever changed first and then does the same, so both of them carry on with the same data.
+    /// </summary>
+    private void ReloadData()
+    {
+        if (_reloadWait > 0.0f) return;
+
+        if (_network is null || Content is null)
+        {
+            ReloadNow();
+            return;
+        }
+
+        // Offering the content again has the other machine fetch what is different, and say so once it has all of it
+        Content.Offer();
+        _reloadWait = RELOAD_PATIENCE;
+        if (_transfer is not null) _transfer.Waiting = "Reloading the data";
+    }
+
+    /// <summary>
+    /// Helper method for the host to wait until the other machine has the data, and to tell it to reload once it does.
+    /// </summary>
+    private void UpdateReload(float dt)
+    {
+        if (_reloadWait <= 0.0f || Content is null) return;
+
+        if (Content.PeerVerified)
+        {
+            _network?.SendReload();
+            ReloadNow();
+            return;
+        }
+
+        // Files that are still going across are no reason to give up, only silence is
+        if (!Content.IsTransferring) _reloadWait -= dt;
+        if (_reloadWait > 0.0f) return;
+
+        Console.WriteLine("[Fight] The other machine never said it has the data, nothing was reloaded.");
+        if (_transfer is not null) _transfer.Waiting = string.Empty;
+    }
+
+    /// <summary>
+    /// Helper method to swap this fight for the same one built from what is on disk right now, carrying on from where this one is.
+    /// </summary>
+    private void ReloadNow()
+    {
+        if (Reload is null || _handedOver) return;
+
+        Console.WriteLine("[Fight] Reading the data again.");
+
+        // What was worked out from the old files is no good for the new ones
+        CharacterBoxes.Forget();
+        CharacterPortrait.Forget();
+
+        var resume = new FightResume(_round.Capture(), FighterResume.Of(Fight.PlayerOne), FighterResume.Of(Fight.PlayerTwo));
+
+        // The fight that takes over uses the same connection, so this one lets go of it without hanging up
+        _network?.Detach();
+        _handedOver = true;
+
+        Engine.SetScene(Reload(resume), null);
+    }
+
+    /// <summary>
+    /// Helper method for a fight that takes the place of another one. The match goes back to how it stood,
+    /// and the arena is in focus from the start because there is no versus screen to sit behind.
+    /// </summary>
+    private void ResumeMatch()
+    {
+        if (Resume is not { } resume) return;
+
+        _round.Restore(resume.Round);
+        _resumePending = true;
+
+        if (resume.Round.Phase != RoundPhase.Versus)
+        {
+            _backdropBlur.Radius = 0.0f;
+            _backdropBlur.Enabled = false;
+        }
+
+        // The host doesn't get a head start, it holds still until the other machine is back in the fight too
+        _awaitingPeer = Session is { IsHost: true };
+    }
+
+    /// <summary>
+    /// Helper method for the host to wait for the other machine after a reload. It asks every so often,
+    /// and gives up waiting if they left or take forever.
+    /// </summary>
+    private void AwaitPeer(float dt)
+    {
+        _awaitTime += dt;
+
+        bool done = _network is null || _network.PeerReloaded || !_network.IsConnected || _awaitTime >= RELOAD_PATIENCE;
+        if (done)
+        {
+            if (_network is { PeerReloaded: false }) Console.WriteLine("[Fight] Never heard that the other machine is done reloading, carrying on anyway.");
+
+            _awaitingPeer = false;
+            if (_transfer is not null) _transfer.Waiting = string.Empty;
+
+            // Both of us are back, three two one and off we go
+            _pause?.StartCountdown();
+            return;
+        }
+
+        if ((_askTimer -= dt) <= 0.0f)
+        {
+            _askTimer = RELOAD_ASK_INTERVAL;
+            _network!.AskReloaded();
+        }
+
+        if (_transfer is not null)
+        {
+            _transfer.Waiting = "Data reloaded";
+            _transfer.WaitingDetail = "waiting for the other machine to do the same";
+            _transfer.WaitingProgress = 1.0f;
+        }
+    }
+
+    /// <summary>
+    /// Helper method to put the fighters back the way they were, once they have bodies to put anywhere.
+    /// </summary>
+    private void ResumeFighters()
+    {
+        if (Resume is not { } resume || Fight.PlayerOne.PhysicsBody is null || Fight.PlayerTwo.PhysicsBody is null) return;
+        _resumePending = false;
+
+        Place(Fight.PlayerOne, resume.One);
+        Place(Fight.PlayerTwo, resume.Two);
+
+        // That is us back in the fight, which the host is waiting to hear. It counts down from there, and so do we.
+        // On one machine there is nobody to wait for
+        if (Session is { IsHost: false }) _network?.SayReloaded();
+        if (!_awaitingPeer) _pause?.StartCountdown();
+
+        static void Place(Player player, FighterResume was)
+        {
+            player.Health = was.Health;
+            player.PhysicsBody.Position = was.Position;
+            player.Transform.Position = was.Position;
+        }
+    }
+
+    /// <summary>
+    /// Helper method to smear the arena for as long as there is a pause on screen, ours or the other machine's.
+    /// </summary>
+    private void UpdatePauseBlur()
+    {
+        bool paused = _pause is { IsShowing: true } || _awaitingPeer;
+        if (paused == _pauseBlurred) return;
+
+        _pauseBlurred = paused;
+
+        if (paused) _backdropBlur.BlurTo(PAUSE_BLUR, PAUSE_BLUR_TIME);
+        else _backdropBlur.BlurTo(0.0f, PAUSE_CLEAR_TIME);
     }
 
     private void OnPhaseChanged(RoundPhase phase)
@@ -252,10 +459,29 @@ internal class FightScene : Scene
 
     public override void UpdateState(float dt)
     {
-        // Nothing of the fight moves while the pause menu is up, only the menu itself
+        if (_resumePending) ResumeFighters();
+        if (_awaitingPeer) AwaitPeer(dt);
+
+        UpdatePauseBlur();
+        UpdateReload(dt);
+
+        // Held for the other machine to catch up after a reload, which is a pause nobody asked for.
+        // The HUD is kept going through every kind of hold. A fight that comes back from a reload is held from its first update,
+        // and a HUD that was never updated has nothing to draw
+        if (_awaitingPeer)
+        {
+            _hud.UpdateState(dt);
+            _transfer?.UpdateState(dt);
+            return;
+        }
+
+        // Nothing of the fight moves while it is paused (by us or by the other machine), only the pause itself
+        // and the files that may be going across for a reload
         if (_pause is { HoldsFight: true })
         {
+            _hud.UpdateState(dt);
             _pause.UpdateState(dt);
+            _transfer?.UpdateState(dt);
             return;
         }
 
@@ -268,7 +494,7 @@ internal class FightScene : Scene
 
     public override void UpdatePhysics(float dt)
     {
-        if (_pause is { HoldsFight: true }) return;
+        if (_pause is { HoldsFight: true } || _awaitingPeer) return;
 
         base.UpdatePhysics(dt);
 
@@ -278,6 +504,9 @@ internal class FightScene : Scene
 
         if (Fight.PlayerOne is { } us && Fight.PlayerTwo is { } them)
         {
+            // They walk through each other as far as the physics goes, this is what keeps them apart
+            Pushboxes.Separate(us, them, dt);
+
             _camera?.Follow(us.Transform.Position, them.Transform.Position, dt);
         }
     }
@@ -331,8 +560,8 @@ internal class FightScene : Scene
 
     protected override void DisposeOther()
     {
-        // Shut down sockets cleanly so ports aren't left hanging open
-        _network?.Dispose();
+        // Shut down sockets cleanly so ports aren't left hanging open. Unless the fight that replaced this one is using them
+        if (!_handedOver) _network?.Dispose();
 
         // Only if the fight is still ours. By the time a scene is disposed of the next one is set up, and after a rematch that is another fight
         if (Fight.Round == _round) Fight.Clear();

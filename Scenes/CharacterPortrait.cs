@@ -25,6 +25,11 @@ internal class CharacterPortrait(Image image)
     // The sprite sheets that have been loaded for portraits, one per character however many portraits show it
     private static readonly Dictionary<string, (SpriteSheet Sheet, SpriteSheetAnimationManager Animations)> sheets = [];
 
+    /// <summary>
+    /// Forgets every sheet that was loaded for a portrait, for when the art on disk has changed.
+    /// </summary>
+    public static void Forget() => sheets.Clear();
+
     private SpriteSheet? _sheet;
     private Vector2 _firstFrame;
     private uint _length = 1;

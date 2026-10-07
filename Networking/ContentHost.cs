@@ -44,7 +44,7 @@ internal sealed class ContentHost
     {
         Forget();
 
-        _manifest = ContentManifest.Build();
+        _manifest = ContentManifest.Build(GameContent.Home);
         _manifestHash = ContentManifest.Hash(_manifest);
 
         // One message per file, the whole list would not fit into one.
@@ -88,7 +88,7 @@ internal sealed class ContentHost
                     if (_sendQueue.Count == 0) return;
 
                     _sendingIndex = _sendQueue.Dequeue();
-                    _sending = File.OpenRead(_manifest[_sendingIndex].Path);
+                    _sending = File.OpenRead(Path.Combine(GameContent.Home, _manifest[_sendingIndex].Path));
                 }
 
                 SendNextChunk(_sending);
