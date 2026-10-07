@@ -112,9 +112,7 @@ internal sealed class PauseMenu : GameComponent
 
     public override void Initialize()
     {
-        var camera = new Camera2D(GameEngine.Instance.WindowManager.ViewportSize);
-
-        (_layout, _compositor) = MenuLayouts.Load(camera, MenuLayouts.PAUSE_MENU);
+        (_layout, _compositor) = MenuLayouts.Load(MenuLayouts.PAUSE_MENU);
         _compositor.Initialize();
 
         AddButton("btn_resume", Close);

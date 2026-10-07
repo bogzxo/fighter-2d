@@ -42,19 +42,23 @@ internal static class MenuLayouts
     }
 
     /// <summary>
-    /// Helper method to load a layout for somebody who wants to update and draw the compositor themselves (the HUD).
+    /// Helper method to load a layout laid over the whole window, for somebody who wants to update and draw the
+    /// compositor themselves (the HUD). It has a camera of its own that keeps up with the window.
     /// </summary>
-    public static (UILayout, UICompositor) Load(Camera2D camera, string file)
+    public static (UILayout, UICompositor) Load(string file)
     {
-        var compositor = CreateCompositor(camera);
+        var compositor = Configure(UICompositor.ForScreen(Constants.UI_THEME));
 
         return (compositor.CreateModule().LoadLayout(Path.Combine(DIRECTORY, file)), compositor);
     }
 
-    private static UICompositor CreateCompositor(Camera2D camera)
+    private static UICompositor CreateCompositor(Camera2D camera) => Configure(new UICompositor(camera, Constants.UI_THEME));
+
+    private static UICompositor Configure(UICompositor compositor)
     {
         // As big as the player likes their UI, on top of fitting the window
-        var compositor = new UICompositor(camera, Constants.UI_THEME) { DesignSize = DesignSize, Scale = GameOptions.GuiScale };
+        compositor.DesignSize = DesignSize;
+        compositor.Scale = GameOptions.GuiScale;
 
         // The menus slide and pop into place, a bit of blur makes that look smooth
         Screen.AddMotionBlur(compositor);

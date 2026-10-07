@@ -59,9 +59,7 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
 
     public override void Initialize()
     {
-        var camera = new Camera2D(GameEngine.Instance.WindowManager.ViewportSize);
-
-        (UILayout layout, _compositor) = MenuLayouts.Load(camera, MenuLayouts.CONTENT_TRANSFER);
+        (UILayout layout, _compositor) = MenuLayouts.Load(MenuLayouts.CONTENT_TRANSFER);
         _compositor.Initialize();
 
         _title = layout.Get<Label>("title");

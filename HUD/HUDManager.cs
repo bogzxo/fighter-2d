@@ -23,9 +23,7 @@ internal class HUDManager : GameComponent
 
     public override void Initialize()
     {
-        var camera = new Camera2D(GameEngine.Instance.WindowManager.ViewportSize);
-
-        (UILayout layout, _compositor) = MenuLayouts.Load(camera, MenuLayouts.FIGHT_HUD);
+        (UILayout layout, _compositor) = MenuLayouts.Load(MenuLayouts.FIGHT_HUD);
         _compositor.Initialize();
 
         // The fight sets its director up before its HUD, there is nothing to show without one
