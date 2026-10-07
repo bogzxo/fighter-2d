@@ -1,0 +1,60 @@
+﻿let maps = {
+    japan: {
+        pretty_name: "Japan",
+        file_name: "japan.tmx",
+        description: "no waifus to see here..",
+        ambience: {
+            start_colour: vec(150, 190, 225),
+            end_colour: vec(90, 120, 190),
+            velocity: vec(-110, -640),
+            rate: 260,
+            size: 1,
+            stretch: 0.018,
+            splash: 140,
+            splash_fade: 0.8,
+            lifetime: 2.2
+        },
+        storm: {
+            interval: vec(7, 16),
+            colour: vec(190, 208, 255),
+            brightness: 0.3,
+            shake: 2
+        },
+        lighting: {
+            ambient: vec(238, 234, 226)
+        },
+        spawn_pos: { x: 30, y: -12 }
+    },
+	dungeon: {
+        pretty_name: "The Dungeon",
+        file_name: "dungeon.tmx",
+        description: "plenty weird stains on the walls.. hmmm... uuhhggg.. mmmhhh.....",
+        ambience: {
+            start_colour: vec(50, 68, 168),
+            end_colour: vec(50, 129, 168),
+            velocity: vec(0, -420),
+            rate: 14,
+            lifetime: 6
+        },
+        lighting: {
+            ambient: vec(92, 90, 116)
+        },
+        spawn_pos: { x: 20, y: -24 }
+    },
+    underground: {
+        pretty_name: "Underground",
+        file_name: "underground.tmx",
+        description: "under where?",
+        ambience: {
+            start_colour: vec(50, 68, 168),
+            end_colour: vec(50, 129, 168),
+            velocity: vec(0, -420),
+            rate: 14,
+            lifetime: 6
+        },
+        lighting: {
+            ambient: vec(112, 118, 158)
+        },
+        spawn_pos: { x: 32, y: -5 }
+    },
+};
