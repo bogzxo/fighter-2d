@@ -60,18 +60,15 @@ internal class MapSelectionScene(MatchSetup setup) : MenuScene
     protected override void BuildUi(UILayout layout)
     {
         // The screen is laid out in Assets/ui/layouts/map_select.hor, the button of a map in map_button.hor
-        var items = layout.Populate("maps", _maps.Count);
-
-        for (int i = 0; i < items.Count; i++)
+        // A button per map. Clicking one selects it, the fight button underneath (or the gamepad) starts the fight
+        layout.Populate("maps", _maps, (item, map, index) =>
         {
-            // Clicking a map selects it, the fight button underneath (or the gamepad) starts the fight
-            int index = i;
-            var button = items[i].Get<Button>("button");
-            button.Label = _maps[i].PrettyName;
+            var button = item.Get<Button>("button");
+            button.Label = map.PrettyName;
             button.OnPressed = () => SelectMap(index);
 
             _buttons.Add(button);
-        }
+        });
 
         _description = layout.Get<Label>("description");
         _hint = layout.Get<Label>("hint");
