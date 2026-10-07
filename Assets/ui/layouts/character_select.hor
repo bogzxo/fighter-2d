@@ -2,6 +2,9 @@
 // everybody there is to pick from on the right. The game makes the cells of the grid out of character_cell.hor,
 // as many rows of them as the grid has columns, and fills in the preview and its bars.
 
+// Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
+compositor.design({ size: vec(1600, 900), fit: "contain" });
+
 let panel = compositor.stack({
     background: "panel",
     padding: vec(40, 34),

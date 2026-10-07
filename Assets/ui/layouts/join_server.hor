@@ -1,6 +1,9 @@
 // Where the address of a server is typed in (JoinServerScene.cs). The keys of the on-screen keyboard are put
 // into keyboard_slot by the game, the status stays empty until there is something to say.
 
+// Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
+compositor.design({ size: vec(1600, 900), fit: "contain" });
+
 let panel = compositor.stack({
     background: "panel",
     padding: vec(40, 34),

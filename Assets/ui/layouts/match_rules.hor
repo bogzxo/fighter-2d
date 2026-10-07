@@ -1,6 +1,9 @@
 // Where the rules of the match are settled on, after the map is picked (MatchRulesScene.cs): one row per rule,
 // what it is called on the left and what it is set to on the right. The game fills in what there is to choose from.
 
+// Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
+compositor.design({ size: vec(1600, 900), fit: "contain" });
+
 let panel = compositor.stack({
     background: "panel",
     padding: vec(40, 34),

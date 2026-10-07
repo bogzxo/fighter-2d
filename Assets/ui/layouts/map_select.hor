@@ -2,6 +2,9 @@
 // The panel sits on the left so the rest of the screen is free for the live preview of whichever map is selected.
 // The game makes a button per map out of map_button.hor.
 
+// Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
+compositor.design({ size: vec(1600, 900), fit: "contain" });
+
 let panel = compositor.stack({
     background: "panel",
     anchor: "left",

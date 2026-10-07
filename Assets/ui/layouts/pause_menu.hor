@@ -4,6 +4,9 @@
 // It is three layers. "menu" is what whoever paused gets, "waiting" is what the other machine of an online fight shows until they carry on,
 // and "countdown" is the 3, 2, 1 everybody gets before the fight is back on.
 
+// Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
+compositor.design({ size: vec(1600, 900), fit: "contain" });
+
 let menu = compositor.stack({
     layer: "menu",
     background: "panel",

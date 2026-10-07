@@ -18,58 +18,47 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
 {
     private const string HINT = "[icon:dpad] choose and change    [icon:pad_lb] [icon:pad_rb] tabs    [icon:pad_b] back";
 
-    private static readonly string[] Tabs = ["display", "look", "fight"];
-
     protected override string LayoutFile => MenuLayouts.OPTIONS;
     protected override float InputDelay => 0.2f;
 
-    // A list of rows for every tab, and the one that is open
-    private readonly SettingList[] _tabs = [new(), new(), new()];
-    private int _tab;
+    // A list of rows for every page of the tabs (the gamepad goes down the rows of the open one), and the tabs themselves
+    private readonly SettingList[] _pages = [new(), new(), new()];
     private SettingList _settings = null!;
+    private TabPanel _tabs = null!;
 
     private Label _hint = null!, _description = null!;
     private UICompositor _ui = null!;
-    private UILayout _layout = null!;
 
     protected override void BuildUi(UILayout layout)
     {
         // The screen is laid out in Assets/ui/layouts/options.hor, what its rows choose between is decided here.
         // So is the line about each of them. Labels don't wrap, so the ones that run long are broken in two by hand
         _ui = layout.Module.Compositor;
-        _layout = layout;
         _hint = layout.Get<Label>("hint");
         _description = layout.Get<Label>("description");
 
-        _settings = _tabs[0];
+        _settings = _pages[0];
         AddWindowOptions(layout);
-        _settings = _tabs[1];
+        _settings = _pages[1];
         AddLookOptions(layout);
-        _settings = _tabs[2];
+        _settings = _pages[2];
         AddFightOptions(layout);
 
-        foreach (SettingList list in _tabs) list.Changed = GameOptions.Save;
+        foreach (SettingList list in _pages) list.Changed = GameOptions.Save;
 
-        OpenTab(tab, selected);
-    }
-
-    /// <summary>
-    /// Helper method to show one tab and hide the others, with the gamepad on a row of it.
-    /// </summary>
-    private void OpenTab(int index, int row = 0)
-    {
-        _tab = (index % Tabs.Length + Tabs.Length) % Tabs.Length;
-        _settings = _tabs[_tab];
-        _settings.Select(row);
-
-        for (int i = 0; i < Tabs.Length; i++)
+        // The tabs do the flipping and the drawing, all we do is point the gamepad at the rows of the open page.
+        // A click on a tab lands here as well as the bumpers
+        _tabs = layout.Get<TabPanel>("tabs");
+        _tabs.OnChanged = page =>
         {
-            bool open = i == _tab;
-            _layout.Get<StackPanel>($"{Tabs[i]}_rows").Visible = open;
-            _layout.Get<Label>($"tab_{Tabs[i]}").Color = open ? Vector4.One : MenuColors.Hint;
-        }
+            _settings = _pages[page];
+            _settings.Select(0);
+            _tabs.Punch(0.04f, 0.15f);
+        };
 
-        _layout.Get<Label>($"tab_{Tabs[_tab]}").Punch(0.12f, 0.2f);
+        _tabs.Selected = tab;
+        _settings = _pages[_tabs.Selected];
+        _settings.Select(selected);
     }
 
     private void AddWindowOptions(UILayout layout)
@@ -107,6 +96,14 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 Engine.WindowManager.Apply(GameOptions.Display);
             },
             $"The most frames that are drawn a second.\nThe fight runs at {GameOptions.MIN_FRAME_LIMIT} ticks a second, so that is as low as it goes.");
+
+        _settings.Add(layout, "performance", Enum.GetValues<PerformanceDetail>(), GameOptions.Performance, detail => detail.ToString(),
+            detail =>
+            {
+                GameOptions.Performance = detail;
+                if (Screen.Performance is { } overlay) overlay.Detail = detail;
+            },
+            "Frames a second in the corner, or the whole lot: every loop of the engine,\ngarbage, graphs. F3 flips through them anywhere.");
     }
 
     private void AddLookOptions(UILayout layout)
@@ -219,7 +216,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
     /// </summary>
     private void Reload(Horizon.Engine.SceneTransition? transition)
     {
-        GoTo(new OptionsScene(_tab, _settings.Selected), transition);
+        GoTo(new OptionsScene(_tabs.Selected, _settings.Selected), transition);
     }
 
     protected override void UpdateMenu(float dt)
@@ -243,7 +240,8 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
             // The bumpers flip between the tabs
             if (gamepad.WasPressed(GamepadInput.LeftBumper) || gamepad.WasPressed(GamepadInput.RightBumper))
             {
-                OpenTab(_tab + (gamepad.WasPressed(GamepadInput.RightBumper) ? 1 : -1));
+                if (gamepad.WasPressed(GamepadInput.RightBumper)) _tabs.Next();
+                else _tabs.Previous();
                 return;
             }
 

@@ -78,15 +78,15 @@ internal class BindingsScene(int slot, MatchSetup setup) : MenuScene
         for (int c = 0; c < columns.Count; c++)
         {
             int first = c * _rowsPerColumn;
-            var rows = layout.Populate(columns[c], Math.Clamp(ActionCount - first, 0, _rowsPerColumn));
+            var actions = GameInput.Actions.Skip(first).Take(Math.Clamp(ActionCount - first, 0, _rowsPerColumn)).ToList();
 
-            for (int i = 0; i < rows.Count; i++)
+            layout.Populate(columns[c], actions, (row, action, i) =>
             {
-                rows[i].Get<Label>("action").Text = GameInput.Actions[first + i].Label;
+                row.Get<Label>("action").Text = action.Label;
 
                 // Clicking a row does what A does on it, the button to bind still has to come from the gamepad
-                AddEntry(rows[i].Get<Button>("binding"), first + i);
-            }
+                AddEntry(row.Get<Button>("binding"), first + i);
+            });
         }
     }
 

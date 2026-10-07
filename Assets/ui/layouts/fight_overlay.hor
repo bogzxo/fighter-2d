@@ -3,6 +3,9 @@
 // "hud" is the bars, the clock, the names, the input display and the hit callouts. "banner" calls out the rounds. "versus" is the versus screen.
 // Load it with UILayout.Load, every component is there under the name it has here.
 
+// Made for 16:9, but the HUD gets the whole screen: on an ultrawide the health bars go out to the corners
+compositor.design({ size: vec(1600, 900), fit: "stretch" });
+
 let player1_health = compositor.progress_bar({
     layer: "hud",
     pos: vec(40, -16),

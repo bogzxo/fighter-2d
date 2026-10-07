@@ -56,6 +56,9 @@ internal class Program
         // Keeps the connection of an online fight alive from the lobby into the fight
         engine.AddEntity(new NetPump());
 
+        // FPS, the loops, garbage: F3 goes round it, the options screen sets where it starts
+        Screen.Performance = engine.AddEntity(new Horizon.Rendering.UIX.PerformanceOverlay(GameOptions.Performance));
+
         if (TryGetArgument(args, ARGUMENT_MAP, out string mapName) && TryFindMap(mapName, out MapDefinition map))
         {
             TryGetArgument(args, ARGUMENT_CHARACTER, out string character);
