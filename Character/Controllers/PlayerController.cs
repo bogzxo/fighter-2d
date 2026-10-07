@@ -97,7 +97,11 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     public bool CanSteer => IsInControl && CurrentMove.AllowsSteering;
     public bool CanTurn => IsInControl && CurrentMove.AllowsTurning && !IsBlocking;
 
-    private float _tickTimer;
+    // How much of the next tick of the fight has gone by, in thousandths of one. Counted in whole numbers rather than
+    // by adding up seconds: a sixtieth of a second made of two halves of one in floats comes up a hair short every so
+    // often, and the fight stands still for an update and then takes two ticks in one, which looks like arse
+    private const int TICK_PARTS = 1000;
+    private long _tickParts;
 
     // How far into the frame of animation that is showing we are, the next one is due at 1
     private float _frameProgress;
@@ -128,17 +132,17 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
 
     public override void UpdateState(float dt)
     {
-        _tickTimer += dt;
+        _tickParts += (long)Math.Round(dt * PlayerConfig.TICK_RATE * TICK_PARTS);
 
-        for (int ticks = 0; _tickTimer >= PlayerConfig.TICK_TIME; ticks++)
+        for (int ticks = 0; _tickParts >= TICK_PARTS; ticks++)
         {
             if (ticks == MAX_TICKS_PER_UPDATE)
             {
-                _tickTimer = 0.0f;
+                _tickParts = 0;
                 break;
             }
 
-            _tickTimer -= PlayerConfig.TICK_TIME;
+            _tickParts -= TICK_PARTS;
             Step();
         }
     }

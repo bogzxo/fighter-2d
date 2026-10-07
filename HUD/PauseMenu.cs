@@ -4,6 +4,7 @@ using Fighter2D.Scenes;
 
 using Horizon.Core;
 using Horizon.Core.Components;
+using Horizon.Core.Threading;
 using Horizon.Engine;
 using Horizon.Input;
 using Horizon.Rendering.UIX;
@@ -42,6 +43,10 @@ internal sealed class PauseMenu : GameComponent
     // How much of the countdown is left in seconds, and the number of it that is on screen
     private float _countdown;
     private int _shownCount;
+
+    // Whether any of it is up, as of every tick: what the frames drawn alongside the simulation go by. Asking the menu
+    // itself from a frame is asking something that may be halfway through changing its mind
+    private readonly Snapshot<bool> _shown = new();
 
     // Whether the fight was paused (by anybody) on the last update, which is how the end of a pause is noticed
     private bool _wasPaused;
@@ -108,7 +113,6 @@ internal sealed class PauseMenu : GameComponent
     public override void Initialize()
     {
         var camera = new Camera2D(GameEngine.Instance.WindowManager.ViewportSize);
-        camera.Render(0);
 
         (_layout, _compositor) = MenuLayouts.Load(camera, MenuLayouts.PAUSE_MENU);
         _compositor.Initialize();
@@ -263,8 +267,17 @@ internal sealed class PauseMenu : GameComponent
         return false;
     }
 
+    public override void Capture()
+    {
+        _shown.Publish(HoldsFight);
+        _compositor.Capture();
+    }
+
     public override void Render(float dt)
     {
-        if (HoldsFight) _compositor.Render(dt);
+        RenderFrame frame = RenderFrame.Active;
+        bool shown = frame.IsDecoupled ? _shown.TryGet(frame, out bool up) && up : HoldsFight;
+
+        if (shown) _compositor.Render(dt);
     }
 }

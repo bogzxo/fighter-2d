@@ -76,6 +76,9 @@ internal sealed class MenuFighter(float size, string spriteDirectory) : Sprite(n
         Body.SetVelocity(dt > 0.0f ? (position - Body.Position) / dt : Vector2.Zero);
         Body.Position = position;
         Transform.Position = position;
+
+        // Without the time it took it was put there rather than moved, and isn't shown on its way
+        if (dt <= 0.0f) Transform.Snap();
     }
 
     /// <summary>

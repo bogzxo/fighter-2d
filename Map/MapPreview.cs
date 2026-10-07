@@ -12,7 +12,7 @@ namespace Fighter2D.Map;
 /// <summary>
 /// A live picture of a map, for the map select screen. It is the real thing and not a screenshot, the same tiles, lights and weather a fight on it would have.
 /// Nobody is standing on it so it has no collision, and the camera just drifts back and forth over where the fight would start.
-/// Ask for a map with <see cref="Show"/> from wherever, it gets loaded the next time the preview is drawn.
+/// Ask for a map with <see cref="Show"/> from wherever, it gets loaded at the start of the next frame with the game standing still.
 /// </summary>
 internal sealed class MapPreview : GameObject
 {
@@ -65,6 +65,8 @@ internal sealed class MapPreview : GameObject
 
         // Back and forth forever, slowly
         _tweens.Play(Tween.To(() => _drift, drift => _drift = drift, 1.0f, DRIFT_TIME / 2).SetEasing(Easing.InOutSine).SetLoops(-1, LoopMode.PingPong));
+
+        GameEngine.Instance.WindowManager.Exclusive += LoadWanted;
     }
 
     /// <summary>
@@ -74,22 +76,35 @@ internal sealed class MapPreview : GameObject
 
     public override void UpdateState(float dt)
     {
+        // Loaded with the game standing still, see LoadWanted
+        if (_wanted.FileName is { } file && file != _shownFile)
+            GameEngine.Instance.WindowManager.RequestExclusive();
+
         _tweens.Tick(dt);
         _view?.LookAt(_focus + new Vector2(_drift * DRIFT, 0.0f));
 
         base.UpdateState(dt);
     }
 
-    public override void Render(float dt)
+    /// <summary>
+    /// Helper method to load the map that was asked for if it isn't the one that is showing. Loading a map makes a pile
+    /// of things on the GPU and changes what the preview is made of, so it happens on the render thread at the start of
+    /// a frame with the game standing still. Not where it was asked for, and not halfway through drawing a frame either,
+    /// that goes tits up.
+    /// </summary>
+    private void LoadWanted(float dt)
     {
-        // Loading a map makes a pile of things on the GPU, so it happens here on the render thread and not where it was asked for
-        if (_wanted.FileName is { } file && file != _shownFile)
-        {
-            _shownFile = file;
-            Load(_wanted);
-        }
+        if (IsDisposed || _wanted.FileName is not { } file || file == _shownFile)
+            return;
 
-        base.Render(dt);
+        _shownFile = file;
+        Load(_wanted);
+    }
+
+    protected override void DisposeOther()
+    {
+        GameEngine.Instance.WindowManager.Exclusive -= LoadWanted;
+        base.DisposeOther();
     }
 
     private void Load(MapDefinition map)

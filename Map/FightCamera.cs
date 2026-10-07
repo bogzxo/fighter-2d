@@ -33,7 +33,8 @@ internal sealed class FightCamera
     private readonly FightingStage _stage;
     private readonly Vector2 _viewportSize;
 
-    // Where the camera would be if it didn't have to sit on whole pixels
+    // Where the camera is, before the shake. It is only rounded to the pixels of the screen once it is known where a
+    // frame shows it (between two ticks), see Camera.PixelSnap: rounded here it would stand still and jump like a twat
     private Vector3 _exactPosition;
 
     // How far the shake has it off from where it belongs right now
@@ -43,6 +44,7 @@ internal sealed class FightCamera
     {
         _camera = camera;
         _camera.Zoom = ZOOM;
+        _camera.PixelSnap = PIXEL;
         _stage = stage;
         _viewportSize = viewportSize;
 
@@ -58,19 +60,20 @@ internal sealed class FightCamera
     public void LookAt(Vector2 focus)
     {
         _exactPosition = ClampToMap(new Vector3(focus, 0.0f));
-        _camera.Position = SnapToPixels(_exactPosition, Vector2.Zero);
+        _camera.PixelSnapAnchor = Vector2.Zero;
         _shake = Vector2.Zero;
+        Place();
     }
 
     /// <summary>
-    /// Called every update with how far the screen shake wants the view off. Only the change since last time gets applied.
+    /// Called every update with how far the screen shake wants the view off.
     /// </summary>
     public void Shake(Vector2 shake)
     {
         if (shake == _shake) return;
 
-        _camera.Position += new Vector3(shake - _shake, 0.0f);
         _shake = shake;
+        Place();
     }
 
     /// <summary>
@@ -84,7 +87,7 @@ internal sealed class FightCamera
     {
         Vector2 focus = Frame(us, them);
 
-        if (Vector3.DistanceSquared(_camera.Position, new Vector3(focus, _camera.Position.Z)) <= FOLLOW_DISTANCE_SQUARED) return;
+        if (Vector3.DistanceSquared(_exactPosition, new Vector3(focus, _exactPosition.Z)) <= FOLLOW_DISTANCE_SQUARED) return;
 
         // Follow the fight, but stop at the edges of the map so the clear colour is never seen
         Vector3 target = ClampToMap(new Vector3(focus, 0.0f));
@@ -97,11 +100,14 @@ internal sealed class FightCamera
         // Rounded by itself it steps at different moments than the players do, and they wobble by a pixel.
         // As good as still (up against the edge of the map) it just sits on the pixels of the screen
         bool moving = Vector3.DistanceSquared(before, _exactPosition) > STILL * STILL;
-        _camera.Position = SnapToPixels(_exactPosition, moving ? focus : Vector2.Zero);
-
-        // The position was just set from scratch, so whatever shake was on it is gone
-        _shake = Vector2.Zero;
+        _camera.PixelSnapAnchor = moving ? focus : Vector2.Zero;
+        Place();
     }
+
+    /// <summary>
+    /// Helper method to put the camera where it is, shaken.
+    /// </summary>
+    private void Place() => _camera.Position = _exactPosition + new Vector3(_shake, 0.0f);
 
     /// <summary>
     /// Helper method to pick the spot to look at, which is halfway between the two players unless that would lose ours off the edge.
@@ -113,14 +119,6 @@ internal sealed class FightCamera
 
         return Vector2.Clamp(middle, us - reach, us + reach);
     }
-
-    /// <summary>
-    /// Helper method to round a position to the pixels of the screen, counted from an anchor.
-    /// </summary>
-    private static Vector3 SnapToPixels(Vector3 position, Vector2 anchor) => new(
-        anchor.X + MathF.Round((position.X - anchor.X) / PIXEL) * PIXEL,
-        anchor.Y + MathF.Round((position.Y - anchor.Y) / PIXEL) * PIXEL,
-        position.Z);
 
     /// <summary>
     /// Helper method to keep what the camera sees inside of the map.

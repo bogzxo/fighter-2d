@@ -103,6 +103,9 @@ internal sealed class PlayerMovement(PlayerController controller)
             body.Position = position;
             body.SetVelocity(velocity);
             _positionError = Vector2.Zero;
+
+            // ...and not shown getting there either
+            Player.Transform.Snap();
             return;
         }
 

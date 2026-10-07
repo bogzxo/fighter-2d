@@ -97,6 +97,9 @@ internal class Player() : Sprite(SIZE)
             PhysicsBody.Position = SpawnPosition;
             PhysicsBody.SetVelocity(Vector2.Zero);
             Transform.Position = SpawnPosition;
+
+            // Put there, not walked there: no frame shows them on their way across the stage
+            Transform.Snap();
         }
 
         Controller?.Reset();

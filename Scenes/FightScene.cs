@@ -251,7 +251,8 @@ internal class FightScene : Scene
             Fight.Network = _network = AddComponent(new FightNetwork(Session, _round)
             {
                 LocalPlayer = Fight.PlayerOne,
-                RemotePlayer = Fight.PlayerTwo
+                RemotePlayer = Fight.PlayerTwo,
+                FightHeld = () => _pause is { HoldsFight: true } || _awaitingPeer
             });
         }
 
@@ -432,6 +433,7 @@ internal class FightScene : Scene
             player.Health = was.Health;
             player.PhysicsBody.Position = was.Position;
             player.Transform.Position = was.Position;
+            player.Transform.Snap();
         }
     }
 

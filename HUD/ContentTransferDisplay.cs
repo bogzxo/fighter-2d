@@ -5,6 +5,7 @@ using Fighter2D.Scenes;
 
 using Horizon.Core;
 using Horizon.Core.Components;
+using Horizon.Core.Threading;
 using Horizon.Engine;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
@@ -31,6 +32,9 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
     private Label _title = null!, _detail = null!;
     private ProgressBar _bar = null!;
 
+    // Whether the panel is up, as of every tick: what the frames drawn alongside the simulation go by
+    private readonly Snapshot<bool> _shown = new();
+
     private float _linger;
     private bool _wasTransferring;
 
@@ -56,7 +60,6 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
     public override void Initialize()
     {
         var camera = new Camera2D(GameEngine.Instance.WindowManager.ViewportSize);
-        camera.Render(0);
 
         (UILayout layout, _compositor) = MenuLayouts.Load(camera, MenuLayouts.CONTENT_TRANSFER);
         _compositor.Initialize();
@@ -115,8 +118,17 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
         }
     }
 
+    public override void Capture()
+    {
+        _shown.Publish(IsShowing);
+        _compositor.Capture();
+    }
+
     public override void Render(float dt)
     {
-        if (IsShowing) _compositor.Render(dt);
+        RenderFrame frame = RenderFrame.Active;
+        bool shown = frame.IsDecoupled ? _shown.TryGet(frame, out bool up) && up : IsShowing;
+
+        if (shown) _compositor.Render(dt);
     }
 }

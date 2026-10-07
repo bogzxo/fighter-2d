@@ -1,5 +1,6 @@
 using Bogz.Logging;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 using Fighter2D.Character;
@@ -49,6 +50,16 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : Ga
     private PlayerSnapshot? _pending;
     private float _pendingTime;
 
+    // What the other machine did to the fight (hits, whiffs) that arrived while it was held here, done once it carries on
+    private readonly Queue<Action> _heldBack = new();
+
+    /// <summary>
+    /// Whether the fight is holding still here (a pause, a reload), asked whenever something arrives that would move it
+    /// on. That waits until the fight carries on: a hit that was on its way when somebody paused lands after the pause,
+    /// not on some poor sod who is frozen stiff and can't do a thing about it. Whatever is about the pause itself always goes through.
+    /// </summary>
+    public Func<bool>? FightHeld { get; init; }
+
     public bool IsConnected => session.IsConnected;
 
     /// <summary>
@@ -71,6 +82,9 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : Ga
 
     public override void UpdateState(float dt)
     {
+        // Only updated while the fight goes on, so whatever was held back can happen now
+        while (_heldBack.TryDequeue(out Action? held)) held();
+
         if (!session.IsConnected) return;
 
         SendPlayer();
@@ -239,11 +253,15 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : Ga
                 break;
 
             case NetMessage.Hit:
-                ReceiveHit(HitReport.Read(message));
+                HitReport hit = HitReport.Read(message);
+                if (FightHeld?.Invoke() == true) _heldBack.Enqueue(() => ReceiveHit(hit));
+                else ReceiveHit(hit);
                 break;
 
             case NetMessage.Whiff:
-                ReceiveWhiff(message.GetString());
+                string whiff = message.GetString();
+                if (FightHeld?.Invoke() == true) _heldBack.Enqueue(() => ReceiveWhiff(whiff));
+                else ReceiveWhiff(whiff);
                 break;
 
             case NetMessage.Pause:

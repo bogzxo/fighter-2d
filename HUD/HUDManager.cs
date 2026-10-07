@@ -24,7 +24,6 @@ internal class HUDManager : GameComponent
     public override void Initialize()
     {
         var camera = new Camera2D(GameEngine.Instance.WindowManager.ViewportSize);
-        camera.Render(0);
 
         (UILayout layout, _compositor) = MenuLayouts.Load(camera, MenuLayouts.FIGHT_HUD);
         _compositor.Initialize();
@@ -52,6 +51,8 @@ internal class HUDManager : GameComponent
     }
 
     public override void UpdatePhysics(float dt) => _compositor.UpdatePhysics(dt);
+
+    public override void Capture() => _compositor.Capture();
 
     public override void Render(float dt) => _compositor.Render(dt);
 }
