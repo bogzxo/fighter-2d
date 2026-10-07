@@ -1,6 +1,9 @@
 // Where the players pick their gamepads, and the lobby of an online fight (GamepadSelectorScene.cs).
 // The game makes one card per player out of player_card.hor and writes the title and the hint itself.
 
+// Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
+compositor.design({ size: vec(1600, 900), fit: "contain" });
+
 let panel = compositor.stack({
     background: "panel",
     padding: vec(40, 34),

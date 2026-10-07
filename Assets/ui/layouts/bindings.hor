@@ -1,6 +1,9 @@
 // Where the bindings of a gamepad are changed (BindingsScene.cs). The game shares the actions out over the
 // columns there are here (column_1, column_2 and so on, add another for a third) with a row out of binding_row.hor each.
 
+// Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
+compositor.design({ size: vec(1600, 900), fit: "contain" });
+
 let panel = compositor.stack({
     background: "panel",
     padding: vec(40, 34),

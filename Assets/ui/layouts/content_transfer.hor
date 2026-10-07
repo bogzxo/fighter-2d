@@ -2,6 +2,9 @@
 // It sits along the bottom of the screen so it is out of the way of the lobby and of the pause menu, both of which it can be up over.
 // The game writes the title, the line under the bar and how full the bar is.
 
+// Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
+compositor.design({ size: vec(1600, 900), fit: "contain" });
+
 let box = compositor.stack({
     anchor: "bottom",
     pivot: "bottom",

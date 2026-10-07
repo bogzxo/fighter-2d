@@ -93,6 +93,11 @@ internal static class GameOptions
     // Whether the hitboxes, hurtboxes and collision of a fight are drawn over it
     public static bool Hitboxes = false;
 
+    /* Under the hood */
+
+    // How much of the engine's performance overlay is up (F3 goes round them too, but that isn't saved)
+    public static Horizon.Rendering.UIX.PerformanceDetail Performance = Horizon.Rendering.UIX.PerformanceDetail.Off;
+
     /// <summary>
     /// The options of the window the way the engine wants them, see <see cref="WindowManager.Apply"/>.
     /// </summary>
@@ -130,6 +135,7 @@ internal static class GameOptions
             HitCallouts = HorReader.Bool(options, "hit_callouts", HitCallouts);
             FrameData = HorReader.Bool(options, "frame_data", FrameData);
             Hitboxes = HorReader.Bool(options, "hitboxes", Hitboxes);
+            Performance = HorReader.Named(options, "performance", Performance);
         }
         catch (Exception e)
         {
@@ -169,7 +175,8 @@ internal static class GameOptions
         text.AppendLine($"    input_display: {Write(InputDisplay)},");
         text.AppendLine($"    hit_callouts: {Write(HitCallouts)},");
         text.AppendLine($"    frame_data: {Write(FrameData)},");
-        text.AppendLine($"    hitboxes: {Write(Hitboxes)}");
+        text.AppendLine($"    hitboxes: {Write(Hitboxes)},");
+        text.AppendLine($"    performance: \"{Performance.ToString().ToLowerInvariant()}\"");
         text.AppendLine("}");
 
         try
