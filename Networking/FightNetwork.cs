@@ -138,7 +138,7 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : Ga
         _roundTimer = 0;
 
         var message = reliable ? NetSession.Reliable(NetMessage.RoundState) : NetSession.Unreliable(NetMessage.RoundState);
-        round.Capture().Write(message);
+        round.TakeSnapshot().Write(message);
         session.Send(message);
     }
 

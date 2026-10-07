@@ -211,7 +211,7 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
     /// <summary>
     /// Helper method to take down how the match stands, for telling the other machine.
     /// </summary>
-    public RoundSnapshot Capture() => new(Phase, PhaseTime, TimeLeft, [.. Score.Rounds], LastOutcome, TimedOut, Score.ForfeitedTo ?? -1);
+    public RoundSnapshot TakeSnapshot() => new(Phase, PhaseTime, TimeLeft, [.. Score.Rounds], LastOutcome, TimedOut, Score.ForfeitedTo ?? -1);
 
     /// <summary>
     /// Called on the machine that follows the match for everything the host says about it, already flipped so that player one is us.

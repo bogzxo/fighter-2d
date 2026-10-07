@@ -347,7 +347,7 @@ internal class FightScene : Scene
         CharacterBoxes.Forget();
         CharacterPortrait.Forget();
 
-        var resume = new FightResume(_round.Capture(), FighterResume.Of(Fight.PlayerOne), FighterResume.Of(Fight.PlayerTwo));
+        var resume = new FightResume(_round.TakeSnapshot(), FighterResume.Of(Fight.PlayerOne), FighterResume.Of(Fight.PlayerTwo));
 
         // The fight that takes over uses the same connection, so this one lets go of it without hanging up
         _network?.Detach();
