@@ -37,16 +37,12 @@ internal class Program
             else Log.Warning($"There is no content in '{content}', going with what the game came with.");
         }
 
-        var engine = new GameEngine(new GameEngineConfiguration
+        var engine = new GameEngine(WindowManagerConfiguration.Default1600x900 with
         {
-            InitialScene = typeof(MainMenuScene),
-            WindowConfiguration = WindowManagerConfiguration.Default1600x900 with
-            {
-                WindowTitle = Constants.WINDOW_TITLE,
-                WindowSize = GameOptions.Resolution,
-                VSync = GameOptions.VSync,
-                FramesPerSecond = GameOptions.FrameLimit
-            }
+            WindowTitle = Constants.WINDOW_TITLE,
+            WindowSize = GameOptions.Resolution,
+            VSync = GameOptions.VSync,
+            FramesPerSecond = GameOptions.FrameLimit
         });
 
         // Fullscreen is gone into the same way the options screen does it, which is before the first scene is made
@@ -54,7 +50,7 @@ internal class Program
 
         Screen.ApplyTransitions();
 
-        // Every scene reads its gamepads from here, so it has to be there before the first one
+        // Every scene reads its gamepads through here, so the bindings have to be in before the first one
         GameInput.Attach(engine);
 
         // Keeps the connection of an online fight alive from the lobby into the fight
@@ -72,14 +68,12 @@ internal class Program
                 Reload = CreateFight
             };
 
-            engine.SetScene(CreateFight(), Screen.IntoFight);
+            engine.Run(CreateFight(), Screen.IntoFight);
         }
         else
         {
-            engine.SceneManager.ChangeInstance<MainMenuScene>();
+            engine.Run<MainMenuScene>();
         }
-
-        engine.Run();
     }
 
     /// <summary>

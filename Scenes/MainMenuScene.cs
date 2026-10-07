@@ -43,13 +43,10 @@ internal class MainMenuScene : MenuScene
 
     protected override void BuildBackdrop()
     {
-        Engine.GL.Enable(EnableCap.Blend);
-        Engine.GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-
         // The picture goes in a batch of its own so it ends up behind everything else
         var backdropBatch = Canvas.AddEntity<SpriteBatch>();
 
-        if (TryLoadTexture("main_menu_bg", "Assets/backgrounds/background_layer_albedo.png", out Texture background))
+        if (TryLoadTexture("Assets/backgrounds/background_layer_albedo.png", out Texture background))
         {
             // Scaled up until it covers the window whatever its shape, whatever sticks out is simply off screen
             Vector2 window = Engine.WindowManager.WindowSize;
@@ -69,7 +66,7 @@ internal class MainMenuScene : MenuScene
 
     private void AddLogo(MenuDuel duel)
     {
-        if (!TryLoadTexture("main_logo", "Assets/ui/new_logo.png", out Texture texture)) return;
+        if (!TryLoadTexture("Assets/ui/new_logo.png", out Texture texture)) return;
 
         var batch = Canvas.AddEntity<SpriteBatch>();
         Vector2 size = new(texture.Width, texture.Height);

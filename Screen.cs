@@ -18,6 +18,15 @@ internal static class Screen
     // The art is drawn at twice its size, so that is how big one dot of the CRT is
     private const float CRT_PIXEL_SIZE = 2.0f;
 
+    // The motion blur of a fight. How long (in seconds) a trail takes to fade and how much of it shows over the sharp picture, 0 to 1.
+    // This is what turns the rain into soft streaks and a kick into a swipe. Longer and stronger is dreamier and harder to read
+    private const float FIGHT_TRAIL = 0.05f;
+    private const float FIGHT_TRAIL_STRENGTH = 0.7f;
+
+    // The same for the menus, which only want their buttons to slide in smoothly
+    private const float MENU_TRAIL = 0.04f;
+    private const float MENU_TRAIL_STRENGTH = 0.6f;
+
     // Kept gentle, the menu buttons are laid over the screen and have to stay lined up with what is drawn behind them
     private static readonly Vector2 CrtWarp = new(1.0f / 64.0f, 1.0f / 48.0f);
 
@@ -75,12 +84,13 @@ internal static class Screen
     /// <summary>
     /// Helper method to put the CRT effect on a renderer. It has to be the last effect, add the others first.
     /// </summary>
-    public static void AddCrt(Renderer2D renderer)
+    /// <param name="zoom">The zoom of the camera the renderer is seen through, so the dots of the CRT stay as big as the pixels of the art.</param>
+    public static void AddCrt(Renderer2D renderer, float zoom = 1.0f)
     {
         renderer.PostProcessing.Add(new CrtEffect
         {
             Enabled = GameOptions.Crt,
-            PixelSize = CRT_PIXEL_SIZE,
+            PixelSize = CRT_PIXEL_SIZE / zoom,
             Warp = CrtWarp
         });
     }
@@ -88,9 +98,16 @@ internal static class Screen
     /// <summary>
     /// Helper method to put motion blur on the world of a fight.
     /// </summary>
-    public static void AddMotionBlur(DeferredRenderer2D world)
+    /// <param name="camera">The camera the world is seen through. The blur follows it, so the street stays sharp when the camera pans.</param>
+    public static void AddMotionBlur(DeferredRenderer2D world, Camera camera)
     {
-        world.PostProcessing.Add(new MotionBlurEffect { Enabled = GameOptions.MotionBlur });
+        world.PostProcessing.Add(new MotionBlurEffect
+        {
+            Enabled = GameOptions.MotionBlur,
+            Trail = FIGHT_TRAIL,
+            Strength = FIGHT_TRAIL_STRENGTH,
+            Camera = camera
+        });
     }
 
     /// <summary>
@@ -98,7 +115,7 @@ internal static class Screen
     /// </summary>
     public static void AddMotionBlur(UICompositor ui)
     {
-        ui.PostProcessing.Add(new MotionBlurEffect { Enabled = GameOptions.MotionBlur });
+        ui.PostProcessing.Add(new MotionBlurEffect { Enabled = GameOptions.MotionBlur, Trail = MENU_TRAIL, Strength = MENU_TRAIL_STRENGTH });
     }
 
     /// <summary>

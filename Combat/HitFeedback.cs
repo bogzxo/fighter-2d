@@ -18,11 +18,16 @@ internal static class HitFeedback
     private const float COUNTER_FLASH_TIME = 0.4f;
     private const float KO_FLASH_TIME = 0.6f;
 
-    // Tints above 1 draw the sprite brighter than it is, which reads as a white flash
-    private static readonly Vector4 HitFlash = new(2.6f, 2.4f, 2.4f, 1.0f);
-    private static readonly Vector4 CounterFlash = new(3.2f, 2.2f, 0.9f, 1.0f);
-    private static readonly Vector4 BlockFlash = new(1.4f, 1.6f, 2.0f, 1.0f);
-    private static readonly Vector4 KoFlash = new(3.6f, 3.4f, 3.4f, 1.0f);
+    // What the victim lights up in. A tint can't do this, tints only ever darken (anything over 1 is cut off at plain white, which is no flash at all).
+    // The sprite gets painted over in the colour instead and glows whatever the light is like, see Sprite.Flash
+    private static readonly Vector4 HitFlash = new(1.0f, 0.95f, 0.95f, 1.0f);
+    private static readonly Vector4 CounterFlash = new(1.0f, 0.75f, 0.3f, 1.0f);
+    private static readonly Vector4 BlockFlash = new(0.6f, 0.75f, 1.0f, 1.0f);
+    private static readonly Vector4 KoFlash = new(1.0f, 1.0f, 1.0f, 1.0f);
+
+    // How much of the victim is painted over when the flash starts, 1 is nothing but the colour. A block only gets a glint
+    private const float HIT_FLASH_AMOUNT = 0.9f;
+    private const float BLOCK_FLASH_AMOUNT = 0.5f;
 
     /// <param name="direction">The way the hit was going, -1 for left and 1 for right.</param>
     /// <param name="lethal">Whether this was the hit that took the last of their health.</param>
@@ -34,7 +39,7 @@ internal static class HitFeedback
         {
             Fight.Effects.Block(impact, direction);
             Freeze(attacker, victim, CombatRules.BLOCK_HITSTOP);
-            Flash(victim, BlockFlash, FLASH_TIME);
+            Flash(victim, BlockFlash, FLASH_TIME, BLOCK_FLASH_AMOUNT);
             return;
         }
 
@@ -67,9 +72,8 @@ internal static class HitFeedback
         victim.ApplyHitstop(ticks);
     }
 
-    private static void Flash(PlayerController victim, Vector4 colour, float time)
+    private static void Flash(PlayerController victim, Vector4 colour, float time, float amount = HIT_FLASH_AMOUNT)
     {
-        victim.Player.Tint = colour;
-        victim.Player.TweenTint(Vector4.One, time);
+        victim.Player.Flash(colour, time, amount);
     }
 }

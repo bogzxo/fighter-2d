@@ -50,12 +50,12 @@ internal static class GameInput
     public static GamepadInputManager Manager { get; private set; } = null!;
 
     /// <summary>
-    /// Helper method to create the gamepad manager and hand it to the engine, which updates it from then on.
+    /// Helper method to give the gamepads of the engine the bindings of the game.
     /// Has to be called once, before the first scene.
     /// </summary>
     public static void Attach(GameEngine engine)
     {
-        Manager = new GamepadInputManager();
+        Manager = engine.Input.Gamepads;
         Manager.DefaultBindings.CopyFrom(CreateDefaultBindings());
 
         // No file simply means nobody has changed anything yet
@@ -69,8 +69,6 @@ internal static class GameInput
             // The file remembers the defaults it was saved with, ours may have changed since
             Manager.DefaultBindings.CopyFrom(CreateDefaultBindings());
         }
-
-        engine.AddEntity(Manager);
     }
 
     /// <summary>

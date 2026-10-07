@@ -15,7 +15,6 @@ namespace Fighter2D.Scenes;
 /// </summary>
 internal abstract class MenuScene : Scene
 {
-    private const string BACKDROP_NAME = "gpselbg";
     private const string BACKDROP_FILE = "Assets/backgrounds/player_select_bg.png";
 
     public override Camera ActiveCamera { get; protected set; } = null!;
@@ -38,15 +37,7 @@ internal abstract class MenuScene : Scene
     /// How long (in seconds) the menu ignores the gamepads after it shows up. The button that got us here is most likely still held.
     /// </summary>
     protected virtual float InputDelay => 0.25f;
-    protected bool InputReady => SceneTime >= InputDelay;
-
-    /// <summary>
-    /// How long the menu has been up, in seconds.
-    /// </summary>
-    protected float SceneTime { get; private set; }
-
-    // Set once we are on our way to another scene, after that the menu stops reacting to anything
-    private bool _leaving;
+    protected bool InputReady => Time >= InputDelay;
 
     public override void Initialize()
     {
@@ -72,7 +63,7 @@ internal abstract class MenuScene : Scene
     /// </summary>
     protected virtual void BuildBackdrop()
     {
-        if (!TryLoadTexture(BACKDROP_NAME, BACKDROP_FILE, out Texture texture)) return;
+        if (!TryLoadTexture(BACKDROP_FILE, out Texture texture)) return;
 
         Vector2 window = Engine.WindowManager.WindowSize;
         var batch = Canvas.AddEntity<SpriteBatch>();
@@ -96,42 +87,18 @@ internal abstract class MenuScene : Scene
 
     public sealed override void UpdateState(float dt)
     {
-        SceneTime += dt;
         base.UpdateState(dt);
 
-        if (!_leaving) UpdateMenu(dt);
-    }
-
-    /// <summary>
-    /// Helper method to leave for another scene, the way the options say menus hand over to each other (see <see cref="Screen.BetweenMenus"/>).
-    /// This menu stays on screen until the engine has covered it up, and stays quiet for as long as that takes.
-    /// </summary>
-    internal void GoTo(Scene scene)
-    {
-        _leaving = true;
-        Engine.SetScene(scene);
-    }
-
-    /// <summary>
-    /// Helper method to leave for another scene with a transition of its own, null for a hard cut.
-    /// </summary>
-    internal void GoTo(Scene scene, SceneTransition? transition)
-    {
-        _leaving = true;
-        Engine.SetScene(scene, transition);
+        // A menu that has left for another scene (see GoTo) stays on screen until the engine has covered it up, and stays quiet for as long as that takes
+        if (!IsLeaving) UpdateMenu(dt);
     }
 
     /// <summary>
     /// Helper method to load a picture, false if the file is fucked or missing.
     /// </summary>
-    protected bool TryLoadTexture(string name, string file, out Texture texture)
+    protected static bool TryLoadTexture(string file, out Texture texture)
     {
-        bool loaded = Engine.ObjectManager.Textures.TryCreateOrGet(
-            name,
-            new TextureDescription { Paths = [file], Definition = TextureDefinition.RgbaUnsignedByteNearest },
-            out var result);
-
-        texture = result.Asset;
-        return loaded;
+        texture = Texture.Load(file);
+        return texture.IsValid;
     }
 }
