@@ -1,0 +1,170 @@
+// The attacks and the block. The moves for getting around are in movement_moves.hor.
+// A character lists the files its moves come from in characters.hor, a move in a later file replaces the one of the same name from an earlier one.
+//
+// What a move can have:
+//   input             the button that starts it. "DPadLeft | DPadRight" is either of them, "A + B" is both together.
+//                     The buttons are A, B, X, Y, DPadUp, DPadDown, DPadLeft, DPadRight, LeftBumper, RightBumper, LeftTrigger and RightTrigger.
+//                     Which physical button each one sits on is up to the bindings of the player. A move without an input can only be rerouted to.
+//   trigger           how the input has to be entered. "held" (for as long as it is), "pressed" (once per press) or "double_tap".
+//   priority          the order the inputs are matched in, lowest goes first. A move that needs more than another one has to come before it
+//                     (double tap left before left).
+//   stances           the stances it can be started from, "standing | crouching | jumping | falling".
+//   damage            how much health a hit takes, out of 100.
+//   knockback         the shove whoever gets hit is given, vec(away from the attacker, up). Anything with an up part is a launcher.
+//   hitstun           how long whoever gets hit loses the controls for, in frames of this move's own animation.
+//                     Leave it out and it is worked out from the startup of the move, see the bottom of this comment.
+//   cancellable       whether the move can be cancelled into another one at all. Its phases say from which frame.
+//   steering          whether the player can walk during the move.
+//   turning           whether the player can turn around during the move, the same as steering if it doesn't say.
+//   status            what the player is while the move lasts. "attacking", "blocking" (hits from the front bounce off and the player
+//                     can't turn around) or "invulnerable" (i-frames, hits go straight through).
+//   stance            the stance the move puts the player in, and stance_after the one it leaves them in.
+//   warns             whether the opponent gets a heads up that the move is coming (the dummy uses it to block). Moves that do damage warn unless they say no.
+//   repeat            a condition (see below) under which the move starts over after its last phase.
+//   stance_reroutes   another move to do instead, by the stance the player is in when the input comes (kick in the air is a jump kick).
+//   finish_reroutes   the move to carry on with once this one is over, by the stance the player is in by then. Without one they go back to "idle".
+//   phases            what the move actually does, see below.
+//
+// The phases of a move play one after the other in the order they are written. What a phase can have:
+//   animation         the animation to play, out of the character's sprite definition. Without one the animation of the phase before carries on.
+//   frames            how many frames the phase lasts, as long as its animation if it doesn't say.
+//   hit               the frame the hit comes out on, counted from 0. Everything before it is startup and everything after it is recovery.
+//   cancel            the frame from which the move can be cancelled into another one.
+//   commit            the frame from which the player is committed and can't cancel any more.
+//   status            a status (see above) the player only takes on during this phase, from the frame status_frame says (0 if it doesn't).
+//                     It lasts until the move is over.
+//   loop_while        a condition. The phase starts over for as long as it holds and ends the frame it stops holding.
+//   until             a condition. The phase ends the frame it starts holding.
+//   impulse           a shove the player gets as the phase starts, vec(the way they are facing, up).
+//   effect            a bit of eye candy, "jump", "roll" or "haze". effect_frames is how many frames it keeps coming for (1 if it doesn't say, 0 for all of them).
+//
+// The conditions are "held" (the input of the move is), "hitstun", "jumping" (on the way up), "falling" and "always".
+//
+// Four names mean something to the game. "idle" is what a player does when they do nothing (and has to be there),
+// "hit_stun" is what they are put in while they are in hitstun, "knocked_out" is where they stay once their health is gone
+// (without one they stay in "hit_stun"), and "heavy_land" is what a long fall ends in if there is one.
+//
+// How hits work (the numbers behind all of this are in Combat/CombatRules.cs):
+//   - Every hit puts the victim in hitstun. They are stuck in "hit_stun" and can't do anything until it runs out.
+//   - A fast move is a little minus on hit, meaning the victim can act before the attacker can. Mash a jab at them and they can jab you first.
+//   - The longer the startup of a move the more plus it is on hit. From some point the attacker recovers first with time to spare,
+//     which is the window to link a fast move after it. That is a combo.
+//   - A hit on somebody who is already in hitstun doesn't cut their hitstun short, so a jab in the middle of a long hitstun leaves the long one standing.
+//   - Somebody who is in hitstun and in the air (a launcher put them there) can be juggled. Every hit adds a little hitstun, less each time.
+//   - A hit that catches somebody in the startup of their own attack is a counter hit. More hitstun, more damage.
+//   - A hit that catches somebody in the recovery of their own attack is a punish. Same as a normal hit, but the HUD calls them out for it.
+//   - Blocking only covers the front, and you can't turn around while you are blocking.
+
+let moves = {
+    block: {
+        input: "RightBumper",
+        trigger: "held",
+        priority: 40,
+        stances: "standing | crouching",
+        cancellable: true,
+        steering: false,
+        phases: {
+            raise: { animation: "block_start", cancel: 0, commit: 3, status: "blocking", status_frame: 2 },
+            hold: { animation: "block_loop", loop_while: "held", commit: 0 }
+        }
+    },
+
+    hit_stun: {
+        stances: "standing | crouching | jumping | falling",
+        cancellable: false,
+        steering: false,
+        finish_reroutes: {
+            jumping: "fall",
+            falling: "fall"
+        },
+        phases: {
+            dazed: { animation: "hard_landing", frames: 1, loop_while: "hitstun", effect: "haze", effect_frames: 0 }
+        }
+    },
+
+    knocked_out: {
+        stances: "standing | crouching | jumping | falling",
+        cancellable: false,
+        steering: false,
+        phases: {
+            drop: { animation: "knocked_out" },
+            down: { frames: 1, loop_while: "always" }
+        }
+    },
+
+    kick_left: {
+        input: "A",
+        trigger: "pressed",
+        priority: 20,
+        stances: "standing | falling | jumping | crouching",
+        damage: 5,
+        cancellable: false,
+        status: "attacking",
+        stance_reroutes: {
+            jumping: "jump_kick",
+            falling: "jump_kick"
+        },
+        phases: {
+            swing: { animation: "kick", hit: 3 }
+        }
+    },
+
+    kick_right: {
+        input: "B",
+        trigger: "pressed",
+        priority: 30,
+        stances: "standing | falling | jumping | crouching",
+        damage: 5,
+        cancellable: false,
+        status: "attacking",
+        stance_reroutes: {
+            jumping: "jump_kick",
+            falling: "jump_kick"
+        },
+        phases: {
+            swing: { animation: "kick", hit: 3 }
+        }
+    },
+
+    punch_left: {
+        input: "X",
+        trigger: "pressed",
+        priority: 24,
+        stances: "standing | crouching",
+        damage: 3,
+        cancellable: false,
+        status: "attacking",
+        phases: {
+            swing: { animation: "punch", hit: 2 }
+        }
+    },
+
+    punch_right: {
+        input: "Y",
+        trigger: "pressed",
+        priority: 34,
+        stances: "standing | crouching",
+        damage: 3,
+        cancellable: false,
+        status: "attacking",
+        phases: {
+            swing: { animation: "punch", hit: 2 }
+        }
+    },
+
+    jump_kick: {
+        stances: "jumping | falling",
+        damage: 8,
+        knockback: vec(900, 1900),
+        hitstun: 12,
+        cancellable: false,
+        status: "attacking",
+        finish_reroutes: {
+            standing: "idle",
+            falling: "fall"
+        },
+        phases: {
+            swing: { animation: "jump_kick", hit: 4 }
+        }
+    }
+}

@@ -52,8 +52,8 @@ internal static class GameOptions
     /* The window */
 
     // Whether the game takes up the whole screen, and how big its window is when it doesn't
-    public static bool Fullscreen = false;
-    public static Vector2 Resolution = new(1600, 900);
+    public static bool Fullscreen = true;
+    public static Vector2 Resolution = new(1920, 1080);
 
     // Whether frames wait for the screen, and the most of them that are drawn a second (NO_FRAME_LIMIT for as many as there is time for)
     public static bool VSync = true;
@@ -61,7 +61,7 @@ internal static class GameOptions
 
     /* The look */
 
-    public static TransitionStyle Transitions = TransitionStyle.Mixed;
+    public static TransitionStyle Transitions = TransitionStyle.Fade;
 
     // Whether the game is drawn like it is on a crusty old CRT
     public static bool Crt = true;
@@ -78,7 +78,7 @@ internal static class GameOptions
     public static bool HitCallouts = true;
 
     // Whether the callouts come with the frame data of the move, for the lab rats
-    public static bool FrameData = false;
+    public static bool FrameData = true;
 
     // Whether the hitboxes, hurtboxes and collision of a fight are drawn over it
     public static bool Hitboxes = false;
