@@ -78,7 +78,7 @@ internal sealed class FightCamera
 
     /// <summary>
     /// Called once per physics step to move the camera along with the fight.
-    /// It has to happen right after the step and not in the state update, because the physics has its own loop.
+    /// It has to happen right after the step and not in the state update, because the physics steps at a rate of its own.
     /// A camera that follows from the state update sees the players stand still one moment and go twice as far the next, which makes them flicker like crazy.
     /// </summary>
     /// <param name="us">The player this machine cares about most, they never leave the screen.</param>
