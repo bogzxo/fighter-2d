@@ -19,6 +19,10 @@ internal static class ButtonGlyphs
     // Hints are asked for on every update, so every text is only ever translated once
     private static readonly Dictionary<string, string> playStationTexts = [];
 
+    // The same for what is held, which the input display asks for every line on every tick a button is held. There
+    // aren't that many ways to mash a pad, and building them anew every time was a pile of garbage a second for nowt
+    private static readonly Dictionary<InputFlags, string> heldTexts = [];
+
     // The buttons of the move files and their icons, in the order they are written out in. Directions first, like every input display ever
     private static readonly (InputFlags Flag, string Icon)[] FightIcons =
     [
@@ -60,13 +64,18 @@ internal static class ButtonGlyphs
     {
         if (held == InputFlags.None) return string.Empty;
 
-        var text = new StringBuilder();
-        foreach (var (flag, icon) in FightIcons)
+        lock (heldTexts)
         {
-            if ((held & flag) != 0) text.Append(icon);
-        }
+            if (heldTexts.TryGetValue(held, out string? known)) return known;
 
-        return text.ToString();
+            var text = new StringBuilder();
+            foreach (var (flag, icon) in FightIcons)
+            {
+                if ((held & flag) != 0) text.Append(icon);
+            }
+
+            return heldTexts[held] = text.ToString();
+        }
     }
 
     /// <summary>
