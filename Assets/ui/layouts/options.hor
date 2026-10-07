@@ -21,7 +21,7 @@ let title = compositor.label({ parent: panel, text: "Options", text_scale: 0.6 }
 // The pages, in the order of their names. The bumpers at the ends of the strip are just text (icons and all)
 let tabs = compositor.tabs({
     parent: panel,
-    tabs: "Display, Look, Fight",
+    tabs: ["Display", "Look", "Fight"],
     text_scale: 0.36,
     spacing: 48,
     prev_hint: "[icon:pad_lb]",

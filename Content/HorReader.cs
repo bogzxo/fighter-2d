@@ -126,12 +126,29 @@ internal static class HorReader
         properties.TryGetValue(key, out var value) ? Named<T>(Text(value, key), key) : fallback;
 
     /// <summary>
-    /// Helper method to read several enum values at once, written as "standing | crouching".
+    /// Helper method to read several texts, written as a list ["a", "b"] or as one text with the separator in it "a | b".
+    /// </summary>
+    public static string[] Texts(IRuntimeValue value, string what, char separator = '|')
+    {
+        const StringSplitOptions tidy = StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries;
+
+        if (value is ListValue list)
+        {
+            var texts = new string[list.Count];
+            for (int i = 0; i < texts.Length; i++) texts[i] = Text(list[i], what).Trim();
+            return texts;
+        }
+
+        return value is StringValue text ? text.Value.Split(separator, tidy) : throw new Exception($"{what} has to be a text or a list of texts.");
+    }
+
+    /// <summary>
+    /// Helper method to read several enum values at once, written as "standing | crouching" or ["standing", "crouching"].
     /// </summary>
     public static T Flags<T>(IRuntimeValue value, string what) where T : struct, Enum
     {
         long flags = 0;
-        foreach (string name in Text(value, what).Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        foreach (string name in Texts(value, what))
         {
             flags |= Convert.ToInt64(Named<T>(name, what));
         }

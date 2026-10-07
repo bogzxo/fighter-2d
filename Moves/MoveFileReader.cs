@@ -99,6 +99,7 @@ internal static class MoveFileReader
 
     /// <summary>
     /// Helper method to read the inputs of a move. "A" is one button, "DPadLeft | DPadRight" is either of them and "A + B" is both together.
+    /// The alternatives can be a list as well, ["DPadLeft", "DPadRight"].
     /// </summary>
     private static InputFlags[] ReadInputs(Dictionary<string, IRuntimeValue> move)
     {
@@ -107,7 +108,7 @@ internal static class MoveFileReader
         const StringSplitOptions tidy = StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries;
         var signatures = new List<InputFlags>();
 
-        foreach (string alternative in HorReader.Text(value, "input").Split('|', tidy))
+        foreach (string alternative in HorReader.Texts(value, "input"))
         {
             InputFlags signature = InputFlags.None;
             foreach (string button in alternative.Split('+', tidy))

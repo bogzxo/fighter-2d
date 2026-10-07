@@ -2,13 +2,13 @@
 // A character lists the files its moves come from in characters.hor, a move in a later file replaces the one of the same name from an earlier one.
 //
 // What a move can have:
-//   input             the button that starts it. "DPadLeft | DPadRight" is either of them, "A + B" is both together.
+//   input             the button that starts it. "DPadLeft | DPadRight" (or ["DPadLeft", "DPadRight"]) is either of them, "A + B" is both together.
 //                     The buttons are A, B, X, Y, DPadUp, DPadDown, DPadLeft, DPadRight, LeftBumper, RightBumper, LeftTrigger and RightTrigger.
 //                     Which physical button each one sits on is up to the bindings of the player. A move without an input can only be rerouted to.
 //   trigger           how the input has to be entered. "held" (for as long as it is), "pressed" (once per press) or "double_tap".
 //   priority          the order the inputs are matched in, lowest goes first. A move that needs more than another one has to come before it
 //                     (double tap left before left).
-//   stances           the stances it can be started from, "standing | crouching | jumping | falling".
+//   stances           the stances it can be started from, "standing | crouching | jumping | falling" or a list of them.
 //   damage            how much health a hit takes, out of 100.
 //   knockback         the shove whoever gets hit is given, vec(away from the attacker, up). Anything with an up part is a launcher.
 //   hitstun           how long whoever gets hit loses the controls for, in frames of this move's own animation.
