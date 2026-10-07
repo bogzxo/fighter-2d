@@ -8,28 +8,92 @@
     <PublishAot>true</PublishAot>
     <InvariantGlobalization>true</InvariantGlobalization>
     <Platforms>AnyCPU;x64</Platforms>
+    <StartupObject>Fighter2D.Program</StartupObject>
   </PropertyGroup>
 
+  <!--
+    Publishing: dotnet publish -c Release -r win-x64 -p:Platform=x64
+    That makes one native Fighter2D.exe (trimmed, no .NET needed on the machine it is run on) next to the Assets
+    and shaders it loads, which is the folder to hand out.
+  -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <SelfContained>true</SelfContained>
+    <PublishTrimmed>true</PublishTrimmed>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <!--
+    What is found by looking for it while the game runs rather than by being called, which trimming can't see and
+    would throw out: DotTiled finds the classes a map is read into that way.
+  -->
   <ItemGroup>
+    <TrimmerRootAssembly Include="DotTiled" />
+  </ItemGroup>
+
+  <!--
+    The native compiler asks Visual Studio where its linker is (vcvarsall.bat), and newer Visual Studios run
+    vswhere.exe for that without saying where it is: it is only found if its folder is on the PATH, which it isn't
+    outside of a developer prompt. What vcvarsall then complains about ends up in front of the name of the linker
+    and the publish fails with "'vswhere.exe' is not recognized". So the folder is put on the PATH of the build
+    before any of that happens.
+  -->
+  <UsingTask TaskName="AddToPath" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Directory ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        string path = System.Environment.GetEnvironmentVariable("PATH") ?? "";
+        if (System.IO.Directory.Exists(Directory) && path.IndexOf(Directory, System.StringComparison.OrdinalIgnoreCase) < 0)
+            System.Environment.SetEnvironmentVariable("PATH", Directory + ";" + path);
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <!--
+    A published game is its exe and its Assets folder, nothing else. Everything else it needs as a file (the
+    native libraries of the packages, the shaders and fonts the engine projects bring) is packed into the exe
+    here and unpacked next to it the first time it runs, see Content/PackedFiles.cs.
+  -->
+  <Target Name="PackEngineFiles" BeforeTargets="PrepareResources" DependsOnTargets="ResolvePackageAssets;GetCopyToOutputDirectoryItems" Condition="'$(Configuration)' == 'Release' and '$(PublishAot)' == 'true' and '$(RuntimeIdentifier)' != ''">
+    <ItemGroup>
+      <!-- Not what only a build needs to know about itself (which with some settings includes a launcher of the game
+           that isn't there yet), and not the odd test file a project leaves lying about -->
+      <_PackedFile Include="@(AllItemsFullPathWithTargetPath)" Condition="!$([System.String]::Copy('%(TargetPath)').StartsWith('Assets')) and '%(Extension)' != '.json' and '%(Extension)' != '.pdb' and '%(Extension)' != '.exe' and '%(Filename)%(Extension)' != 'test.hor'" />
+      <_PackedFile Include="@(NativeCopyLocalItems)" TargetPath="%(NativeCopyLocalItems.DestinationSubPath)" />
+
+      <EmbeddedResource Include="@(_PackedFile)" LogicalName="packed/$([System.String]::Copy('%(_PackedFile.TargetPath)').Replace('\', '/'))" Type="Non-Resx" WithCulture="false" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="PublishOnlyAssets" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(Configuration)' == 'Release' and '$(PublishAot)' == 'true'">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="!$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').StartsWith('Assets'))" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="FindVisualStudioLocator" BeforeTargets="SetupOSSpecificProps" Condition="'$(OS)' == 'Windows_NT' and '$(PublishAot)' == 'true'">
+    <AddToPath Directory="$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer" />
+  </Target>
+
+  <ItemGroup>
+    <None Update="Assets\backgrounds\background_layer_albedo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Assets\backgrounds\menu.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\data\moves.hor">
+    <None Update="Assets\backgrounds\menu_sheet.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\data\maps.hor">
+    <None Update="Assets\backgrounds\player_select_bg.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\fonts\Born2bSporty\Born2bSporty.fnt">
+    <None Update="Assets\data\*.hor">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\fonts\Born2bSporty\Born2bSporty.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\fonts\FIGHTERFISH\FIGHTERFISH.fnt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\fonts\FIGHTERFISH\FIGHTERFISH.png">
+    <None Update="Assets\maps\objects\*.tx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\maps\dungeon.tmx">
@@ -38,7 +102,16 @@
     <None Update="Assets\maps\japan.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\maps\tilesets\Background.png">
+    <None Update="Assets\maps\tilesets\adve.tsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\maps\tilesets\adve_albedo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\maps\tilesets\adve_normal.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\maps\tilesets\adve_specular.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\maps\tilesets\Background.tsx">
@@ -47,25 +120,10 @@
     <None Update="Assets\maps\tilesets\Background_albedo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\maps\tilesets\Basic-sample.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\Basic.tiled-project">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\Basic.tiled-session">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="Assets\maps\tilesets\oak_woods.tsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\maps\tilesets\oak_woods_tileset.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="Assets\maps\tilesets\oak_woods_tileset_albedo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\Platform-and-Objects.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\maps\tilesets\Platform-and-Objects.tsx">
@@ -74,25 +132,25 @@
     <None Update="Assets\maps\tilesets\Platform-and-Objects_albedo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\maps\tilesets\Sky.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="Assets\maps\tilesets\Sky.tsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\maps\tilesets\Sky_albedo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\sprites\player\definition.hor">
+    <None Update="Assets\maps\underground.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\sprites\player\spritesheet.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\sprites\player\_spritesheet.png">
+    <None Update="Assets\sprites\characters\**\*.hor;Assets\sprites\characters\**\*.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\ui\bar.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\ui\new_logo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\ui\layouts\*.hor">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\ui\logo.png">
@@ -101,11 +159,6 @@
     <None Update="Assets\backgrounds\player_select_bg.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Assets\fonts\" />
-    <Folder Include="Assets\sprites\bar\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -121,8 +174,8 @@
     <ProjectReference Include="..\horizon\Horizon.Input\Horizon.Input.csproj" />
     <ProjectReference Include="..\horizon\Horizon.OpenGL\Horizon.OpenGL.csproj" />
     <ProjectReference Include="..\horizon\Horizon.Physics\Horizon.Physics.csproj" />
+    <ProjectReference Include="..\horizon\Horizon.Rendering.UIX\Horizon.Rendering.UIX.csproj" />
     <ProjectReference Include="..\horizon\Horizon.Rendering\Horizon.Rendering.csproj" />
-    <ProjectReference Include="..\horizon\Horizon.Webhost\Horizon.Webhost.csproj" />
   </ItemGroup>
 
 </Project>

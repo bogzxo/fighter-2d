@@ -1,0 +1,42 @@
+// Where the bindings of a gamepad are changed (BindingsScene.cs). The game shares the actions out over the
+// columns there are here (column_1, column_2 and so on, add another for a third) with a row out of binding_row.hor each.
+
+let panel = compositor.stack({
+    background: "panel",
+    padding: vec(40, 34),
+    spacing: 20,
+    intro: "pop",
+    intro_time: 0.4
+});
+
+let title = compositor.label({ parent: panel, text: "Bindings of player 1", text_scale: 0.6 });
+let gamepad_name = compositor.label({ parent: panel, text: "Gamepad", text_scale: 0.25, color: vec(0.58, 0.6, 0.66, 1) });
+
+let columns = compositor.stack({ parent: panel, direction: "horizontal", spacing: 36 });
+let column_1 = compositor.stack({
+    parent: columns,
+    anchor: "top",
+    spacing: 6,
+    stagger: 0.04,
+    template: "binding_row.hor",
+    preview_count: 8
+});
+let column_2 = compositor.stack({
+    parent: columns,
+    anchor: "top",
+    spacing: 6,
+    stagger: 0.04,
+    template: "binding_row.hor",
+    preview_count: 8
+});
+
+let actions = compositor.stack({ parent: panel, direction: "horizontal", spacing: 16 });
+let btn_defaults = compositor.button({ parent: actions, label: "Defaults", size: vec(240, 0) });
+let btn_done = compositor.button({ parent: actions, label: "Done", size: vec(180, 0) });
+
+let hint = compositor.label({
+    parent: panel,
+    text: "[icon:dpad] choose    [icon:pad_a] change    [icon:pad_b] done",
+    text_scale: 0.25,
+    color: vec(0.58, 0.6, 0.66, 1)
+});

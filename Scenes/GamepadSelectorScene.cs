@@ -1,79 +1,138 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
-using System.Text;
+using Fighter2D.Match;
 
-using Horizon.Engine;
-using Horizon.Rendering.Spriting;
-using Horizon.Rendering.Text;
-using Horizon.Rendering.UI;
-using Silk.NET.Input;
+using Horizon.Input;
+using Horizon.Rendering.UIX;
+using Horizon.Rendering.UIX.Components;
+
+using Button = Horizon.Rendering.UIX.Components.Button;
 
 namespace Fighter2D.Scenes;
 
-internal class GamepadSelectorScene : Scene
+/// <summary>
+/// Scene where the players pick their gamepads one after the other, by pressing any button on the one they want.
+/// A gamepad that has been picked can change its bindings from here as well, see <see cref="BindingsScene"/>.
+/// For an online fight this is the lobby too. What happens once the gamepads are picked is up to the <see cref="GamepadSelectFlow"/>.
+/// </summary>
+internal class GamepadSelectorScene(MatchSetup setup) : MenuScene
 {
-    private GlyphRenderer glyphRenderer;
-    public override Camera ActiveCamera { get; protected set; }
+    protected override string LayoutFile => MenuLayouts.GAMEPAD_SELECT;
 
-    public override void Initialize()
+    /// <summary>
+    /// What the text of a card is coloured with when it wants somebody's attention.
+    /// </summary>
+    internal Pulse FastPulse { get; } = new(0.3f, 1.0f, 1.05f);
+    internal Pulse SlowPulse { get; } = new(0.3f, 1.0f, 2.1f);
+
+    private PlayerCard[] _cards = [];
+    private GamepadSelectFlow _flow = null!;
+
+    protected override void BuildUi(UILayout layout)
     {
-        ActiveCamera = AddEntity(new Camera2D(new Vector2(1600, 900)));
+        // The screen is laid out in Assets/ui/layouts/gamepad_select.hor, the cards in player_card.hor
+        layout.Get<Label>("title").Text = setup.Title;
 
-        CompositeImages();
-        CompositeText();
+        // One card per player, side by side. Online there are always two of them, one for each corner of the fight
+        var items = layout.Populate("cards", setup.IsOnline ? 2 : setup.PlayerCount);
+        _cards = new PlayerCard[items.Count];
+        for (int i = 0; i < _cards.Length; i++)
+        {
+            _cards[i] = new PlayerCard(items[i], setup.IsOnline ? (i == 0 ? "Blue corner" : "Red corner") : $"Player {i + 1}");
+        }
 
-        base.Initialize();
+        var hint = layout.Get<Label>("hint");
+        hint.Text = string.Empty;
+
+        // For the mouse, a gamepad goes back with B
+        layout.Get<Button>("btn_back").OnPressed = Back;
+
+        _flow = setup.Lobby is { } lobby
+            ? new LobbySelectFlow(this, setup, lobby, _cards, hint)
+            : new LocalSelectFlow(this, setup, _cards, hint);
+
+        // Online the game files may have to go from the host to whoever joined, which gets a progress bar of its own
+        if (setup.Lobby is { } online) AddComponent(new HUD.ContentTransferDisplay(online.Content, online.IsHost));
     }
 
-    public override void UpdateState(float dt)
+    protected override void UpdateMenu(float dt)
     {
-        if (!Engine.InputManager.NativeInputContext!.Gamepads.Any())
-        {
-            glyphRenderer["insertGamepadHint"].IsVisible = true;
-            glyphRenderer["gamepadPressX"].IsVisible = false;
-        }
-        else
-        {
-            glyphRenderer["insertGamepadHint"].IsVisible = false;
-            glyphRenderer["gamepadPressX"].IsVisible = true;
-        }
+        FastPulse.Update(dt);
+        SlowPulse.Update(dt);
 
-        foreach (var gamepad in Engine.InputManager.NativeInputContext!.Gamepads)
+        DropUnplugged();
+
+        if (_flow.Update()) return;
+        _flow.Refresh();
+
+        if (!InputReady) return;
+
+        foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
         {
-            if (gamepad.X().Pressed)
-            {
-                Engine.SetScene(new MapSelectionScene());
-            }
-        }
-        base.UpdateState(dt);
-    }
+            if (!gamepad.IsConnected) continue;
 
-    private void CompositeImages()
-    {
-        var spriteBatch = AddEntity<SpriteBatch>();
-
-        if (Engine.ObjectManager.Textures.TryCreateOrGet("gpselbg", new Horizon.OpenGL.Descriptions.TextureDescription { Paths = ["Assets/backgrounds/player_select_bg.png"], Definition = Horizon.OpenGL.Descriptions.TextureDefinition.RgbaUnsignedByteNearest }, out var result_bg))
-        {
-            var bg = spriteBatch.AddEntity(new UIRectangle(Engine.WindowManager.WindowSize));
-            bg.Transform.SetPositionRelativeToOrigin(new System.Numerics.Vector2(-Engine.WindowManager.WindowSize.X / 2, Engine.WindowManager.WindowSize.Y / 2));
-            bg.ConfigureSpriteSheet(SpriteSheet.FromTexture(result_bg.Asset, new Vector2(result_bg.Asset.Width, result_bg.Asset.Height)), "bg");
-
-            spriteBatch.Add(bg);
+            // Only one thing happens per update, whoever pressed first wins
+            if (setup.Slots.Contains(gamepad.Slot) ? HandlePicked(gamepad) : HandleUnpicked(gamepad)) return;
         }
     }
 
-    private void CompositeText()
+    /// <summary>
+    /// Called for every gamepad that belongs to a player already, returns whether it did anything.
+    /// </summary>
+    private bool HandlePicked(Gamepad gamepad)
     {
-        glyphRenderer = AddEntity(new GlyphRenderer("Assets/Fonts/Born2bSporty", "Born2bSporty.fnt"));
-        glyphRenderer.AddLabel("insertGamepadHint", new()
+        if (gamepad.WasPressed(GamepadInput.Y))
         {
-            Text = "Insert Gamepad to Continue",
-            Origin = Horizon.Rendering.Origin.Center
-        });
-        glyphRenderer.AddLabel("gamepadPressX", new()
+            GoTo(new BindingsScene(gamepad.Slot, setup));
+            return true;
+        }
+
+        return _flow.HandlePicked(gamepad);
+    }
+
+    /// <summary>
+    /// Called for every gamepad nobody has picked yet, returns whether it did anything.
+    /// </summary>
+    private bool HandleUnpicked(Gamepad gamepad)
+    {
+        if (setup.IsReady || gamepad.Pressed is not { } input) return false;
+
+        // Any button picks the gamepad. Apart from B while there is nothing to undo, that one means back like everywhere else
+        if (input == GamepadInput.B && setup.Slots.Count == 0)
         {
-            Text = "Press X to Continue"
-        });
+            Back();
+            return true;
+        }
+
+        int card = _flow.NextCard;
+        setup.Slots.Add(gamepad.Slot);
+
+        // The card of whoever just picked jumps, so there is no doubt it went to them
+        _cards[card].Bump();
+        return true;
+    }
+
+    /// <summary>
+    /// Helper method to take a gamepad away from its player when it is pulled out, along with everybody who picked after them.
+    /// </summary>
+    private void DropUnplugged()
+    {
+        for (int i = 0; i < setup.Slots.Count; i++)
+        {
+            if (GameInput.Manager.TryGet(setup.Slots[i], out Gamepad gamepad) && gamepad.IsConnected) continue;
+
+            setup.Slots.RemoveRange(i, setup.Slots.Count - i);
+
+            // Nobody can be ready without a gamepad
+            setup.Lobby?.SetReady(false);
+            return;
+        }
+    }
+
+    /// <summary>
+    /// Goes back to the main menu, which for an online fight means hanging up on whoever is in the lobby.
+    /// </summary>
+    internal void Back()
+    {
+        setup.Close();
+        GoTo(new MainMenuScene());
     }
 }

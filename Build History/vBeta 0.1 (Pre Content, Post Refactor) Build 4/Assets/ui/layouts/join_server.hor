@@ -1,0 +1,22 @@
+// Where the address of a server is typed in (JoinServerScene.cs). The keys of the on-screen keyboard are put
+// into keyboard_slot by the game, the status stays empty until there is something to say.
+
+let panel = compositor.stack({
+    background: "panel",
+    padding: vec(40, 34),
+    spacing: 16,
+    intro: "pop",
+    intro_time: 0.4
+});
+
+let title = compositor.label({ parent: panel, text: "Join Multiplayer", text_scale: 0.6 });
+let subtitle = compositor.label({ parent: panel, text: "Address of the server", text_scale: 0.3 });
+let address = compositor.textbox({ parent: panel, size: vec(420, 56), text: "127.0.0.1", max_length: 15 });
+let status = compositor.label({ parent: panel, size: vec(0, 22), text_scale: 0.25, color: vec(1, 0.45, 0.4, 1) });
+let keyboard_slot = compositor.stack({ parent: panel });
+let hint = compositor.label({
+    parent: panel,
+    text: "[icon:dpad] move    [icon:pad_a] press    [icon:pad_b] delete    [icon:pad_y] connect",
+    text_scale: 0.25,
+    color: vec(0.58, 0.6, 0.66, 1)
+});

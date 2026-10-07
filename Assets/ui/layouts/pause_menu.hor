@@ -1,0 +1,50 @@
+// The menu that comes up when somebody presses start in the middle of a fight (PauseMenu.cs).
+// The fight behind it is blurred by the game while this is up, so there is nothing here to darken it.
+// The host tools at the bottom read everything from disk again (moves, characters, maps and art) without leaving the fight.
+// It is three layers. "menu" is what whoever paused gets, "waiting" is what the other machine of an online fight shows until they carry on,
+// and "countdown" is the 3, 2, 1 everybody gets before the fight is back on.
+
+let menu = compositor.stack({
+    layer: "menu",
+    background: "panel",
+    padding: vec(44, 36),
+    spacing: 16,
+    intro: "pop",
+    intro_time: 0.25
+});
+
+let title = compositor.label({ parent: menu, text: "PAUSED", text_scale: 0.8 });
+
+let btn_resume = compositor.button({ parent: menu, label: "Carry on", size: vec(360, 0) });
+let btn_rematch = compositor.button({ parent: menu, label: "Start over", size: vec(360, 0) });
+let btn_quit = compositor.button({ parent: menu, label: "Main menu", size: vec(360, 0) });
+
+// Only the host gets these (and whoever plays on one machine, who is their own host). The game takes them off the menu for everybody else
+let tools_title = compositor.label({ parent: menu, text: "HOST TOOLS", text_scale: 0.26, color: vec(0.58, 0.6, 0.66, 1) });
+let btn_reload = compositor.button({ parent: menu, label: "Reload data", size: vec(360, 0) });
+let btn_hitboxes = compositor.button({ parent: menu, label: "Hitboxes: off", size: vec(360, 0) });
+
+let hint = compositor.label({
+    parent: menu,
+    size: vec(0, 30),
+    text: "[icon:dpad] choose    [icon:pad_a] pick    [icon:pad_b] carry on",
+    text_scale: 0.25,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+
+let count = compositor.label({ layer: "countdown", pos: vec(0, 110), text: "3", text_scale: 2.4 });
+
+let waiting = compositor.stack({
+    layer: "waiting",
+    background: "panel",
+    padding: vec(44, 36),
+    spacing: 14
+});
+
+let waiting_title = compositor.label({ parent: waiting, text: "PAUSED", text_scale: 0.8 });
+let waiting_detail = compositor.label({
+    parent: waiting,
+    text: "the other player has paused the fight",
+    text_scale: 0.28,
+    color: vec(0.58, 0.6, 0.66, 1)
+});

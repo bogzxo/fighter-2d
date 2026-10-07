@@ -1,0 +1,37 @@
+// Where the map of the fight is picked (MapSelectionScene.cs): the maps on the left, what there is to say about
+// the selected one on the right. The game makes a button per map out of map_button.hor.
+
+let panel = compositor.stack({
+    background: "panel",
+    padding: vec(40, 34),
+    spacing: 24,
+    intro: "pop",
+    intro_time: 0.4
+});
+
+let title = compositor.label({ parent: panel, text: "Select Map", text_scale: 0.6 });
+let columns = compositor.stack({ parent: panel, direction: "horizontal", spacing: 28 });
+
+let maps = compositor.stack({
+    parent: columns,
+    spacing: 10,
+    stretch: true,
+    template: "map_button.hor",
+    preview_count: 3
+});
+let description = compositor.label({
+    parent: columns,
+    anchor: "top",
+    size: vec(440, 130),
+    text: "What there is to say about the map",
+    text_scale: 0.3,
+    align: "top_left"
+});
+
+let btn_fight = compositor.button({ parent: panel, label: "Fight", size: vec(200, 0) });
+let hint = compositor.label({
+    parent: panel,
+    text: "[icon:dpad] choose a map    [icon:pad_a] fight    [icon:pad_b] back",
+    text_scale: 0.25,
+    color: vec(0.58, 0.6, 0.66, 1)
+});

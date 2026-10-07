@@ -1,0 +1,44 @@
+// The main menu, made for a screen of 1600 by 900. The game looks its parts up by the names they have here
+// (MainMenuScene.cs), everything else about them is free to change. Open it with Horizon.Hex to move things around.
+// The menu comes in from the side, and its buttons pop up one after the other once it is there.
+
+let menu = compositor.stack({
+    anchor: "left",
+    pos: vec(90, -110),
+    background: "panel",
+    padding: vec(36, 32),
+    spacing: 16,
+    stagger: 0.1,
+    intro: "slide",
+    intro_time: 0.55,
+    intro_delay: 0.2,
+    intro_offset: vec(-520, 0)
+});
+
+let btn_pvp = compositor.button({ parent: menu, label: "PVP", size: vec(360, 0), intro: "pop", intro_delay: 0.55 });
+let btn_practice = compositor.button({ parent: menu, label: "Practice", size: vec(360, 0), intro: "pop", intro_delay: 0.55 });
+let btn_host = compositor.button({ parent: menu, label: "Host Server", size: vec(360, 0), intro: "pop", intro_delay: 0.55 });
+let btn_join = compositor.button({ parent: menu, label: "Join Multiplayer", size: vec(360, 0), intro: "pop", intro_delay: 0.55 });
+let btn_options = compositor.button({ parent: menu, label: "Options", size: vec(360, 0), intro: "pop", intro_delay: 0.55 });
+
+let hint = compositor.label({
+    parent: menu,
+    size: vec(0, 30),
+    text: "[icon:dpad] choose    [icon:pad_a] pick",
+    text_scale: 0.25,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+let version = compositor.label({ parent: menu, text: "version", text_scale: 0.2, color: vec(0.58, 0.6, 0.66, 1) });
+
+// The logo, in the top left corner, a bit over one and a half times the size of its art (just clear of the menu). Part of the layout so it scales with the rest of the
+// UI (the window, the GUI scale option) instead of being stuck at a size in pixels. It rattles with every kick of the
+// duel behind it, see MainMenuScene.cs
+let logo = compositor.image({
+    anchor: "top_left",
+    pos: vec(12, 0),
+    size: vec(600, 288),
+    file: "Assets/ui/new_logo.png",
+    intro: "pop",
+    intro_time: 0.7,
+    intro_delay: 0.15
+});

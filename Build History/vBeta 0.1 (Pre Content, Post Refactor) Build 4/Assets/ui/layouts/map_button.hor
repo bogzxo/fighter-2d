@@ -1,0 +1,4 @@
+// One map on the map selector, made once per map by map_select.hor.
+// A height of zero leaves the button as tall as the skin draws it.
+
+let button = compositor.button({ label: "Map", size: vec(280, 0) });

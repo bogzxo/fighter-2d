@@ -1,191 +1,112 @@
-﻿namespace Fighter2D.Logic;
-
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
-using Horizon.Engine;
-using Horizon.HIDL;
-using Horizon.HIDL.Runtime;
+using Fighter2D.Logic.Moves;
 
-using Silk.NET.Input;
+namespace Fighter2D.Logic;
 
-
+/// <summary>
+/// Every move a character has, read out of the move files of the game's content.
+/// Nothing about a move lives in the code, so a game pack can change the ones there are or bring its own.
+/// </summary>
 internal class MoveList
 {
-    public Dictionary<string, FightingMove> Moves { get; init; } = new();
+    public Dictionary<string, FightingMove> Moves { get; } = [];
 
-    // Changed key to string (joined bindings) because arrays pass by reference, breaking dictionary lookups.
-    public Dictionary<string, string> MovesLookup { get; init; } = new();
+    // The moves an input can start, in the order they are matched in. First match wins.
+    // A move that needs more than another has to come before it (double tap left before left)
+    private FightingMove[] _inputMoves = [];
 
-    public FightingMove Idle { get; private set; }
+    public FightingMove Idle { get; private set; } = new();
 
-    private readonly string _filePath = string.Empty;
-
-    public MoveList(in string file = "Assets/data/moves.hor")
+    /// <summary>
+    /// Helper method to read a move list out of its files, a move from a later file replaces the one of the same name from an earlier one.
+    /// Throws (saying what is wrong and where) if a file is fucked.
+    /// </summary>
+    public static MoveList Load(params string[] files)
     {
-        _filePath = file;
-        HIDLRuntime runtime = new();
-        runtime.GlobalScope.DeclareSystem("playerJump", new NativeFunctionValue());
+        var list = new MoveList();
 
-        if (!File.Exists(file)) throw new FileNotFoundException($"Move list file not found: {file}");
-
-        var (success, _) = runtime.Evaluate(File.ReadAllText(file));
-        if (!success) throw new Exception("Failed to evaluate move list script.");
-
-        ObjectValue movesValue = (ObjectValue)runtime.UserScope.Lookup("moves");
-        ParseMoves(movesValue);
-    }
-
-    public void Reload()
-    {
-        MovesLookup.Clear();
-        Moves.Clear();
-
-        HIDLRuntime runtime = new();
-        runtime.GlobalScope.DeclareSystem("playerJump", new NativeFunctionValue());
-
-        var (success, _) = runtime.Evaluate(File.ReadAllText(_filePath));
-        if (!success) throw new Exception("Failed to evaluate move list script.");
-
-        ObjectValue movesValue = (ObjectValue)runtime.UserScope.Lookup("moves");
-        ParseMoves(movesValue);
-    }
-
-    private void ParseMoves(ObjectValue movesValue)
-    {
-        foreach (var move in movesValue.Properties)
+        foreach (string file in files)
         {
-            if (move.Value is not ObjectValue moveObj) continue;
-
-            string moveName = move.Key;
-
-            // Extracted safe property fetching
-            string bindraw = GetStringProp(moveObj, "binding", "none");
-            string dirraw = GetStringProp(moveObj, "direction", "none");
-            string stanceraw = GetStringProp(moveObj, "stance", "standing");
-            int damage = GetIntProp(moveObj, "damage", 0);
-            bool interuptable = GetBoolProp(moveObj, "interruptible", false);
-            bool loopable = GetBoolProp(moveObj, "loopable", false);
-            bool doubleTap = GetBoolProp(moveObj, "double_tap", false);
-            string? nextMove = GetStringProp(moveObj, "next_move", null);
-            string? releaseMove = GetStringProp(moveObj, "release_move", null);
-
-            AnonymousFunctionValue? callback = null;
-            if (moveObj.Properties.TryGetValue("callback", out var cbVal) && cbVal is AnonymousFunctionValue cb)
+            foreach (FightingMove move in MoveFileReader.Read(file))
             {
-                callback = cb;
+                list.Moves[move.Id] = move;
             }
+        }
 
-            // Parse Stance Reroutes
-            Dictionary<Stance, string>? stanceReroutes = null;
-            if (moveObj.Properties.TryGetValue("stance_reroutes", out var srVal) && srVal is ObjectValue srObj)
+        list.Validate();
+        return list;
+    }
+
+    private void Validate()
+    {
+        if (!Moves.TryGetValue(MoveIds.IDLE, out var idle))
+            throw new Exception($"There is no move called '{MoveIds.IDLE}', a player has to be able to do nothing.");
+
+        Idle = idle;
+
+        // A reroute to a move that doesn't exist would leave the player stuck, better to hear about it now
+        foreach (FightingMove move in Moves.Values)
+        {
+            IEnumerable<string> targets = (move.StanceReroutes?.Values ?? Enumerable.Empty<string>()).Concat(move.FinishReroutes?.Values ?? Enumerable.Empty<string>());
+
+            foreach (string target in targets)
             {
-                stanceReroutes = new Dictionary<Stance, string>();
-                foreach (var kvp in srObj.Properties)
-                {
-                    if (Enum.TryParse(kvp.Key, true, out Stance parsedStance) && kvp.Value is StringValue sv)
-                    {
-                        stanceReroutes[parsedStance] = sv.Value;
-                    }
-                }
+                if (!Moves.ContainsKey(target))
+                    throw new Exception($"The move '{move.Id}' reroutes to '{target}', which isn't a move.");
             }
+        }
 
-            var animObj = (ObjectValue)moveObj.Properties["animation"];
-            string animName = GetStringProp(animObj, "name", "idle");
-            int animHit = GetIntProp(animObj, "hit", 0);
+        _inputMoves = [.. Moves.Values.Where(move => move.Priority >= 0).OrderBy(move => move.Priority)];
+    }
 
-            var (anyInput, bindings) = ParseBindings(bindraw);
-
-            // Map to string to prevent array reference mismatch
-            string bindKey = string.Join("+", bindings);
-            if (bindings.Length > 0 && !MovesLookup.ContainsKey(bindKey))
-            {
-                MovesLookup.Add(bindKey, moveName);
-            }
-
-            var fmove = new FightingMove
-            {
-                Name = moveName,
-                Damage = damage,
-                Animation = new MoveAnimation { HitFrame = animHit, Name = animName },
-                Stances = ParseStance(stanceraw),
-                Directions = ParseDirection(dirraw),
-                Bindings = bindings,
-                UseAnyBindings = anyInput,
-                Interuptable = interuptable,
-                Callback = callback,
-                Loopable = loopable,
-                DoubleTap = doubleTap,
-                NextMove = nextMove,
-                ReleaseMove = releaseMove,
-                StanceReroutes = stanceReroutes
-            };
-
-            if (moveName.Equals("idle", StringComparison.OrdinalIgnoreCase))
-            {
-                Idle = fmove;
-            }
-
-            Moves.Add(moveName, fmove);
+    /// <summary>
+    /// Works out the frame data of every move, which needs to know how long the animations of the character are.
+    /// </summary>
+    /// <param name="animationLength">How many frames an animation of the character has.</param>
+    /// <param name="frameRate">How many frames of animation a second the character plays at.</param>
+    public void Bake(Func<string?, uint> animationLength, float frameRate)
+    {
+        foreach (FightingMove move in Moves.Values)
+        {
+            move.FrameData = MoveFrameData.Of(move, animationLength, frameRate);
         }
     }
 
-    #region Safe Property Parsers
-    private static string? GetStringProp(ObjectValue obj, string key, string? defaultVal) =>
-        obj.Properties.TryGetValue(key, out var val) && val is StringValue sv ? sv.Value : defaultVal;
-
-    private static int GetIntProp(ObjectValue obj, string key, int defaultVal) =>
-        obj.Properties.TryGetValue(key, out var val) && val is NumberValue nv ? (int)nv.Value : defaultVal;
-
-    private static bool GetBoolProp(ObjectValue obj, string key, bool defaultVal) =>
-        obj.Properties.TryGetValue(key, out var val) && val is BooleanValue bv ? bv.Value : defaultVal;
-    #endregion
-
-    private static (bool any, ButtonName[])  ParseBindings(string bindraw)
+    public bool TryGetMove(string id, out FightingMove move)
     {
-        if (string.Equals(bindraw, "none", StringComparison.OrdinalIgnoreCase)) return (false, []);
-
-        List<ButtonName> bindings = new();
-        bool isOr = bindraw.Contains('|');
-        char delimiter = isOr ? '|' : '+';
-
-        foreach (var dir in bindraw.Split(delimiter))
+        if (Moves.TryGetValue(id, out var found))
         {
-            if (Enum.TryParse(dir.Trim(), true, out ButtonName parsedBinding))
-            {
-                bindings.Add(parsedBinding);
-            }
+            move = found;
+            return true;
         }
-        return (isOr, bindings.ToArray());
+
+        move = Idle;
+        return false;
     }
 
-    private static Direction ParseDirection(string dirraw)
+    /// <summary>
+    /// Finds the move the player is asking for, going by priority.
+    /// </summary>
+    /// <param name="signature">The input signature of the move which matched.</param>
+    public bool TryMatchInput(InputBuffer input, Stance stance, out FightingMove move, out InputFlags signature)
     {
-        if (string.Equals(dirraw, "none", StringComparison.OrdinalIgnoreCase)) return Direction.None;
-
-        Direction final = Direction.None;
-        foreach (var dir in dirraw.Split('|'))
+        foreach (FightingMove candidate in _inputMoves)
         {
-            if (Enum.TryParse(dir.Trim(), true, out Direction parsedDir))
+            // Reject all moves that are not allowed in our current stance
+            if ((candidate.Stances & stance) == 0) continue;
+
+            if (input.TryMatch(candidate, out signature))
             {
-                final |= parsedDir;
+                move = candidate;
+                return true;
             }
         }
-        return final;
-    }
 
-    private static Stance ParseStance(string stanceraw)
-    {
-        Stance final = Stance.None;
-        foreach (var stance in stanceraw.Split('|'))
-        {
-            if (Enum.TryParse(stance.Trim(), true, out Stance parsedStance))
-            {
-                final |= parsedStance;
-            }
-        }
-        return final;
+        move = Idle;
+        signature = InputFlags.None;
+        return false;
     }
 }

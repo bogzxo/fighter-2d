@@ -1,9 +1,0 @@
-﻿let maps = {
-	dungeon: {
-        pretty_name: "The Dungeon",
-        file_name: "dungeon.tmx",
-        description: "plenty weird stains on the walls.. hmmm... uuhhggg.. mmmhhh.....",
-        spawn_pos: { x: 16, y: 0 },
-        floor_level: 25
-    }
-};

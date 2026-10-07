@@ -1,0 +1,23 @@
+let sprite = {
+	sprite_size: { w: 128, h: 128},
+    grid_size: { w: 12, h: 12},
+
+    animations: {
+        idle: {x: 0, y: 0, length: 1},
+        run_loop: {x: 0, y: 1, length: 12 },
+        run_stop: {x: 0, y: 2, length: 5 },
+        jump: {x: 0, y: 3, length: 4 },
+        fall: {x: 4, y: 3, length: 1 },
+        hard_landing: {x: 0, y: 4, length: 6 },
+        roll: {x: 0, y: 5, length: 9 },
+        jump_kick: {x: 0, y: 6, length: 8 },
+        kick: {x: 0, y: 7, length: 5 },
+        crouch_start: {x: 0, y: 8, length: 3 },
+        crouch_loop: {x: 2, y: 8, length: 1 },
+        block: {x: 0, y: 9, length: 7 },
+        block_start: {x: 0, y: 9, length: 6 },
+        block_loop: {x: 6, y: 9, length: 1 },
+        counter_attack: {x: 0, y: 10, length: 4 },
+        punch: {x: 0, y: 10, length: 4 },
+    }
+}
