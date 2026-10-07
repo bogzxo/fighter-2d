@@ -29,6 +29,7 @@ let tabs = compositor.tabs({
     accent: vec(1, 1, 1, 1),
     color: vec(0.58, 0.6, 0.66, 1)
 });
+let rule = compositor.divider({ parent: panel, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
 
 // The display tab
 let display_rows = compositor.stack({ parent: tabs, spacing: 8, intro: "slide", intro_time: 0.25, intro_offset: vec(0, -24) });

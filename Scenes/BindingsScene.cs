@@ -193,7 +193,7 @@ internal class BindingsScene(int slot, MatchSetup setup) : MenuScene
         _capture.Start(index, adding);
 
         _entries[index].Label = TEXT_LISTENING;
-        _hint.Text = ButtonGlyphs.Localize($"Press the button for {GameInput.Actions[index].Label.ToLowerInvariant()}, or several together    start cancels", _gamepad);
+        _hint.Text = ButtonGlyphs.Localize($"Press the button for {GameInput.Actions[index].Label.ToLowerInvariant()}, or several together    [icon:pad_menu] cancels", _gamepad);
     }
 
     private void StopCapture()

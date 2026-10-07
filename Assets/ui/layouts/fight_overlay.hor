@@ -1,41 +1,77 @@
 // fight_overlay, laid out with Horizon.Hex.
-// Everything that is drawn over a fight. It is split over three layers so each can be hidden while another one is worked on.
-// "hud" is the bars, the clock, the names, the input display and the hit callouts. "banner" calls out the rounds. "versus" is the versus screen.
+// Everything that is drawn over a fight. It is split over layers so each can be hidden while another one is worked on.
+// "hud" is the bars, the meters, the clock, the names, the input display and the hit callouts. "banner" calls out the
+// rounds, "flash" is the white hit of a K.O. and "versus" is the versus screen.
 // Load it with UILayout.Load, every component is there under the name it has here.
 
 // Made for 16:9, but the HUD gets the whole screen: on an ultrawide the health bars go out to the corners
 compositor.design({ size: vec(1600, 900), fit: "stretch" });
 
+// The health bars along the top, draining towards the middle. The red ghost behind the fill is what the last
+// hits took off, it catches up a moment later (HealthDisplay.cs)
 let player1_health = compositor.progress_bar({
     layer: "hud",
-    pos: vec(40, -16),
-    scale: vec(5, 2.75),
+    pos: vec(40, -22),
+    size: vec(580, 48),
     anchor: "top_left",
     pivot: "top_left",
     intro: "slide",
     intro_delay: 0.4,
-    intro_offset: vec(-692.75, 0),
-    text_scale: 0.75
+    intro_offset: vec(-720, 0),
+    show_text: false,
+    ghost: 1
 });
 
 let player2_health = compositor.progress_bar({
     layer: "hud",
-    pos: vec(-40, -16),
-    scale: vec(5, 2.75),
+    pos: vec(-40, -22),
+    size: vec(580, 48),
     anchor: "top_right",
     pivot: "top_right",
     intro: "slide",
     intro_delay: 0.4,
-    intro_offset: vec(642.25, 0),
-    text_scale: 0.75
+    intro_offset: vec(720, 0),
+    show_text: false,
+    reverse: true,
+    ghost: 1
 });
 
+// Under each bar, who the player is playing and the rounds they have taken, the rounds towards the middle
+let player1_plate = compositor.stack({
+    layer: "hud",
+    pos: vec(52, -76),
+    anchor: "top_left",
+    pivot: "top_left",
+    direction: "horizontal",
+    spacing: 22,
+    intro: "slide",
+    intro_delay: 0.5,
+    intro_offset: vec(-640, 0)
+});
+let player1_name = compositor.label({ parent: player1_plate, text: "PLAYER ONE", text_scale: 0.36 });
+let player1_rounds = compositor.label({ parent: player1_plate, text: "", text_scale: 0.34, color: vec(1, 0.82, 0.25, 1) });
+
+let player2_plate = compositor.stack({
+    layer: "hud",
+    pos: vec(-52, -76),
+    anchor: "top_right",
+    pivot: "top_right",
+    direction: "horizontal",
+    spacing: 22,
+    intro: "slide",
+    intro_delay: 0.5,
+    intro_offset: vec(640, 0)
+});
+let player2_rounds = compositor.label({ parent: player2_plate, text: "", text_scale: 0.34, color: vec(1, 0.82, 0.25, 1) });
+let player2_name = compositor.label({ parent: player2_plate, text: "PLAYER TWO", text_scale: 0.36 });
+
+// The clock in the middle, and under it which round this is
 let timer_background = compositor.panel({
     layer: "hud",
-    size: vec(500, 100),
+    size: vec(260, 100),
     anchor: "top",
     pivot: "top",
-    padding: vec(77, 18, 69.25, 17.5),
+    padding: vec(30, 18, 30, 17.5),
     intro: "slide",
     intro_delay: 0.35,
     intro_offset: vec(0, 148),
@@ -51,66 +87,73 @@ let timer_label = compositor.label({
     text_scale: 1.25
 });
 
-// Under each bar: who the player is playing and the rounds they have taken, written by the game (HealthDisplay.cs)
-let player1_info = compositor.label({
+let round_label = compositor.label({
     layer: "hud",
-    pos: vec(48, -92),
-    size: vec(560, 34),
-    anchor: "top_left",
-    pivot: "top_left",
-    align: "left",
-    intro: "slide",
-    intro_delay: 0.5,
-    intro_offset: vec(-640, 0),
-    text: "PLAYER ONE",
-    text_scale: 0.32
+    pos: vec(0, -108),
+    anchor: "top",
+    pivot: "top",
+    text: "ROUND 1",
+    text_scale: 0.26,
+    color: vec(0.58, 0.6, 0.66, 1),
+    intro: "pop",
+    intro_delay: 0.7
 });
 
-let player2_info = compositor.label({
-    layer: "hud",
-    pos: vec(-48, -92),
-    size: vec(560, 34),
-    anchor: "top_right",
-    pivot: "top_right",
-    align: "right",
-    intro: "slide",
-    intro_delay: 0.5,
-    intro_offset: vec(640, 0),
-    text: "PLAYER TWO",
-    text_scale: 0.32
-});
-
-// The super meter of each player, under their name. It fills off hits dealt and taken and buys the moves that cost meter (HealthDisplay.cs)
+// The super meters along the bottom corners, in the four pieces a special costs. It fills off hits dealt and taken,
+// says MAX when it is all there, and buys the moves that cost meter (HealthDisplay.cs)
 let player1_meter = compositor.progress_bar({
     layer: "hud",
-    pos: vec(48, -130),
-    size: vec(360, 16),
-    anchor: "top_left",
-    pivot: "top_left",
+    pos: vec(40, 34),
+    size: vec(440, 22),
+    anchor: "bottom_left",
+    pivot: "bottom_left",
     intro: "slide",
     intro_delay: 0.55,
-    intro_offset: vec(-460, 0),
+    intro_offset: vec(-520, 0),
     show_text: false,
+    segments: 4,
+    fill_color: vec(1, 0.82, 0.25, 1),
     progress: 0
+});
+let player1_meter_label = compositor.label({
+    layer: "hud",
+    pos: vec(48, 62),
+    anchor: "bottom_left",
+    pivot: "bottom_left",
+    text: "METER",
+    text_scale: 0.22,
+    color: vec(0.58, 0.6, 0.66, 1)
 });
 
 let player2_meter = compositor.progress_bar({
     layer: "hud",
-    pos: vec(-48, -130),
-    size: vec(360, 16),
-    anchor: "top_right",
-    pivot: "top_right",
+    pos: vec(-40, 34),
+    size: vec(440, 22),
+    anchor: "bottom_right",
+    pivot: "bottom_right",
     intro: "slide",
     intro_delay: 0.55,
-    intro_offset: vec(460, 0),
+    intro_offset: vec(520, 0),
     show_text: false,
+    reverse: true,
+    segments: 4,
+    fill_color: vec(1, 0.82, 0.25, 1),
     progress: 0
+});
+let player2_meter_label = compositor.label({
+    layer: "hud",
+    pos: vec(-48, 62),
+    anchor: "bottom_right",
+    pivot: "bottom_right",
+    text: "METER",
+    text_scale: 0.22,
+    color: vec(0.58, 0.6, 0.66, 1)
 });
 
 // The input display down both sides. What each player held lately with the newest on top, written by the game (InputDisplay.cs)
 let player1_inputs = compositor.label({
     layer: "hud",
-    pos: vec(48, -150),
+    pos: vec(48, -130),
     size: vec(300, 430),
     anchor: "top_left",
     pivot: "top_left",
@@ -121,7 +164,7 @@ let player1_inputs = compositor.label({
 
 let player2_inputs = compositor.label({
     layer: "hud",
-    pos: vec(-48, -150),
+    pos: vec(-48, -130),
     size: vec(300, 430),
     anchor: "top_right",
     pivot: "top_right",
@@ -130,11 +173,11 @@ let player2_inputs = compositor.label({
     text_scale: 0.3
 });
 
-// What the last attack of each player came to (HIT, COUNTER HIT, WHIFF...), the combo count under it
-// and the frame data of the move under that (for whoever switched it on in the options), see HitCalloutDisplay.cs
+// What the last attack of each player came to (HIT, COUNTER HIT, WHIFF...), the combo under it big enough to
+// read from the sofa, and the frame data of the move under that (for whoever switched it on), see HitCalloutDisplay.cs
 let player1_callout = compositor.label({
     layer: "hud",
-    pos: vec(330, -160),
+    pos: vec(330, -150),
     size: vec(420, 56),
     anchor: "top_left",
     pivot: "top_left",
@@ -145,29 +188,29 @@ let player1_callout = compositor.label({
 
 let player1_combo = compositor.label({
     layer: "hud",
-    pos: vec(330, -222),
-    size: vec(420, 40),
+    pos: vec(330, -206),
+    size: vec(480, 64),
     anchor: "top_left",
     pivot: "top_left",
     align: "left",
     text: "",
-    text_scale: 0.42
+    text_scale: 0.8
 });
 
 let player1_frames = compositor.label({
     layer: "hud",
-    pos: vec(330, -268),
+    pos: vec(330, -272),
     size: vec(420, 34),
     anchor: "top_left",
     pivot: "top_left",
     align: "left",
     text: "",
-    text_scale: 0.32
+    text_scale: 0.3
 });
 
 let player2_callout = compositor.label({
     layer: "hud",
-    pos: vec(-330, -160),
+    pos: vec(-330, -150),
     size: vec(420, 56),
     anchor: "top_right",
     pivot: "top_right",
@@ -178,29 +221,38 @@ let player2_callout = compositor.label({
 
 let player2_combo = compositor.label({
     layer: "hud",
-    pos: vec(-330, -222),
-    size: vec(420, 40),
+    pos: vec(-330, -206),
+    size: vec(480, 64),
     anchor: "top_right",
     pivot: "top_right",
     align: "right",
     text: "",
-    text_scale: 0.42
+    text_scale: 0.8
 });
 
 let player2_frames = compositor.label({
     layer: "hud",
-    pos: vec(-330, -268),
+    pos: vec(-330, -272),
     size: vec(420, 34),
     anchor: "top_right",
     pivot: "top_right",
     align: "right",
     text: "",
-    text_scale: 0.32
+    text_scale: 0.3
 });
 
-// What is called out across the screen (ROUND 1, FIGHT!, K.O.) and the line under it, see RoundDisplay.cs
+// What is called out across the screen (ROUND 1, FIGHT!, K.O.) on a dark stripe, and the line under it, see RoundDisplay.cs
+let banner_stripe = compositor.panel({
+    layer: "banner",
+    pos: vec(0, 110),
+    size: vec(2600, 210),
+    color: vec(0.06, 0.05, 0.1, 0.72)
+});
 let banner = compositor.label({ layer: "banner", pos: vec(0, 150), text: "ROUND 1", text_scale: 1.7 });
 let banner_detail = compositor.label({ layer: "banner", pos: vec(0, 60), text: "takes the round", text_scale: 0.4 });
+
+// The white hit of a K.O., over the lot for a moment
+let flash = compositor.panel({ layer: "flash", fill: "both", color: vec(1, 1, 1, 1) });
 
 // The fighters shown off against each other before the first round, see VersusDisplay.cs
 let versus = compositor.stack({

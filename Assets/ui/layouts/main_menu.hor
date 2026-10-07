@@ -1,17 +1,18 @@
 // The main menu, made for a screen of 1600 by 900. The game looks its parts up by the names they have here
 // (MainMenuScene.cs), everything else about them is free to change. Open it with Horizon.Hex to move things around.
-// The menu comes in from the side, and its buttons pop up one after the other once it is there.
+// The menu comes in from the side, and its buttons pop up one after the other once it is there. Under the buttons
+// a line says what the one the gamepad is on does.
 
 // Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
 compositor.design({ size: vec(1600, 900), fit: "contain" });
 
 let menu = compositor.stack({
     anchor: "left",
-    pos: vec(90, -110),
+    pos: vec(90, -150),
     background: "panel",
-    padding: vec(36, 32),
-    spacing: 16,
-    stagger: 0.1,
+    padding: vec(36, 28),
+    spacing: 10,
+    stagger: 0.08,
     intro: "slide",
     intro_time: 0.55,
     intro_delay: 0.2,
@@ -23,6 +24,20 @@ let btn_practice = compositor.button({ parent: menu, label: "Practice", size: ve
 let btn_host = compositor.button({ parent: menu, label: "Host Server", size: vec(360, 0), intro: "pop", intro_delay: 0.55 });
 let btn_join = compositor.button({ parent: menu, label: "Join Multiplayer", size: vec(360, 0), intro: "pop", intro_delay: 0.55 });
 let btn_options = compositor.button({ parent: menu, label: "Options", size: vec(360, 0), intro: "pop", intro_delay: 0.55 });
+let btn_quit = compositor.button({ parent: menu, label: "Quit", style: "button_flat", size: vec(360, 0), intro: "pop", intro_delay: 0.55 });
+
+let rule = compositor.divider({ parent: menu, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
+
+// What the button the gamepad is on does, two lines at the most
+let description = compositor.label({
+    parent: menu,
+    size: vec(360, 46),
+    wrap: true,
+    align: "top",
+    text: "Two players on this machine",
+    text_scale: 0.24,
+    color: vec(0.86, 0.88, 0.92, 1)
+});
 
 let hint = compositor.label({
     parent: menu,
@@ -39,7 +54,7 @@ let version = compositor.label({ parent: menu, text: "version", text_scale: 0.2,
 let logo = compositor.image({
     anchor: "top_left",
     pos: vec(12, 0),
-    size: vec(600, 288),
+    size: vec(500, 240),
     file: "Assets/ui/new_logo.png",
     intro: "pop",
     intro_time: 0.7,

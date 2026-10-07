@@ -14,6 +14,7 @@ let panel = compositor.stack({
 
 let title = compositor.label({ parent: panel, text: "Bindings of player 1", text_scale: 0.6 });
 let gamepad_name = compositor.label({ parent: panel, text: "Gamepad", text_scale: 0.25, color: vec(0.58, 0.6, 0.66, 1) });
+let rule = compositor.divider({ parent: panel, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
 
 let columns = compositor.stack({ parent: panel, direction: "horizontal", spacing: 36 });
 let column_1 = compositor.stack({

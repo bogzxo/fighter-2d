@@ -19,6 +19,7 @@ let map_name = compositor.label({
     text_scale: 0.3,
     color: vec(0.58, 0.6, 0.66, 1)
 });
+let rule = compositor.divider({ parent: panel, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
 
 let rows = compositor.stack({ parent: panel, spacing: 12 });
 

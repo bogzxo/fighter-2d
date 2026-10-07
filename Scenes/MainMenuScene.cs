@@ -18,6 +18,8 @@ namespace Fighter2D.Scenes;
 /// <summary>
 /// The first scene of the game, where the kind of fight is picked (or the options).
 /// Behind the menu two fighters go at each other forever, see <see cref="MenuDuel"/>.
+/// The gamepad walks the buttons through the engine's navigator, the same one the pause menu uses, and a line under
+/// the buttons says what the one it is on does. Quitting asks first, nobody wants to lose the game to a slip of the thumb.
 /// </summary>
 internal class MainMenuScene : MenuScene
 {
@@ -30,9 +32,13 @@ internal class MainMenuScene : MenuScene
     protected override Vector2 CameraSize => Engine.WindowManager.ViewportSize;
     protected override System.Drawing.Color ClearColor => System.Drawing.Color.Black;
 
-    private readonly ButtonList _buttons = new();
+    private UILayout _layout = null!;
+    private UINavigator _nav = null!;
     private MenuDuel? _duel;
-    private Label _hint = null!;
+    private Label _hint = null!, _description = null!;
+
+    // What every button has to say for itself, by the button
+    private readonly Dictionary<UIComponent, string> _descriptions = [];
 
     // Whether the hint is busy saying something else than which buttons to press
     private bool _hintIsMessage;
@@ -60,28 +66,34 @@ internal class MainMenuScene : MenuScene
 
     protected override void BuildUi(UILayout layout)
     {
+        _layout = layout;
+
         // The logo is part of the layout, so it scales with the rest of the UI. It rattles along with every kick of the duel
         if (layout.TryGet<Image>("logo", out var logo) && _duel is { } duel) duel.Struck += () => logo.Shake(8.0f, 0.35f);
 
         // The menu is laid out in Assets/ui/layouts/main_menu.hor, what its buttons do is decided here
-        AddButton(layout, "btn_pvp", () => Play(MatchMode.Pvp));
-        AddButton(layout, "btn_practice", () => Play(MatchMode.Practice));
-        AddButton(layout, "btn_host", HostServer);
-        AddButton(layout, "btn_join", () => GoTo(new JoinServerScene()));
-        AddButton(layout, "btn_options", () => GoTo(new OptionsScene()));
+        AddButton(layout, "btn_pvp", () => Play(MatchMode.Pvp), "Two players on this machine, a gamepad each.");
+        AddButton(layout, "btn_practice", () => Play(MatchMode.Practice), "The lab. You against the dummy, with health that comes back and frame data on screen.");
+        AddButton(layout, "btn_host", HostServer, "Open a fight for somebody on another machine to join.");
+        AddButton(layout, "btn_join", () => GoTo(new JoinServerScene()), "Join a fight somebody else is hosting, by their address.");
+        AddButton(layout, "btn_options", () => GoTo(new OptionsScene()), "The window, the look of the game and what a fight shows on top of itself.");
+        AddButton(layout, "btn_quit", AskToQuit, "Back to the desktop.");
 
         _hint = layout.Get<Label>("hint");
+        _description = layout.Get<Label>("description");
         layout.Get<Label>("version").Text = Constants.VERSION_LABEL;
 
-        _buttons.Select(0);
+        // The navigator lights the button the gamepad is on, and the line under the buttons follows it
+        _nav = layout.Module.Navigation;
+        _nav.Changed = selected => _description.Text = selected is not null && _descriptions.TryGetValue(selected, out string? about) ? about : string.Empty;
+        _nav.SelectFirst();
     }
 
-    private void AddButton(UILayout layout, string name, Action pressed)
+    private void AddButton(UILayout layout, string name, Action pressed, string description)
     {
         var button = layout.Get<Button>(name);
         button.OnPressed = pressed;
-
-        _buttons.Add(button);
+        _descriptions[button] = description;
     }
 
     private void Play(MatchMode mode) => GoTo(new GamepadSelectorScene(new MatchSetup(mode)));
@@ -98,6 +110,13 @@ internal class MainMenuScene : MenuScene
         }
 
         GoTo(new GamepadSelectorScene(MatchSetup.Online(session)));
+    }
+
+    private void AskToQuit()
+    {
+        UIDialog.Show(_layout.Module, "Quit?", "Leave the game and go back to the desktop.",
+            new DialogChoice("Quit", () => Engine.WindowManager.Window.Close()),
+            new DialogChoice("Stay"));
     }
 
     private void ShowMessage(string message)
@@ -119,11 +138,18 @@ internal class MainMenuScene : MenuScene
         {
             if (!gamepad.IsConnected) continue;
 
-            _buttons.Move(MenuInput.Vertical(gamepad));
+            // A question that is up takes the gamepad, B is the answer that changes nothing
+            if (_layout.Module.Dialog is { } dialog && gamepad.WasPressed(GamepadInput.B))
+            {
+                dialog.Cancel();
+                return;
+            }
+
+            _nav.Move(0, MenuInput.Vertical(gamepad));
 
             if (MenuInput.ConfirmPressed(gamepad))
             {
-                _buttons.Press();
+                _nav.Activate();
                 return;
             }
         }

@@ -126,7 +126,7 @@ internal sealed class PauseMenu : GameComponent
         if (Rematch is { } rematch) WireButton("btn_rematch", () => Leave(rematch));
         else _layout.Get<Button>("btn_rematch").Visible = false;
 
-        WireButton("btn_quit", () => Leave(Quit));
+        WireButton("btn_quit", AskToQuit);
         WireHostTools();
         WireTraining();
 
@@ -188,6 +188,16 @@ internal sealed class PauseMenu : GameComponent
         });
     }
 
+    /// <summary>
+    /// Helper method to ask before the fight is thrown away. The question comes up over the menu and takes the gamepad with it.
+    /// </summary>
+    private void AskToQuit()
+    {
+        UIDialog.Show(_layout.Module, "Leave the fight?", "The match is lost, there is no coming back to it.",
+            new DialogChoice("Leave", () => Leave(Quit)),
+            new DialogChoice("Stay"));
+    }
+
     private Button WireButton(string name, Action pressed)
     {
         var button = _layout.Get<Button>(name);
@@ -210,6 +220,7 @@ internal sealed class PauseMenu : GameComponent
     private void Close()
     {
         IsOpen = false;
+        _layout.Module.Dialog?.Close();
         _nav.Select(null);
 
         Closed?.Invoke();
@@ -264,6 +275,15 @@ internal sealed class PauseMenu : GameComponent
         foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
         {
             if (!gamepad.IsConnected) continue;
+
+            // A question that is up takes the gamepad, B is the answer that changes nothing
+            if (_layout.Module.Dialog is { } dialog)
+            {
+                if (gamepad.WasPressed(GamepadInput.B)) dialog.Cancel();
+                else if (gamepad.WasPressed(GamepadInput.A)) _nav.Activate();
+                else _nav.Move(MenuInput.Horizontal(gamepad), MenuInput.Vertical(gamepad));
+                return;
+            }
 
             if (gamepad.WasPressed(GamepadInput.B) || gamepad.WasPressed(GamepadInput.Start))
             {

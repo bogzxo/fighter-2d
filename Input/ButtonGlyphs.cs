@@ -6,8 +6,9 @@ using Horizon.Input;
 namespace Fighter2D.Input;
 
 /// <summary>
-/// Turns buttons into text with icons in it, for labels. The UI skin draws [icon:pad_a] as the A button and so on.
-/// All texts are written with the icons of an Xbox gamepad, <see cref="Localize"/> swaps them for the PlayStation ones when that is what the player is holding.
+/// Turns buttons into text with icons in it, for labels. The UI skin draws [icon:pad_a] as the A button and so on, out of the
+/// gamepad art of the Dead Revolver pack. All texts are written with the icons of an Xbox gamepad, <see cref="Localize"/> has the
+/// skin swap them for the PlayStation ones when that is what the player is holding (icon_sets in skin.hor says which is which).
 /// </summary>
 internal static class ButtonGlyphs
 {
@@ -50,8 +51,7 @@ internal static class ButtonGlyphs
         {
             if (playStationTexts.TryGetValue(text, out string? known)) return known;
 
-            // Nothing on a PlayStation gamepad is called start
-            return playStationTexts[text] = PLAYSTATION_ICONS + text.Replace("start cancels", "options cancels");
+            return playStationTexts[text] = PLAYSTATION_ICONS + text;
         }
     }
 
@@ -131,12 +131,15 @@ internal static class ButtonGlyphs
         GamepadInput.RightBumper => "[icon:pad_rb]",
         GamepadInput.LeftTrigger => "[icon:pad_lt]",
         GamepadInput.RightTrigger => "[icon:pad_rt]",
-        GamepadInput.LeftStick => "[icon:pad_ls] click",
-        GamepadInput.RightStick => "[icon:pad_rs] click",
-        GamepadInput.DPadUp => "[icon:dpad] up",
-        GamepadInput.DPadDown => "[icon:dpad] down",
-        GamepadInput.DPadLeft => "[icon:dpad] left",
-        GamepadInput.DPadRight => "[icon:dpad] right",
+        GamepadInput.Start => "[icon:pad_menu]",
+        GamepadInput.Back => "[icon:pad_view]",
+        GamepadInput.Home => "[icon:pad_home]",
+        GamepadInput.LeftStick => "[icon:pad_ls]",
+        GamepadInput.RightStick => "[icon:pad_rs]",
+        GamepadInput.DPadUp => "[icon:dpad_up]",
+        GamepadInput.DPadDown => "[icon:dpad_down]",
+        GamepadInput.DPadLeft => "[icon:dpad_left]",
+        GamepadInput.DPadRight => "[icon:dpad_right]",
         GamepadInput.LeftStickUp => "[icon:pad_ls] up",
         GamepadInput.LeftStickDown => "[icon:pad_ls] down",
         GamepadInput.LeftStickLeft => "[icon:pad_ls] left",

@@ -14,6 +14,7 @@ let panel = compositor.stack({
 });
 
 let title = compositor.label({ parent: panel, text: "Choose your fighter", text_scale: 0.6 });
+let rule = compositor.divider({ parent: panel, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
 let columns = compositor.stack({ parent: panel, direction: "horizontal", spacing: 28 });
 
 let preview_box = compositor.stack({ parent: columns, background: "button_flat", padding: vec(26, 24), spacing: 12 });
