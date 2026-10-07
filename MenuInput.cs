@@ -1,4 +1,4 @@
-using Horizon.Input2;
+using Horizon.Input;
 
 namespace Fighter2D;
 

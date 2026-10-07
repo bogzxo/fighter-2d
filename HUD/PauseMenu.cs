@@ -5,7 +5,7 @@ using Fighter2D.Scenes;
 using Horizon.Core;
 using Horizon.Core.Components;
 using Horizon.Engine;
-using Horizon.Input2;
+using Horizon.Input;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
 

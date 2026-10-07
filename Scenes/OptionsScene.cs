@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 
-using Horizon.Input2;
+using Horizon.Input;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
 

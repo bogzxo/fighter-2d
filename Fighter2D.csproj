@@ -169,7 +169,6 @@
     <ProjectReference Include="..\horizon\Horizon.Engine\Horizon.Engine.csproj" />
     <ProjectReference Include="..\horizon\Horizon.Horlang\Horizon.HIDL.csproj" />
     <ProjectReference Include="..\horizon\Horizon.Input\Horizon.Input.csproj" />
-    <ProjectReference Include="..\horizon\Horizon.Input2\Horizon.Input2.csproj" />
     <ProjectReference Include="..\horizon\Horizon.OpenGL\Horizon.OpenGL.csproj" />
     <ProjectReference Include="..\horizon\Horizon.Physics\Horizon.Physics.csproj" />
     <ProjectReference Include="..\horizon\Horizon.Rendering.UIX\Horizon.Rendering.UIX.csproj" />

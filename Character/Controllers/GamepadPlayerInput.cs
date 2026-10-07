@@ -1,6 +1,6 @@
 using Fighter2D.Logic;
 
-using Horizon.Input2;
+using Horizon.Input;
 
 namespace Fighter2D.Character.Controllers;
 

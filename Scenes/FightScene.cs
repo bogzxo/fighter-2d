@@ -14,7 +14,7 @@ using Fighter2D.Networking;
 
 using Horizon.Core.Tweening;
 using Horizon.Engine;
-using Horizon.Input2;
+using Horizon.Input;
 using Horizon.Physics;
 using Horizon.Rendering;
 using Horizon.Rendering.PostProcessing;

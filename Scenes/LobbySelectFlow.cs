@@ -6,7 +6,7 @@ using Fighter2D.Map;
 using Fighter2D.Match;
 using Fighter2D.Networking;
 
-using Horizon.Input2;
+using Horizon.Input;
 using Horizon.Rendering.UIX.Components;
 
 namespace Fighter2D.Scenes;

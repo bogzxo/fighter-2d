@@ -1,7 +1,7 @@
 using Fighter2D.Map;
 using Fighter2D.Match;
 
-using Horizon.Input2;
+using Horizon.Input;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
 

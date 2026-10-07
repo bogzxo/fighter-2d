@@ -5,7 +5,7 @@ using System.IO;
 using Fighter2D.Logic;
 
 using Horizon.Engine;
-using Horizon.Input2;
+using Horizon.Input;
 
 namespace Fighter2D;
 

@@ -6,7 +6,7 @@ using Fighter2D.Match;
 using Fighter2D.Networking;
 
 using Horizon.Rendering;
-using Horizon.Input2;
+using Horizon.Input;
 using Horizon.OpenGL.Assets;
 using Horizon.Rendering.Spriting;
 using Horizon.Rendering.UIX;
