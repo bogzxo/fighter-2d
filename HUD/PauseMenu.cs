@@ -1,9 +1,7 @@
 using System;
 
-using Horizon.Core;
 using Horizon.Core.Components;
 using Horizon.Core.Threading;
-using Horizon.Engine;
 using Horizon.Input;
 using Horizon.Rendering.UIX;
 using Horizon.Rendering.UIX.Components;
@@ -14,28 +12,33 @@ namespace Fighter2D.HUD;
 
 /// <summary>
 /// The menu that comes up when somebody presses start in the middle of a fight. Carry on, start the match over or sod off to the main menu.
+/// A practice fight gets the training options under that (see <see cref="TrainingMode"/>).
 /// This only is the menu. Holding the fight still while it is up is the job of the scene, which asks <see cref="HoldsFight"/>.
 /// Online a pause is a pause for both machines. Whoever didn't press start gets told who did and waits for them to carry on,
 /// only the one who paused can unpause (see <see cref="HeldByOther"/>).
 /// Nobody is dropped straight back into the fight either. Once the pause is over (or the data has been reloaded) it counts
 /// down from three first, and the fight stays held until it gets to the end of that.
+/// The gamepad walks the menu through the engine's navigator, which is what lets it step the selectors as well as press the buttons.
 /// </summary>
 internal sealed class PauseMenu : GameComponent
 {
     private const string HINT = "[icon:dpad] choose    [icon:pad_a] pick    [icon:pad_b] carry on";
+    private const string TRAINING_HINT = "[icon:dpad] choose and change    [icon:pad_a] pick    [icon:pad_b] carry on";
 
-    // The layout is three layers. The menu of whoever paused, what the other machine shows while it waits for them,
-    // and the countdown both of them get before the fight is back on
+    // The layout is four layers. The menu of whoever paused, the training options under it (practice only), what the other
+    // machine shows while it waits for them, and the countdown both of them get before the fight is back on
     private const string MENU_LAYER = "menu";
+    private const string TRAINING_LAYER = "training";
     private const string WAITING_LAYER = "waiting";
     private const string COUNTDOWN_LAYER = "countdown";
 
     // What the countdown counts from, a second for each
     private const int COUNTDOWN_FROM = 3;
 
-    private readonly ButtonList _buttons = new();
     private UICompositor _compositor = null!;
     private UILayout _layout = null!;
+    private UINavigator _nav = null!;
+    private Button _resume = null!;
     private Label _hint = null!, _count = null!;
 
     // How much of the countdown is left in seconds, and the number of it that is on screen
@@ -108,24 +111,34 @@ internal sealed class PauseMenu : GameComponent
     public Action? ReloadData { get; init; }
     public Func<bool>? ToggleHitboxes { get; init; }
 
+    /// <summary>
+    /// The training options of a practice fight, null for a real one (which doesn't get them).
+    /// </summary>
+    public TrainingMode? Training { get; init; }
+
     public override void Initialize()
     {
         (_layout, _compositor) = MenuLayouts.Load(MenuLayouts.PAUSE_MENU);
         _compositor.Initialize();
 
-        AddButton("btn_resume", Close);
+        _resume = WireButton("btn_resume", Close);
 
-        if (Rematch is { } rematch) AddButton("btn_rematch", () => Leave(rematch));
+        if (Rematch is { } rematch) WireButton("btn_rematch", () => Leave(rematch));
         else _layout.Get<Button>("btn_rematch").Visible = false;
 
-        AddButton("btn_quit", () => Leave(Quit));
-        AddHostTools();
+        WireButton("btn_quit", () => Leave(Quit));
+        WireHostTools();
+        WireTraining();
 
         _hint = _layout.Get<Label>("hint");
         _count = _layout.Get<Label>("count");
 
+        // The gamepad walks whatever is on the menu layer, the hidden layers are skipped by themselves
+        _nav = _layout.Module.Navigation;
+
         // None of it is up until somebody pauses
         _layout.Module.SetLayerVisible(MENU_LAYER, false);
+        _layout.Module.SetLayerVisible(TRAINING_LAYER, false);
         _layout.Module.SetLayerVisible(WAITING_LAYER, false);
         _layout.Module.SetLayerVisible(COUNTDOWN_LAYER, false);
     }
@@ -133,7 +146,7 @@ internal sealed class PauseMenu : GameComponent
     /// <summary>
     /// Helper method to set up the tools of the host, or to take them off the menu for whoever isn't.
     /// </summary>
-    private void AddHostTools()
+    private void WireHostTools()
     {
         var reload = _layout.Get<Button>("btn_reload");
         var hitboxes = _layout.Get<Button>("btn_hitboxes");
@@ -146,23 +159,49 @@ internal sealed class PauseMenu : GameComponent
         }
 
         // The menu stays up while the data is read again, the fight that comes back from it has no pause on
-        AddButton("btn_reload", ReloadData);
-        AddButton("btn_hitboxes", () => hitboxes.Label = ToggleHitboxes() ? "Hitboxes: on" : "Hitboxes: off");
+        WireButton("btn_reload", ReloadData);
+        WireButton("btn_hitboxes", () => hitboxes.Label = ToggleHitboxes() ? "Hitboxes: on" : "Hitboxes: off");
     }
 
-    private void AddButton(string name, Action pressed)
+    /// <summary>
+    /// Helper method to set up the training options. What the dummy does, whether health comes back, and a reset of the positions.
+    /// A fight without training mode never shows the layer they are on.
+    /// </summary>
+    private void WireTraining()
+    {
+        if (Training is not { } training) return;
+
+        var dummy = _layout.Get<Selector>("dummy");
+        dummy.Options = [.. DummyModes.All.Select(DummyModes.Describe)];
+        dummy.Index = Array.IndexOf(DummyModes.All, training.Dummy);
+        dummy.OnChanged = _ => training.Dummy = DummyModes.All[dummy.Index];
+
+        var refill = _layout.Get<Selector>("refill");
+        refill.Options = ["Off", "On"];
+        refill.Index = training.RefillHealth ? 1 : 0;
+        refill.OnChanged = _ => training.RefillHealth = refill.Index == 1;
+
+        WireButton("btn_reset", () =>
+        {
+            training.ResetPositions();
+            Close();
+        });
+    }
+
+    private Button WireButton(string name, Action pressed)
     {
         var button = _layout.Get<Button>(name);
         button.OnPressed = pressed;
-
-        _buttons.Add(button);
+        return button;
     }
 
     private void Open()
     {
         IsOpen = true;
 
-        _buttons.Select(0);
+        // The layers have to be up before the navigator will stand on anything in them
+        ShowLayers();
+        _nav.Select(_resume);
         _layout.PlayIntros();
 
         Opened?.Invoke();
@@ -171,6 +210,7 @@ internal sealed class PauseMenu : GameComponent
     private void Close()
     {
         IsOpen = false;
+        _nav.Select(null);
 
         Closed?.Invoke();
     }
@@ -186,26 +226,38 @@ internal sealed class PauseMenu : GameComponent
         how();
     }
 
+    private void ShowLayers()
+    {
+        _layout.Module.SetLayerVisible(MENU_LAYER, IsOpen);
+        _layout.Module.SetLayerVisible(TRAINING_LAYER, IsOpen && Training is not null);
+        _layout.Module.SetLayerVisible(WAITING_LAYER, !IsOpen && Waiting);
+        _layout.Module.SetLayerVisible(COUNTDOWN_LAYER, !IsShowing && _countdown > 0.0f);
+    }
+
     public override void UpdateState(float dt)
     {
         if (_leaving) return;
 
         UpdateCountdown(dt);
 
-        _layout.Module.SetLayerVisible(MENU_LAYER, IsOpen);
-        _layout.Module.SetLayerVisible(WAITING_LAYER, !IsOpen && Waiting);
-        _layout.Module.SetLayerVisible(COUNTDOWN_LAYER, !IsShowing && _countdown > 0.0f);
+        // The press that opens the menu is done with, or it would shut it again on the way out of this update
+        if (!IsOpen && StartPressed() && CanOpen?.Invoke() != false)
+        {
+            Open();
+            _compositor.UpdateState(dt);
+            return;
+        }
+
+        ShowLayers();
 
         if (!IsOpen)
         {
-            if (StartPressed() && CanOpen?.Invoke() != false) Open();
-
             // Nothing to press while waiting for the other player or for the countdown, but what they say still has to be laid out
             if (HoldsFight) _compositor.UpdateState(dt);
             return;
         }
 
-        _hint.Text = ButtonGlyphs.Localize(HINT, GameInput.Manager.LastUsed);
+        _hint.Text = ButtonGlyphs.Localize(Training is null ? HINT : TRAINING_HINT, GameInput.Manager.LastUsed);
         _compositor.UpdateState(dt);
 
         // Whoever has a gamepad gets a say, it is not just player one who needs a piss
@@ -219,11 +271,15 @@ internal sealed class PauseMenu : GameComponent
                 return;
             }
 
-            _buttons.Move(MenuInput.Vertical(gamepad));
+            _nav.Move(0, MenuInput.Vertical(gamepad));
+
+            // Left and right step whatever is selected (the selectors of the training options), buttons have no use for them
+            int horizontal = MenuInput.Horizontal(gamepad);
+            if (horizontal != 0) _nav.Adjust(horizontal);
 
             if (gamepad.WasPressed(GamepadInput.A))
             {
-                _buttons.Press();
+                _nav.Activate();
                 return;
             }
         }

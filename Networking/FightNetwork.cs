@@ -315,8 +315,9 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : Ga
     {
         if (Remote is null) return;
 
-        // Their health is theirs to keep track of, we only show it
+        // Their health and their meter are theirs to keep track of, we only show them
         RemotePlayer.Health = snapshot.Health;
+        RemotePlayer.Meter = snapshot.Meter;
 
         // From before they heard about our last hit. Going by this one would have them stand there as if nothing happened
         if (snapshot.HitsSeen != _hitsSent) return;

@@ -18,6 +18,19 @@ public class FightingMove
     // Below zero means the move didn't say, then it is worked out from its startup (see MoveFrameData)
     public float Hitstun { get; init; } = -1.0f;
 
+    // How long whoever blocks it is stuck in their block for, in frames of this move's own animation.
+    // Below zero means the move didn't say, then it is a share of the hitstun (see MoveFrameData)
+    public float Blockstun { get; init; } = -1.0f;
+
+    // Where the hit comes in, which block stops it. See HitLevel
+    public HitLevel Level { get; init; } = HitLevel.Mid;
+
+    // Whether whoever gets hit ends up on the floor. In the air they come down first, on the ground they go down on the spot
+    public bool Knockdown { get; init; }
+
+    // How much meter the move burns to come out, 0 for a move anybody can throw any time. See Player.Meter
+    public int MeterCost { get; init; }
+
     // The stances the move can be started from
     public Stance Stances { get; init; } = Fighters.Stance.Standing;
 

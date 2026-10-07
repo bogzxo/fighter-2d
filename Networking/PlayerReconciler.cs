@@ -17,7 +17,8 @@ internal static class PlayerReconciler
     public static void Apply(PlayerController controller, in PlayerSnapshot snapshot)
     {
         controller.Player.Flipped = snapshot.Flipped;
-        controller.State.Restore(snapshot.Status, snapshot.HitstunTicks, snapshot.ComboCount);
+        controller.Player.Meter = snapshot.Meter;
+        controller.State.Restore(snapshot.Status, snapshot.HitstunTicks, snapshot.ComboCount, snapshot.BlockstunTicks);
 
         if (!IsInStep(controller, snapshot) && controller.MoveList.TryGetMove(snapshot.MoveId, out var move))
         {

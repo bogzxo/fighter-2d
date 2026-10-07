@@ -27,6 +27,17 @@ let tools_title = compositor.label({ parent: menu, text: "HOST TOOLS", text_scal
 let btn_reload = compositor.button({ parent: menu, label: "Reload data", size: vec(360, 0) });
 let btn_hitboxes = compositor.button({ parent: menu, label: "Hitboxes: off", size: vec(360, 0) });
 
+// The lab, only in a practice fight (its layer is hidden everywhere else, see PauseMenu.cs). What the dummy does with itself,
+// whether health comes back after a combo, and a reset of the positions. Left and right step the selectors
+let training_title = compositor.label({ parent: menu, layer: "training", text: "TRAINING", text_scale: 0.26, color: vec(0.58, 0.6, 0.66, 1) });
+let dummy_row = compositor.stack({ parent: menu, layer: "training", direction: "horizontal", spacing: 16 });
+let dummy_title = compositor.label({ parent: dummy_row, size: vec(120, 0), text: "Dummy", text_scale: 0.28, align: "left" });
+let dummy = compositor.selector({ parent: dummy_row, size: vec(224, 44), text_scale: 0.26 });
+let refill_row = compositor.stack({ parent: menu, layer: "training", direction: "horizontal", spacing: 16 });
+let refill_title = compositor.label({ parent: refill_row, size: vec(120, 0), text: "Refill", text_scale: 0.28, align: "left" });
+let refill = compositor.selector({ parent: refill_row, size: vec(224, 44), text_scale: 0.26 });
+let btn_reset = compositor.button({ parent: menu, layer: "training", label: "Reset positions", size: vec(360, 0) });
+
 let hint = compositor.label({
     parent: menu,
     size: vec(0, 30),

@@ -13,6 +13,14 @@
 //   knockback         the shove whoever gets hit is given, vec(away from the attacker, up). Anything with an up part is a launcher.
 //   hitstun           how long whoever gets hit loses the controls for, in frames of this move's own animation.
 //                     Leave it out and it is worked out from the startup of the move, see the bottom of this comment.
+//   blockstun         how long whoever blocks it is stuck in their block for, in frames of this move's own animation.
+//                     Leave it out and it is a share of the hitstun, short enough that a blocked move can be punished.
+//   level             where the hit comes in. "mid" (blocked standing or crouching, which it is if left out), "low" (only a crouching
+//                     block stops it, a sweep) or "overhead" (only a standing block stops it, anything coming down from a jump).
+//   knockdown         whether whoever gets hit ends up on the floor. Launched first they go down when they land, otherwise on the spot.
+//                     Nothing hits somebody who is down, and they get up with the i-frames of the get_up move.
+//   meter_cost        how much of the super meter the move burns to come out, out of 100. Without the meter for it the input is
+//                     matched against the next move instead (A + B without the meter for the special is a plain kick).
 //   cancellable       whether the move can be cancelled into another one at all. Its phases say from which frame.
 //   steering          whether the player can walk during the move.
 //   turning           whether the player can turn around during the move, the same as steering if it doesn't say.
@@ -40,9 +48,10 @@
 //
 // The conditions are "held" (the input of the move is), "hitstun", "jumping" (on the way up), "falling" and "always".
 //
-// Four names mean something to the game. "idle" is what a player does when they do nothing (and has to be there),
+// Six names mean something to the game. "idle" is what a player does when they do nothing (and has to be there),
 // "hit_stun" is what they are put in while they are in hitstun, "knocked_out" is where they stay once their health is gone
-// (without one they stay in "hit_stun"), and "heavy_land" is what a long fall ends in if there is one.
+// (without one they stay in "hit_stun"), "heavy_land" is what a long fall ends in if there is one, "knocked_down" is where they
+// lie after a knockdown (hit_stun without one) and "get_up" is how they get back up from it (straight to idle without one).
 //
 // How hits work (the numbers behind all of this are in Combat/CombatRules.cs):
 //   - Every hit puts the victim in hitstun. They are stuck in "hit_stun" and can't do anything until it runs out.
@@ -53,7 +62,11 @@
 //   - Somebody who is in hitstun and in the air (a launcher put them there) can be juggled. Every hit adds a little hitstun, less each time.
 //   - A hit that catches somebody in the startup of their own attack is a counter hit. More hitstun, more damage.
 //   - A hit that catches somebody in the recovery of their own attack is a punish. Same as a normal hit, but the HUD calls them out for it.
-//   - Blocking only covers the front, and you can't turn around while you are blocking.
+//   - Every hit of a combo after the first does less damage, so a long combo isn't a round by itself.
+//   - Blocking only covers the front, and you can't turn around while you are blocking. A block held with down is a crouching block,
+//     which is what stops a low. A blocked hit still shoves the blocker back, keeps them in the block for the blockstun and takes a
+//     sliver of chip damage (never the last of their health).
+//   - Both players build super meter off hits dealt and taken, blocks and even whiffs. The moves that cost meter say so (meter_cost).
 
 let moves = {
     block: {
@@ -89,6 +102,30 @@ let moves = {
         phases: {
             drop: { animation: "knocked_out" },
             down: { frames: 1, loop_while: "always" }
+        }
+    },
+
+    knocked_down: {
+        stances: "standing | crouching | jumping | falling",
+        cancellable: false,
+        steering: false,
+        finish_reroutes: {
+            standing: "get_up",
+            crouching: "get_up"
+        },
+        phases: {
+            drop: { animation: "knocked_out" },
+            floor: { frames: 1, loop_while: "hitstun" }
+        }
+    },
+
+    get_up: {
+        stances: "standing | crouching",
+        cancellable: false,
+        steering: false,
+        status: "invulnerable",
+        phases: {
+            rise: { animation: "hard_landing" }
         }
     },
 
@@ -157,6 +194,8 @@ let moves = {
         damage: 8,
         knockback: vec(900, 1900),
         hitstun: 12,
+        level: "overhead",
+        knockdown: true,
         cancellable: false,
         status: "attacking",
         finish_reroutes: {

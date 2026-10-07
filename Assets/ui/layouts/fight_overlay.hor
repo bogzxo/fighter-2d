@@ -80,6 +80,33 @@ let player2_info = compositor.label({
     text_scale: 0.32
 });
 
+// The super meter of each player, under their name. It fills off hits dealt and taken and buys the moves that cost meter (HealthDisplay.cs)
+let player1_meter = compositor.progress_bar({
+    layer: "hud",
+    pos: vec(48, -130),
+    size: vec(360, 16),
+    anchor: "top_left",
+    pivot: "top_left",
+    intro: "slide",
+    intro_delay: 0.55,
+    intro_offset: vec(-460, 0),
+    show_text: false,
+    progress: 0
+});
+
+let player2_meter = compositor.progress_bar({
+    layer: "hud",
+    pos: vec(-48, -130),
+    size: vec(360, 16),
+    anchor: "top_right",
+    pivot: "top_right",
+    intro: "slide",
+    intro_delay: 0.55,
+    intro_offset: vec(460, 0),
+    show_text: false,
+    progress: 0
+});
+
 // The input display down both sides. What each player held lately with the newest on top, written by the game (InputDisplay.cs)
 let player1_inputs = compositor.label({
     layer: "hud",

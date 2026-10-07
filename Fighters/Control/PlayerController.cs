@@ -82,9 +82,9 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     public bool IsInControl => !State.IsInHitstun && !IsKnockedOut;
 
     /// <summary>
-    /// Whether a new move is allowed to start right now.
+    /// Whether a new move is allowed to start right now. Not in hitstop, not stuck in a block that just ate a hit, and in a move that lets go.
     /// </summary>
-    public bool CanStartMove => IsInControl && _hitstop == 0 && CurrentMove.Cancellable && CanCancel;
+    public bool CanStartMove => IsInControl && _hitstop == 0 && !State.IsInBlockstun && CurrentMove.Cancellable && CanCancel;
 
     /// <summary>
     /// Whether the player can walk right now, and whether they can turn around. Both are up to the move they are in.
@@ -166,9 +166,12 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         }
         else
         {
-            // Somebody who is knocked out never gets out of hitstun, for everybody else the hitstun move lasts exactly as long as the hitstun does
+            // Somebody who is knocked out never gets out of hitstun, for everybody else the hitstun move (or lying on the floor)
+            // lasts exactly as long as the hitstun does. The blockstun runs down alongside, the block move lets go when it is out
+            State.TickBlockstun();
+
             if (IsKnockedOut) StayDown();
-            else if (State.TickHitstun() && CurrentMove.Id == MoveIds.HIT_STUN) FinishMove();
+            else if (State.TickHitstun() && CurrentMove.Id is MoveIds.HIT_STUN or MoveIds.KNOCKED_DOWN) FinishMove();
 
             AdvanceMove();
         }
@@ -286,14 +289,18 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// </summary>
     private void TryStartMove()
     {
-        // Find a match as per the order of precedence defined in the movelist
-        if (!MoveList.TryMatchInput(Inputs.Buffer, State.CurrentStance, out var move, out var signature)) return;
+        // Find a match as per the order of precedence defined in the movelist. A move we can't pay for is passed over, so A + B
+        // without the meter for the special is a plain kick
+        if (!MoveList.TryMatchInput(Inputs.Buffer, State.CurrentStance, Player.Meter, out var move, out var signature)) return;
 
         // A press only ever starts one move, held inputs (run, crouch, block) keep matching for as long as they are held
         if (move.Trigger != InputTrigger.Held)
         {
             Inputs.Buffer.Consume(signature);
         }
+
+        // The meter is spent the moment the move is asked for, a reroute doesn't change what it cost
+        Player.SpendMeter(move.MeterCost);
 
         // Check stance reroutes (hitting kick while in the air -> jumpkick)
         if (move.StanceReroutes != null &&
@@ -360,12 +367,30 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// Takes the controls away for a number of ticks. Whatever we were doing ends here and we sit in the hitstun move until it is over.
     /// </summary>
     /// <param name="damage">How much the hit that did it took off us, for the combo counter.</param>
-    public void ApplyHitstun(int ticks, int damage = 0)
+    /// <param name="knockdown">Whether the hit puts us on the floor once we come down from it, see <see cref="KnockDown"/>.</param>
+    public void ApplyHitstun(int ticks, int damage = 0, bool knockdown = false)
     {
-        State.ApplyHitstun(ticks, damage);
+        State.ApplyHitstun(ticks, damage, knockdown);
 
         // Every hit restarts the move, so each hit of a combo is seen to land
         ChangeToMove(MoveIds.HIT_STUN, forceRestart: true);
+    }
+
+    /// <summary>
+    /// Keeps us in our block for a number of ticks after it ate a hit. No move starts until it is over, and the block can't be dropped.
+    /// </summary>
+    public void ApplyBlockstun(int ticks) => State.ApplyBlockstun(ticks);
+
+    /// <summary>
+    /// Puts us on the floor. Nothing hits us down here, and once the knockdown runs out we get up with i-frames (the get_up move's).
+    /// Called by the hit that does it on the ground, and by the landing for one that launched us first.
+    /// </summary>
+    public void KnockDown()
+    {
+        State.KnockDown(CombatRules.KNOCKDOWN_TICKS);
+
+        // A move list without a floor to lie on makes do with the hitstun move
+        ChangeToMove(MoveList.Moves.ContainsKey(MoveIds.KNOCKED_DOWN) ? MoveIds.KNOCKED_DOWN : MoveIds.HIT_STUN, forceRestart: true);
     }
 
     /// <summary>

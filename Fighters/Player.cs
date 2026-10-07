@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 
 using Bogz.Logging;
@@ -31,6 +32,35 @@ internal class Player() : Sprite(SIZE)
     /// This is the player health out of 100, 0 being dead.
     /// </summary>
     public byte Health = MAX_HEALTH;
+
+    public const byte MAX_METER = 100;
+
+    /// <summary>
+    /// The super meter out of 100. It builds off hits dealt and taken (see CombatRules) and buys the moves that cost it (meter_cost).
+    /// It carries over from one round to the next and starts the match empty.
+    /// </summary>
+    public byte Meter;
+
+    /// <summary>
+    /// Helper method to add to the meter, up to full.
+    /// </summary>
+    public void GainMeter(int amount)
+    {
+        if (amount <= 0) return;
+
+        Meter = (byte)Math.Min(MAX_METER, Meter + amount);
+    }
+
+    /// <summary>
+    /// Helper method to pay for a move. False (and nothing paid) if there isn't enough in the tank.
+    /// </summary>
+    public bool SpendMeter(int amount)
+    {
+        if (amount > Meter) return false;
+
+        Meter = (byte)(Meter - amount);
+        return true;
+    }
 
     /// <summary>
     /// What kind of fighter this is, read from the content once the fight is set up.

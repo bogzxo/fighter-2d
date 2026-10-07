@@ -1,10 +1,10 @@
-
 namespace Fighter2D.Fighters.Inputs.Dummy;
 
 /// <summary>
 /// Input for the AI opponent. It walks (or rolls) up to the player, throws kicks and punches, blocks what it sees coming and punishes whiffs.
 /// It plays by pressing the same buttons a gamepad would, so it is bound by the same move list, buffering and cancel rules as a real player.
 /// The thinking is split up into its legs (<see cref="DummyFootwork"/>), its block (<see cref="DummyGuard"/>) and its attacks (<see cref="DummyOffence"/>).
+/// Training mode can tell it to stop thinking and just stand there, crouch or hold a block (<see cref="Mode"/>).
 /// </summary>
 internal class DummyPlayerInput : IPlayerInput
 {
@@ -13,6 +13,11 @@ internal class DummyPlayerInput : IPlayerInput
     private DummyFootwork _footwork = null!;
     private DummyGuard _guard = null!;
     private DummyOffence _offence = null!;
+
+    /// <summary>
+    /// What the dummy does with itself. Fighting unless training mode says otherwise.
+    /// </summary>
+    public DummyMode Mode { get; set; } = DummyMode.Fight;
 
     public float WalkSpeedScale => DummyConfig.WALK_SPEED_SCALE;
 
@@ -25,7 +30,10 @@ internal class DummyPlayerInput : IPlayerInput
         _offence = new DummyOffence(controller, _hands);
     }
 
-    public void OnOpponentAttack() => _guard.OnOpponentAttack();
+    public void OnOpponentAttack()
+    {
+        if (Mode == DummyMode.Fight) _guard.OnOpponentAttack();
+    }
 
     public InputFlags Read()
     {
@@ -33,6 +41,9 @@ internal class DummyPlayerInput : IPlayerInput
 
         _hands.Tick();
         _footwork.Tick();
+
+        if (Mode != DummyMode.Fight) return Pose(view);
+
         _footwork.WatchForDodgeRoll(view);
 
         // In hitstun nothing it presses counts, and letting go of everything makes the first thing after a fresh press
@@ -56,5 +67,32 @@ internal class DummyPlayerInput : IPlayerInput
         _offence.Update(view);
 
         return direction | _hands.Held;
+    }
+
+    /// <summary>
+    /// Helper method for the training dummy, which holds one pose and lets the player work on it.
+    /// </summary>
+    private InputFlags Pose(in DummyView view)
+    {
+        _footwork.Stop();
+        _guard.Drop();
+
+        if (!_controller.IsInControl) return InputFlags.None;
+
+        switch (Mode)
+        {
+            case DummyMode.Crouch:
+                return InputFlags.DPadDown;
+
+            case DummyMode.Block:
+            case DummyMode.CrouchBlock:
+                // A block only covers the front and can't be turned around, so it faces the player first
+                if (view.FacingAway && !_controller.IsBlocking) return view.Towards;
+
+                return InputFlags.RightBumper | (Mode == DummyMode.CrouchBlock ? InputFlags.DPadDown : InputFlags.None);
+
+            default:
+                return InputFlags.None;
+        }
     }
 }

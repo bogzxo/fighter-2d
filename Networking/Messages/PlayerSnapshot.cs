@@ -25,10 +25,12 @@ internal readonly record struct PlayerSnapshot(
     uint Shown,
     FighterStatus Status,
     int HitstunTicks,
+    int BlockstunTicks,
     int ComboCount,
     bool CanCancel,
     bool HitThrown,
     byte Health,
+    byte Meter,
     byte HitsSeen)
 {
     /// <summary>
@@ -50,10 +52,12 @@ internal readonly record struct PlayerSnapshot(
             controller.Playback.Shown,
             controller.State.CurrentStatus,
             controller.State.HitstunTicks,
+            controller.State.BlockstunTicks,
             controller.State.ComboCount,
             controller.CanCancel,
             controller.HitThrown,
             player.Health,
+            player.Meter,
             hitsSeen);
     }
 
@@ -72,10 +76,12 @@ internal readonly record struct PlayerSnapshot(
         message.AddUShort((ushort)Math.Min(Shown, ushort.MaxValue));
         message.AddByte((byte)Status);
         message.AddUShort((ushort)Math.Clamp(HitstunTicks, 0, ushort.MaxValue));
+        message.AddUShort((ushort)Math.Clamp(BlockstunTicks, 0, ushort.MaxValue));
         message.AddByte((byte)Math.Clamp(ComboCount, 0, byte.MaxValue));
         message.AddBool(CanCancel);
         message.AddBool(HitThrown);
         message.AddByte(Health);
+        message.AddByte(Meter);
         message.AddByte(HitsSeen);
     }
 
@@ -91,9 +97,11 @@ internal readonly record struct PlayerSnapshot(
         message.GetUShort(),
         (FighterStatus)message.GetByte(),
         message.GetUShort(),
+        message.GetUShort(),
         message.GetByte(),
         message.GetBool(),
         message.GetBool(),
+        message.GetByte(),
         message.GetByte(),
         message.GetByte());
 }

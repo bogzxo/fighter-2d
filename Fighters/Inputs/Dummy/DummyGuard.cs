@@ -13,6 +13,9 @@ internal sealed class DummyGuard(PlayerController controller)
     // Blocking only covers the front and can't be turned around, so with our back to them we turn first
     private bool _turnFirst;
 
+    // Whether what is coming is a low, which has to be blocked crouching
+    private bool _low;
+
     /// <summary>
     /// Whether the last thing <see cref="Update"/> returned was the tap that turns us around, which counts as a press of a direction.
     /// </summary>
@@ -33,6 +36,9 @@ internal sealed class DummyGuard(PlayerController controller)
         _timer = DummyConfig.BLOCK_LINGER;
         _time = 0;
         _turnFirst = !controller.Player.IsFacing(controller.Opponent);
+
+        // It reads the move the way a player reads the animation, a sweep gets a crouching block
+        _low = controller.Opponent.Controller.CurrentMove.Level == HitLevel.Low;
     }
 
     public void Drop() => _timer = 0;
@@ -60,6 +66,8 @@ internal sealed class DummyGuard(PlayerController controller)
         if (view.Them.IsInStartup && _time < DummyConfig.MAX_BLOCK_TIME) _timer = MathF.Max(_timer, DummyConfig.BLOCK_LINGER);
         else if (view.Them.IsRecovering) _timer = 0;
 
-        return _timer > 0 ? InputFlags.RightBumper : null;
+        if (_timer <= 0) return null;
+
+        return InputFlags.RightBumper | (_low ? InputFlags.DPadDown : InputFlags.None);
     }
 }

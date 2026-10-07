@@ -111,9 +111,14 @@ internal sealed class HitCalloutDisplay : IHudDisplay
             ? (int)MathF.Round(frames.Hitstun * CombatRules.COUNTER_HITSTUN_SCALE)
             : frames.Hitstun;
 
-        // A hit that didn't land leaves the attacker stuck in the rest of the move with nobody stunned, which is as minus as it gets
-        bool landed = report.Result is not (HitResult.Whiff or HitResult.Blocked);
-        int advantage = landed ? hitstun - frames.Recovery : -frames.Recovery;
+        // A whiff leaves the attacker stuck in the rest of the move with nobody stunned, which is as minus as it gets.
+        // A block stuns for the blockstun, which is less than the hitstun, so most things are minus on block
+        int advantage = report.Result switch
+        {
+            HitResult.Whiff => -frames.Recovery,
+            HitResult.Blocked => frames.OnBlock,
+            _ => hitstun - frames.Recovery
+        };
 
         string outcome = report.Result switch
         {

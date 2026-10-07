@@ -9,12 +9,18 @@ namespace Fighter2D.Moves;
 /// <param name="Startup">How long after the move starts its hit comes out, 0 for a move that doesn't hit.</param>
 /// <param name="Recovery">How long the move goes on for after the hit came out.</param>
 /// <param name="Hitstun">How long whoever it lands on is in hitstun for.</param>
-public readonly record struct MoveFrameData(int Startup, int Recovery, int Hitstun)
+/// <param name="Blockstun">How long whoever blocks it is stuck in their block for.</param>
+public readonly record struct MoveFrameData(int Startup, int Recovery, int Hitstun, int Blockstun)
 {
     /// <summary>
     /// Frame advantage on hit. Plus means the attacker can act first, minus means whoever got hit can.
     /// </summary>
     public int OnHit => Hitstun - Recovery;
+
+    /// <summary>
+    /// Frame advantage on block. Nearly always minus, which is what makes a blocked move a punish.
+    /// </summary>
+    public int OnBlock => Blockstun - Recovery;
 
     /// <summary>
     /// Helper method to work out the frame data of a move.
@@ -48,10 +54,18 @@ public readonly record struct MoveFrameData(int Startup, int Recovery, int Hitst
         float hitstun = move.Hitstun >= 0
             ? move.Hitstun * ticksPerFrame
             : recovery + MathF.Min(CombatRules.MAX_ADVANTAGE, startup * CombatRules.STARTUP_REWARD - CombatRules.BASE_DISADVANTAGE);
+        hitstun = MathF.Max(CombatRules.MIN_HITSTUN, hitstun);
+
+        // The same for the blockstun, which is a share of the hitstun unless the move says. Short enough that a blocked move
+        // is a punish, long enough that mashing out of a block isn't free
+        float blockstun = move.Blockstun >= 0
+            ? move.Blockstun * ticksPerFrame
+            : hitstun * CombatRules.BLOCKSTUN_SCALE;
 
         return new MoveFrameData(
             (int)MathF.Round(startup),
             (int)MathF.Round(recovery),
-            Math.Max(CombatRules.MIN_HITSTUN, (int)MathF.Round(hitstun)));
+            (int)MathF.Round(hitstun),
+            Math.Max(CombatRules.MIN_BLOCKSTUN, (int)MathF.Round(blockstun)));
     }
 }

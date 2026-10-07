@@ -219,9 +219,12 @@ internal sealed class MovePlayback(PlayerController controller)
 
     /// <summary>
     /// Helper method to test if any of the inputs that start the move is (still) held down.
+    /// A block that just ate a hit counts as held for as long as the blockstun lasts, whatever the thumb is doing.
     /// </summary>
     private bool IsHeld()
     {
+        if (Move.Status == FighterStatus.Blocking && controller.State.IsInBlockstun) return true;
+
         foreach (InputFlags signature in Move.InputSignatures)
         {
             if (signature != InputFlags.None && controller.Inputs.IsHeld(signature)) return true;

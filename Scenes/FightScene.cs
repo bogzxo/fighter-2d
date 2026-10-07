@@ -100,6 +100,9 @@ internal class FightScene : Scene
     private PauseMenu? _pause;
     private bool _pauseBlurred;
 
+    // The lab, only for a fight against the dummy
+    private TrainingMode? _training;
+
     // Reloading the data. How long the host still waits for the other machine to have it, the panel that shows the files going across,
     // whether the fighters still have to be put back where they were, and whether the connection went on to the fight that replaces this one
     private float _reloadWait;
@@ -188,12 +191,15 @@ internal class FightScene : Scene
 
     private void SpawnPlayerTwo(SpriteBatch players, Vector2 spawn)
     {
-        // Somebody on this machine, somebody on another one, or the dummy if nobody showed up
-        Fight.PlayerTwo = _opponent ?? new Player()
+        // Somebody on this machine, somebody on another one, or the dummy if nobody showed up. A fight against the dummy is the lab
+        if (_opponent is null)
         {
-            Controller = new PlayerController(new DummyPlayerInput())
-        };
+            var dummy = new DummyPlayerInput();
+            _opponent = new Player { Controller = new PlayerController(dummy) };
+            _training = new TrainingMode(dummy, Fight.PlayerOne, _opponent);
+        }
 
+        Fight.PlayerTwo = _opponent;
         Fight.PlayerTwo.SpawnPosition = spawn;
         players.Add(AddEntity(Fight.PlayerTwo));
     }
@@ -274,7 +280,9 @@ internal class FightScene : Scene
 
             // The tools are the host's. On one machine that is whoever is playing
             ReloadData = IsHost && Reload is not null ? ReloadData : null,
-            ToggleHitboxes = IsHost ? () => _world.RenderDebug = !_world.RenderDebug : null
+            ToggleHitboxes = IsHost ? () => _world.RenderDebug = !_world.RenderDebug : null,
+
+            Training = _training
         });
     }
 
@@ -481,6 +489,9 @@ internal class FightScene : Scene
         // Hits and thunder both rattle the view
         _camera.Shake(_weather.Shake + Fight.Effects.Shake);
         _playerLights.Follow(Fight.PlayerOne, Fight.PlayerTwo);
+
+        // The lab tops the health back up once the dust has settled, only while the round is actually on
+        if (_round.Phase == RoundPhase.Fight) _training?.Update(dt);
 
         base.UpdateState(dt);
     }

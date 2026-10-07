@@ -78,6 +78,16 @@ internal sealed class PlayerMovement(PlayerController controller)
             Fight.Effects.Land(Player.FeetPosition, state.FallDuration);
         }
 
+        // Launched by something that knocks down, this is where they hit the floor and stay there for a bit. Hitting the deck
+        // kicks up as much dust as a long fall would, however short the way down was
+        if (state.KnockdownPending && !controller.IsInControl)
+        {
+            Fight.Effects.Land(Player.FeetPosition, MathF.Max(state.FallDuration, HEAVY_FALL_TIME));
+            controller.KnockDown();
+            state.ResetFallDuration();
+            return;
+        }
+
         // Somebody who comes down in hitstun stays in hitstun
         if (state.FallDuration > HEAVY_FALL_TIME && controller.IsInControl)
         {

@@ -9,8 +9,11 @@
 //   B             heavy kick      sweep                 jump_kick
 //   X             light punch     crouch_punch          jump_light_punch
 //   Y             heavy punch     crouch_heavy_punch    jump_punch
-//   A + B         cannon_drill, she throws herself at the other player feet first
-//   X + Y         cannon_spike, a kick straight up that launches whoever it meets
+//   A + B         cannon_drill, she throws herself at the other player feet first. Costs a quarter of the meter
+//   X + Y         cannon_spike, a kick straight up that launches whoever it meets. Costs a quarter of the meter too
+//
+//   Her sweep and crouch kick are lows (block them crouching), everything out of the air is an overhead (block it standing),
+//   and the sweep, the drill and the spike all knock down.
 //   LeftBumper    spinning_knuckle, a spin on the spot into a backfist that carries her forwards
 
 let moves = {
@@ -47,6 +50,30 @@ let moves = {
         phases: {
             reel: { animation: "hit" },
             down: { animation: "knocked_out", loop_while: "always" }
+        }
+    },
+
+    knocked_down: {
+        stances: "standing | crouching | jumping | falling",
+        cancellable: false,
+        steering: false,
+        finish_reroutes: {
+            standing: "get_up",
+            crouching: "get_up"
+        },
+        phases: {
+            drop: { animation: "knocked_out" },
+            floor: { frames: 1, loop_while: "hitstun" }
+        }
+    },
+
+    get_up: {
+        stances: "standing | crouching",
+        cancellable: false,
+        steering: false,
+        status: "invulnerable",
+        phases: {
+            rise: { animation: "hard_landing" }
         }
     },
 
@@ -126,6 +153,7 @@ let moves = {
     crouch_kick: {
         stances: "crouching",
         damage: 5,
+        level: "low",
         cancellable: false,
         steering: false,
         status: "attacking",
@@ -143,6 +171,8 @@ let moves = {
         damage: 7,
         knockback: vec(500, 1500),
         hitstun: 12,
+        level: "low",
+        knockdown: true,
         cancellable: false,
         steering: false,
         status: "attacking",
@@ -191,6 +221,8 @@ let moves = {
         damage: 8,
         knockback: vec(900, 1900),
         hitstun: 6,
+        level: "overhead",
+        knockdown: true,
         cancellable: false,
         status: "attacking",
         finish_reroutes: {
@@ -205,6 +237,7 @@ let moves = {
     jump_light_kick: {
         stances: "jumping | falling",
         damage: 5,
+        level: "overhead",
         cancellable: false,
         status: "attacking",
         finish_reroutes: {
@@ -220,6 +253,7 @@ let moves = {
         stances: "jumping | falling",
         damage: 7,
         knockback: vec(600, 300),
+        level: "overhead",
         cancellable: false,
         status: "attacking",
         finish_reroutes: {
@@ -234,6 +268,7 @@ let moves = {
     jump_light_punch: {
         stances: "jumping | falling",
         damage: 4,
+        level: "overhead",
         cancellable: false,
         status: "attacking",
         finish_reroutes: {
@@ -253,6 +288,8 @@ let moves = {
         damage: 10,
         knockback: vec(1300, 900),
         hitstun: 12,
+        knockdown: true,
+        meter_cost: 25,
         cancellable: false,
         steering: false,
         status: "attacking",
@@ -275,6 +312,8 @@ let moves = {
         damage: 11,
         knockback: vec(500, 2800),
         hitstun: 24,
+        knockdown: true,
+        meter_cost: 25,
         cancellable: false,
         steering: false,
         status: "attacking",

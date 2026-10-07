@@ -88,13 +88,14 @@ internal class MoveList
     /// <summary>
     /// Finds the move the player is asking for, going by priority.
     /// </summary>
+    /// <param name="meter">How much meter the player has, a move that costs more than that is passed over for the next match.</param>
     /// <param name="signature">The input signature of the move which matched.</param>
-    public bool TryMatchInput(InputBuffer input, Stance stance, out FightingMove move, out InputFlags signature)
+    public bool TryMatchInput(InputBuffer input, Stance stance, int meter, out FightingMove move, out InputFlags signature)
     {
         foreach (FightingMove candidate in _inputMoves)
         {
-            // Reject all moves that are not allowed in our current stance
-            if ((candidate.Stances & stance) == 0) continue;
+            // Reject all moves that are not allowed in our current stance, and the ones the player can't afford
+            if ((candidate.Stances & stance) == 0 || candidate.MeterCost > meter) continue;
 
             if (input.TryMatch(candidate, out signature))
             {

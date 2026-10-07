@@ -14,8 +14,8 @@ internal static class MoveFileReader
 {
     private static readonly HashSet<string> MoveKeys =
     [
-        "input", "trigger", "priority", "stances", "damage", "knockback", "hitstun", "cancellable", "steering",
-        "turning", "status", "stance", "stance_after", "warns", "repeat", "phases", "stance_reroutes", "finish_reroutes"
+        "input", "trigger", "priority", "stances", "damage", "knockback", "hitstun", "blockstun", "level", "knockdown", "meter_cost",
+        "cancellable", "steering", "turning", "status", "stance", "stance_after", "warns", "repeat", "phases", "stance_reroutes", "finish_reroutes"
     ];
 
     private static readonly HashSet<string> PhaseKeys =
@@ -70,6 +70,10 @@ internal static class MoveFileReader
             Damage = damage,
             Knockback = HorReader.Vector(move, "knockback", Vector2.Zero),
             Hitstun = HorReader.Number(move, "hitstun", -1),
+            Blockstun = HorReader.Number(move, "blockstun", -1),
+            Level = HorReader.Named(move, "level", HitLevel.Mid),
+            Knockdown = HorReader.Bool(move, "knockdown", false),
+            MeterCost = Math.Max(0, (int)HorReader.Number(move, "meter_cost", 0)),
             Stances = move.TryGetValue("stances", out var stances) ? HorReader.Flags<Stance>(stances, "stances") : Stance.Standing,
             InputSignatures = ReadInputs(move),
             Trigger = move.TryGetValue("trigger", out var trigger) ? HorReader.Named<InputTrigger>(HorReader.Text(trigger, "trigger").Replace("_", ""), "trigger") : InputTrigger.Held,
