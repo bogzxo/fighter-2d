@@ -53,7 +53,8 @@ internal static class MenuLayouts
 
     private static UICompositor CreateCompositor(Camera2D camera)
     {
-        var compositor = new UICompositor(camera, Constants.UI_THEME) { DesignSize = DesignSize };
+        // As big as the player likes their UI, on top of fitting the window
+        var compositor = new UICompositor(camera, Constants.UI_THEME) { DesignSize = DesignSize, Scale = GameOptions.GuiScale };
 
         // The menus slide and pop into place, a bit of blur makes that look smooth
         Screen.AddMotionBlur(compositor);

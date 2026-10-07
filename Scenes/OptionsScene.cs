@@ -10,34 +10,66 @@ namespace Fighter2D.Scenes;
 
 /// <summary>
 /// Scene where the player sets the game up the way they like it. The window, the look of the game and what a fight shows on top of itself.
-/// Every option is a row of the screen and takes hold the moment it is changed, there is nothing to confirm. They are all kept in <see cref="GameOptions"/>.
+/// The options come in three tabs the bumpers flip between, so nobody has to scroll through the lot to get to the one they want.
+/// Every option is a row of its tab and takes hold the moment it is changed, there is nothing to confirm. They are all kept in <see cref="GameOptions"/>.
 /// </summary>
-/// <param name="selected">The row the gamepad starts on, for when the screen had to be made again half way through (see <see cref="Reload"/>).</param>
-internal class OptionsScene(int selected = 0) : MenuScene
+/// <param name="tab">The tab that is open to begin with, and the row the gamepad starts on in it: for when the screen had to be made again half way through (see <see cref="Reload"/>).</param>
+internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
 {
-    private const string HINT = "[icon:dpad] choose and change    [icon:pad_b] back";
+    private const string HINT = "[icon:dpad] choose and change    [icon:pad_lb] [icon:pad_rb] tabs    [icon:pad_b] back";
+
+    private static readonly string[] Tabs = ["display", "look", "fight"];
 
     protected override string LayoutFile => MenuLayouts.OPTIONS;
     protected override float InputDelay => 0.2f;
 
-    private readonly SettingList _settings = new();
+    // A list of rows for every tab, and the one that is open
+    private readonly SettingList[] _tabs = [new(), new(), new()];
+    private int _tab;
+    private SettingList _settings = null!;
+
     private Label _hint = null!, _description = null!;
     private UICompositor _ui = null!;
+    private UILayout _layout = null!;
 
     protected override void BuildUi(UILayout layout)
     {
         // The screen is laid out in Assets/ui/layouts/options.hor, what its rows choose between is decided here.
         // So is the line about each of them. Labels don't wrap, so the ones that run long are broken in two by hand
         _ui = layout.Module.Compositor;
+        _layout = layout;
         _hint = layout.Get<Label>("hint");
         _description = layout.Get<Label>("description");
 
+        _settings = _tabs[0];
         AddWindowOptions(layout);
+        _settings = _tabs[1];
         AddLookOptions(layout);
+        _settings = _tabs[2];
         AddFightOptions(layout);
 
-        _settings.Changed = GameOptions.Save;
-        _settings.Select(selected);
+        foreach (SettingList list in _tabs) list.Changed = GameOptions.Save;
+
+        OpenTab(tab, selected);
+    }
+
+    /// <summary>
+    /// Helper method to show one tab and hide the others, with the gamepad on a row of it.
+    /// </summary>
+    private void OpenTab(int index, int row = 0)
+    {
+        _tab = (index % Tabs.Length + Tabs.Length) % Tabs.Length;
+        _settings = _tabs[_tab];
+        _settings.Select(row);
+
+        for (int i = 0; i < Tabs.Length; i++)
+        {
+            bool open = i == _tab;
+            _layout.Get<StackPanel>($"{Tabs[i]}_rows").Visible = open;
+            _layout.Get<Label>($"tab_{Tabs[i]}").Color = open ? Vector4.One : MenuColors.Hint;
+        }
+
+        _layout.Get<Label>($"tab_{Tabs[_tab]}").Punch(0.12f, 0.2f);
     }
 
     private void AddWindowOptions(UILayout layout)
@@ -79,6 +111,17 @@ internal class OptionsScene(int selected = 0) : MenuScene
 
     private void AddLookOptions(UILayout layout)
     {
+        // In the order they are in on the screen, the gamepad goes down the rows by the order they were added in
+        _settings.Add(layout, "gui_scale", GameOptions.GuiScales, GameOptions.GuiScale, scale => $"{scale * 100:0}%",
+            scale =>
+            {
+                GameOptions.GuiScale = scale;
+
+                // Shown off on this screen straight away, every other one is made with it
+                _ui.Scale = scale;
+            },
+            "How big the menus and the HUD are drawn,\non top of fitting the window.");
+
         _settings.Add(layout, "transitions", Enum.GetValues<TransitionStyle>(), GameOptions.Transitions, DescribeTransitions,
             style =>
             {
@@ -105,10 +148,14 @@ internal class OptionsScene(int selected = 0) : MenuScene
                 Screen.ApplyOptions(Canvas, _ui);
             },
             "Smears whatever moves along the way it is going,\nwhich hides that pixel art moves in steps.");
+
     }
 
     private void AddFightOptions(UILayout layout)
     {
+        _settings.Add(layout, "camera_zoom", GameOptions.CameraZooms, GameOptions.CameraZoom, DescribeZoom, zoom => GameOptions.CameraZoom = zoom,
+            "How close in the camera of a fight is.\nCloser is bigger fighters, further out is more of the arena.");
+
         _settings.AddSwitch(layout, "input_display", GameOptions.InputDisplay, on => GameOptions.InputDisplay = on,
             "Shows what both players are pressing down the sides of a fight.");
 
@@ -142,6 +189,14 @@ internal class OptionsScene(int selected = 0) : MenuScene
         return limit == GameOptions.MIN_FRAME_LIMIT ? $"{limit} (the tick rate)" : limit.ToString();
     }
 
+    private static string DescribeZoom(float zoom) => zoom switch
+    {
+        <= 0.6f => "Close",
+        <= 0.75f => "Normal",
+        <= 0.9f => "Far",
+        _ => "Furthest"
+    };
+
     private static string DescribeTransitions(TransitionStyle style) => style switch
     {
         TransitionStyle.Mixed => "Mixed",
@@ -164,7 +219,7 @@ internal class OptionsScene(int selected = 0) : MenuScene
     /// </summary>
     private void Reload(Horizon.Engine.SceneTransition? transition)
     {
-        GoTo(new OptionsScene(_settings.Selected), transition);
+        GoTo(new OptionsScene(_tab, _settings.Selected), transition);
     }
 
     protected override void UpdateMenu(float dt)
@@ -182,6 +237,13 @@ internal class OptionsScene(int selected = 0) : MenuScene
             if (gamepad.WasPressed(GamepadInput.B))
             {
                 GoTo(new MainMenuScene());
+                return;
+            }
+
+            // The bumpers flip between the tabs
+            if (gamepad.WasPressed(GamepadInput.LeftBumper) || gamepad.WasPressed(GamepadInput.RightBumper))
+            {
+                OpenTab(_tab + (gamepad.WasPressed(GamepadInput.RightBumper) ? 1 : -1));
                 return;
             }
 

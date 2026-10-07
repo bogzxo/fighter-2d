@@ -11,13 +11,14 @@ namespace Fighter2D.Map;
 internal sealed class FightCamera
 {
     /// <summary>
-    /// How much of the usual view the camera of a fight sees. Three quarters of it, which is everything a third bigger than the art is drawn anywhere else.
+    /// How much of the usual view the camera of a fight sees, as the player set it (see <see cref="GameOptions.CameraZoom"/>).
+    /// Three quarters of it to begin with, which is everything a third bigger than the art is drawn anywhere else.
     /// Lower is closer in, 1 is no zoom at all.
     /// </summary>
-    public const float ZOOM = 0.75f;
+    public static float Zoom => GameOptions.CameraZoom;
 
     // One pixel of the screen in world units (the art is drawn at twice its size, and then zoomed in on)
-    private const float PIXEL = 0.5f * ZOOM;
+    private readonly float _pixel;
 
     // How little the camera has to move in a step to count as standing still
     private const float STILL = 0.02f;
@@ -43,8 +44,9 @@ internal sealed class FightCamera
     public FightCamera(Camera2D camera, FightingStage stage, Vector2 viewportSize, Vector2 start)
     {
         _camera = camera;
-        _camera.Zoom = ZOOM;
-        _camera.PixelSnap = PIXEL;
+        _pixel = 0.5f * Zoom;
+        _camera.Zoom = Zoom;
+        _camera.PixelSnap = _pixel;
         _stage = stage;
         _viewportSize = viewportSize;
 

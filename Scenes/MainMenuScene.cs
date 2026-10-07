@@ -26,7 +26,6 @@ namespace Fighter2D.Scenes;
 internal class MainMenuScene : MenuScene
 {
     private const string HINT = "[icon:dpad] choose    [icon:pad_a] pick";
-    private const uint LOGO_SCALE = 2;
 
     // Where the fighters of the background meet and the ground they stand on, in pixels of the window
     private static readonly Vector2 DuelCenter = new(330, -330);
@@ -36,6 +35,7 @@ internal class MainMenuScene : MenuScene
     protected override System.Drawing.Color ClearColor => System.Drawing.Color.Black;
 
     private readonly ButtonList _buttons = new();
+    private MenuDuel? _duel;
     private Label _hint = null!;
 
     // Whether the hint is busy saying something else than which buttons to press
@@ -59,31 +59,14 @@ internal class MainMenuScene : MenuScene
         }
 
         // The right of the screen belongs to the duel, which looks after itself
-        var duel = Canvas.AddEntity(new MenuDuel(DuelCenter));
-
-        AddLogo(duel);
-    }
-
-    private void AddLogo(MenuDuel duel)
-    {
-        if (!TryLoadTexture("Assets/ui/new_logo.png", out Texture texture)) return;
-
-        var batch = Canvas.AddEntity<SpriteBatch>();
-        Vector2 size = new(texture.Width, texture.Height);
-
-        var logo = batch.AddEntity(new Sprite(size * LOGO_SCALE));
-        logo.Transform.Origin = Origin.TopLeft;
-        logo.Transform.Position = new Vector2(Engine.WindowManager.WindowSize.X / -2, Engine.WindowManager.WindowSize.Y / 2);
-        logo.ConfigureSpriteSheet(SpriteSheet.FromTexture(texture, size), "logo");
-        batch.Add(logo);
-
-        // The logo grows out of its corner, and rattles along with every kick of the duel
-        logo.PopIn(0.7f, 0.15f);
-        duel.Struck += () => logo.Shake(8.0f, 0.35f);
+        _duel = Canvas.AddEntity(new MenuDuel(DuelCenter));
     }
 
     protected override void BuildUi(UILayout layout)
     {
+        // The logo is part of the layout, so it scales with the rest of the UI. It rattles along with every kick of the duel
+        if (layout.TryGet<Image>("logo", out var logo) && _duel is { } duel) duel.Struck += () => logo.Shake(8.0f, 0.35f);
+
         // The menu is laid out in Assets/ui/layouts/main_menu.hor, what its buttons do is decided here
         AddButton(layout, "btn_pvp", () => Play(MatchMode.Pvp));
         AddButton(layout, "btn_practice", () => Play(MatchMode.Practice));

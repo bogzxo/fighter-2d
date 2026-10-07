@@ -44,6 +44,10 @@ internal static class GameOptions
     public static readonly int[] FrameLimits = [MIN_FRAME_LIMIT, 75, 90, 120, 144, 165, 240, NO_FRAME_LIMIT];
 
     // The sizes the window comes in. All of them are 16 by 9, which is the shape the menus were laid out for
+    // How big the UI is drawn on top of fitting the window, and how far in the camera of a fight is (lower is closer)
+    public static readonly float[] GuiScales = [0.75f, 0.85f, 1.0f, 1.15f, 1.3f, 1.5f];
+    public static readonly float[] CameraZooms = [0.6f, 0.75f, 0.9f, 1.0f];
+
     public static readonly Vector2[] Resolutions =
     [
         new(1280, 720), new(1366, 768), new(1600, 900), new(1920, 1080), new(2560, 1440), new(3840, 2160)
@@ -68,6 +72,12 @@ internal static class GameOptions
 
     // Whether moving things get smeared along the way they move, which hides that pixel art moves in steps
     public static bool MotionBlur = true;
+
+    // How big every UI is on top of fitting the window, 1 for as it was laid out
+    public static float GuiScale = 1.0f;
+
+    // How much of the arena the camera of a fight sees, 0.75 being what the game was made with. Lower is closer in
+    public static float CameraZoom = 0.75f;
 
     /* The fight */
 
@@ -113,6 +123,8 @@ internal static class GameOptions
             Transitions = HorReader.Named(options, "transitions", Transitions);
             Crt = HorReader.Bool(options, "crt", Crt);
             MotionBlur = HorReader.Bool(options, "motion_blur", MotionBlur);
+            GuiScale = Closest(GuiScales, (float)HorReader.Number(options, "gui_scale", GuiScale));
+            CameraZoom = Closest(CameraZooms, (float)HorReader.Number(options, "camera_zoom", CameraZoom));
 
             InputDisplay = HorReader.Bool(options, "input_display", InputDisplay);
             HitCallouts = HorReader.Bool(options, "hit_callouts", HitCallouts);
@@ -128,6 +140,18 @@ internal static class GameOptions
     /// <summary>
     /// Helper method to write the options back to the file.
     /// </summary>
+    // Whichever of the choices a number out of the file is nearest to, so a hand-edited file can't set something daft
+    private static float Closest(float[] choices, float value)
+    {
+        float best = choices[0];
+        foreach (float choice in choices)
+        {
+            if (MathF.Abs(choice - value) < MathF.Abs(best - value)) best = choice;
+        }
+
+        return best;
+    }
+
     public static void Save()
     {
         var text = new StringBuilder();
@@ -140,6 +164,8 @@ internal static class GameOptions
         text.AppendLine($"    transitions: \"{Transitions.ToString().ToLowerInvariant()}\",");
         text.AppendLine($"    crt: {Write(Crt)},");
         text.AppendLine($"    motion_blur: {Write(MotionBlur)},");
+        text.AppendLine($"    gui_scale: {GuiScale.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
+        text.AppendLine($"    camera_zoom: {CameraZoom.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
         text.AppendLine($"    input_display: {Write(InputDisplay)},");
         text.AppendLine($"    hit_callouts: {Write(HitCallouts)},");
         text.AppendLine($"    frame_data: {Write(FrameData)},");
