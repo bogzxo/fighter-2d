@@ -1,3 +1,4 @@
+using Bogz.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -61,7 +62,7 @@ internal sealed class ContentHost
             _session.Send(entry);
         }
 
-        Console.WriteLine($"[Content] Offered {_manifest.Count} files ({_manifestHash[..12]}).");
+        Log.Info($"[Content] Offered {_manifest.Count} files ({_manifestHash[..12]}).");
     }
 
     public void Forget()
@@ -97,7 +98,7 @@ internal sealed class ContentHost
         catch (Exception e)
         {
             // A file that vanished or got locked under us. They don't get that file, so they never get to say they are ready
-            Console.WriteLine($"[Content] Couldn't send a file: {e.Message}");
+            Log.Warning($"[Content] Couldn't send a file: {e.Message}");
             Forget();
         }
     }
@@ -136,7 +137,7 @@ internal sealed class ContentHost
 
             case NetMessage.ContentReady:
                 PeerVerified = message.GetString() == _manifestHash;
-                if (!PeerVerified) Console.WriteLine("[Content] The other player says they are ready with content that is not ours.");
+                if (!PeerVerified) Log.Warning("[Content] The other player says they are ready with content that is not ours.");
                 break;
         }
     }

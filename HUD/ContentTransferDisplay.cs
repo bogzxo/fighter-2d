@@ -17,7 +17,7 @@ namespace Fighter2D.HUD;
 /// It shows itself whenever files are on the move and goes away by itself a moment after the last of them arrived.
 /// It is laid out in Assets/ui/layouts/content_transfer.hor and is the same thing on both machines, only the wording differs.
 /// </summary>
-internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) : IGameComponent
+internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) : GameComponent
 {
     // How long (in seconds) the full bar stays up once everything has arrived, so it can be seen to have finished
     private const float LINGER_TIME = 0.7f;
@@ -53,11 +53,7 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
     /// </summary>
     public bool IsShowing => content.IsTransferring || _linger > 0.0f || Waiting.Length > 0 || Failed;
 
-    public bool Enabled { get; set; } = true;
-    public string Name { get; set; } = "Content Transfer";
-    public Entity Parent { get; set; } = null!;
-
-    public void Initialize()
+    public override void Initialize()
     {
         var camera = new Camera2D(GameEngine.Instance.WindowManager.ViewportSize);
         camera.Render(0);
@@ -70,7 +66,7 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
         _bar = layout.Get<ProgressBar>("bar");
     }
 
-    public void UpdateState(float dt)
+    public override void UpdateState(float dt)
     {
         bool transferring = content.IsTransferring;
 
@@ -119,9 +115,7 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
         }
     }
 
-    public void UpdatePhysics(float dt) { }
-
-    public void Render(float dt, object? obj = null)
+    public override void Render(float dt)
     {
         if (IsShowing) _compositor.Render(dt);
     }

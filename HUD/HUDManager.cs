@@ -16,16 +16,12 @@ namespace Fighter2D.HUD;
 /// Each of those is an <see cref="IHudDisplay"/>, this only loads the layout (Assets/ui/layouts/fight_overlay.hor) and keeps them all updated.
 /// The input display and the callouts are only there if the player wants them, see <see cref="GameOptions"/>.
 /// </summary>
-internal class HUDManager : IGameComponent
+internal class HUDManager : GameComponent
 {
     private readonly List<IHudDisplay> _displays = [];
     private UICompositor _compositor = null!;
 
-    public bool Enabled { get; set; }
-    public string Name { get; set; } = "HUD Manager";
-    public Entity Parent { get; set; } = null!;
-
-    public void Initialize()
+    public override void Initialize()
     {
         var camera = new Camera2D(GameEngine.Instance.WindowManager.ViewportSize);
         camera.Render(0);
@@ -45,7 +41,7 @@ internal class HUDManager : IGameComponent
         if (GameOptions.HitCallouts) _displays.Add(new HitCalloutDisplay(layout, round, Fight.CombatLog));
     }
 
-    public void UpdateState(float dt)
+    public override void UpdateState(float dt)
     {
         foreach (IHudDisplay display in _displays)
         {
@@ -55,7 +51,7 @@ internal class HUDManager : IGameComponent
         _compositor.UpdateState(dt);
     }
 
-    public void UpdatePhysics(float dt) => _compositor.UpdatePhysics(dt);
+    public override void UpdatePhysics(float dt) => _compositor.UpdatePhysics(dt);
 
-    public void Render(float dt, object? obj = null) => _compositor.Render(dt);
+    public override void Render(float dt) => _compositor.Render(dt);
 }

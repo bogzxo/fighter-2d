@@ -1,3 +1,4 @@
+using Bogz.Logging;
 using System;
 using System.IO;
 using System.Numerics;
@@ -120,7 +121,7 @@ internal static class GameOptions
         }
         catch (Exception e)
         {
-            Console.WriteLine($"[GameOptions] {FILE} makes no sense, going with the defaults: {e.Message}");
+            Log.Warning($"[GameOptions] {FILE} makes no sense, going with the defaults: {e.Message}");
         }
     }
 
@@ -152,7 +153,7 @@ internal static class GameOptions
         catch (Exception e)
         {
             // Not being able to save is no reason to stop the game
-            Console.WriteLine($"[GameOptions] Could not save {FILE}: {e.Message}");
+            Log.Warning($"[GameOptions] Could not save {FILE}: {e.Message}");
         }
     }
 

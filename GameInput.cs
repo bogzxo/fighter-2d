@@ -1,3 +1,4 @@
+using Bogz.Logging;
 using System;
 using System.IO;
 
@@ -62,7 +63,7 @@ internal static class GameInput
         {
             foreach (string problem in problems)
             {
-                Console.WriteLine($"[GameInput] {BINDINGS_FILE}: {problem}");
+                Log.Info($"[GameInput] {BINDINGS_FILE}: {problem}");
             }
 
             // The file remembers the defaults it was saved with, ours may have changed since
@@ -84,7 +85,7 @@ internal static class GameInput
         catch (Exception e)
         {
             // Not being able to save is no reason to stop the game
-            Console.WriteLine($"[GameInput] Could not save {BINDINGS_FILE}: {e.Message}");
+            Log.Warning($"[GameInput] Could not save {BINDINGS_FILE}: {e.Message}");
         }
     }
 

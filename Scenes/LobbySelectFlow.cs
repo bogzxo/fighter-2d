@@ -1,3 +1,4 @@
+using Bogz.Logging;
 using System;
 using System.Numerics;
 
@@ -81,7 +82,7 @@ internal sealed class LobbySelectFlow : GamepadSelectFlow
     {
         if (!MapLoader.TryFind(mapFile, out MapDefinition map))
         {
-            Console.WriteLine($"[Lobby] The host started on '{mapFile}', which is not a map we have.");
+            Log.Warning($"[Lobby] The host started on '{mapFile}', which is not a map we have.");
             Scene.Back();
             return;
         }

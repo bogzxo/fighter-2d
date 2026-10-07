@@ -4,7 +4,6 @@ using System.IO;
 using System.Numerics;
 
 using Bogz.Logging;
-using Bogz.Logging.Loggers;
 
 using Horizon.Rendering.Spriting;
 
@@ -64,7 +63,7 @@ internal sealed class CharacterBoxes
             catch (Exception exception)
             {
                 // A character without boxes still works, it just falls back to a dumb box in the middle
-                ConcurrentLogger.Instance.Log(LogLevel.Error, $"Couldn't read the hitboxes of '{directory}': {exception.Message}");
+                Log.Error($"Couldn't read the hitboxes of '{directory}': {exception.Message}");
             }
 
             return cache[directory] = read;

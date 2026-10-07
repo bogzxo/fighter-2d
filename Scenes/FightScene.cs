@@ -1,3 +1,4 @@
+using Bogz.Logging;
 using System;
 using System.Numerics;
 
@@ -328,7 +329,7 @@ internal class FightScene : Scene
         if (!Content.IsTransferring) _reloadWait -= dt;
         if (_reloadWait > 0.0f) return;
 
-        Console.WriteLine("[Fight] The other machine never said it has the data, nothing was reloaded.");
+        Log.Warning("[Fight] The other machine never said it has the data, nothing was reloaded.");
         if (_transfer is not null) _transfer.Waiting = string.Empty;
     }
 
@@ -339,7 +340,7 @@ internal class FightScene : Scene
     {
         if (Reload is null || _handedOver) return;
 
-        Console.WriteLine("[Fight] Reading the data again.");
+        Log.Info("[Fight] Reading the data again.");
 
         // What was worked out from the old files is no good for the new ones
         CharacterBoxes.Forget();
@@ -386,7 +387,7 @@ internal class FightScene : Scene
         bool done = _network is null || _network.PeerReloaded || !_network.IsConnected || _awaitTime >= RELOAD_PATIENCE;
         if (done)
         {
-            if (_network is { PeerReloaded: false }) Console.WriteLine("[Fight] Never heard that the other machine is done reloading, carrying on anyway.");
+            if (_network is { PeerReloaded: false }) Log.Warning("[Fight] Never heard that the other machine is done reloading, carrying on anyway.");
 
             _awaitingPeer = false;
             if (_transfer is not null) _transfer.Waiting = string.Empty;
@@ -498,9 +499,6 @@ internal class FightScene : Scene
 
         base.UpdatePhysics(dt);
 
-        // The players are drawn where the physics has just put them, and the camera follows in the same breath (see FightCamera.Follow)
-        SyncToPhysics(Fight.PlayerOne);
-        SyncToPhysics(Fight.PlayerTwo);
 
         if (Fight.PlayerOne is { } us && Fight.PlayerTwo is { } them)
         {
@@ -511,10 +509,6 @@ internal class FightScene : Scene
         }
     }
 
-    private static void SyncToPhysics(Player? player)
-    {
-        if (player?.PhysicsBody is { } body) player.Transform.Position = body.Position;
-    }
 
     /// <summary>
     /// Called by the rounds once the match is over and its result has been up for long enough, and by the pause menu for whoever has had enough.

@@ -13,7 +13,7 @@ namespace Fighter2D.Match;
 /// It only decides and keeps the score, showing any of it is up to the HUD and what happens after the match is up to <see cref="Finished"/>.
 /// Online only the host decides (see <see cref="IsAuthority"/>), the other machine is told how the match stands and goes along with it.
 /// </summary>
-internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player playerTwo) : IGameComponent
+internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player playerTwo) : GameComponent
 {
     // How long (in seconds) each of the phases lasts that end by themselves
     private const float VERSUS_TIME = 2.8f;
@@ -87,17 +87,11 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
 
     public bool RematchOffered => Rematch is not null;
 
-    public bool Enabled { get; set; } = true;
-    public string Name { get; set; } = "Round Director";
-    public Entity Parent { get; set; } = null!;
-
     private bool _finished;
 
     public Player PlayerOf(int index) => index == 0 ? playerOne : playerTwo;
 
-    public void Initialize() { }
-
-    public void UpdateState(float dt)
+    public override void UpdateState(float dt)
     {
         PhaseTime += dt;
 
@@ -302,8 +296,4 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
         playerOne.ResetForRound();
         playerTwo.ResetForRound();
     }
-
-    public void UpdatePhysics(float dt) { }
-
-    public void Render(float dt, object? obj = null) { }
 }

@@ -1,3 +1,4 @@
+using Bogz.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -144,7 +145,7 @@ internal sealed class ContentClient
             return;
         }
 
-        Console.WriteLine($"[Content] Asking the host for {missing.Count} files ({_download.TotalBytes / 1024} KB).");
+        Log.Info($"[Content] Asking the host for {missing.Count} files ({_download.TotalBytes / 1024} KB).");
         Phase = ContentPhase.Downloading;
 
         // In batches, a long list would not fit into one message
@@ -195,7 +196,7 @@ internal sealed class ContentClient
     private void Finish(string whose)
     {
         Phase = ContentPhase.Ready;
-        Console.WriteLine($"[Content] Playing with {whose} content ({_manifestHash[..12]}).");
+        Log.Info($"[Content] Playing with {whose} content ({_manifestHash[..12]}).");
 
         Acknowledge();
     }
@@ -214,7 +215,7 @@ internal sealed class ContentClient
     {
         Phase = ContentPhase.Failed;
         Error = reason;
-        Console.WriteLine($"[Content] Giving up: {reason}.");
+        Log.Warning($"[Content] Giving up: {reason}.");
 
         _download?.Dispose();
     }

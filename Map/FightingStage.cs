@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Numerics;
 
 using Bogz.Logging;
-using Bogz.Logging.Loggers;
 
 using Fighter2D.Content;
 using Fighter2D.Effects;
@@ -140,7 +139,7 @@ internal sealed class FightingStage : IDisposable
         int player = spawn.Properties.GetInt("player", 1);
         if (player < 1 || player > _spawns.Length)
         {
-            ConcurrentLogger.Instance.Log(LogLevel.Warning, $"Spawn '{spawn.Name}' is for player {player}, there are only {_spawns.Length}!");
+            Log.Warning($"Spawn '{spawn.Name}' is for player {player}, there are only {_spawns.Length}!");
             return;
         }
 
@@ -154,7 +153,7 @@ internal sealed class FightingStage : IDisposable
     {
         if (!emitter.Properties.TryGetFloat("emitter_rate", out float rate))
         {
-            ConcurrentLogger.Instance.Log(LogLevel.Warning, $"Emitter '{emitter.Name}' has no emitter_rate, or one that isn't a number!");
+            Log.Warning($"Emitter '{emitter.Name}' has no emitter_rate, or one that isn't a number!");
             return;
         }
 
@@ -169,7 +168,7 @@ internal sealed class FightingStage : IDisposable
         float radius = light.Properties.GetFloat("light_radius");
         if (radius <= 0.0f)
         {
-            ConcurrentLogger.Instance.Log(LogLevel.Warning, $"Light '{light.Name}' has a light_radius that isn't a number above zero!");
+            Log.Warning($"Light '{light.Name}' has a light_radius that isn't a number above zero!");
             return;
         }
 
@@ -198,7 +197,7 @@ internal sealed class FightingStage : IDisposable
         {
             if (!effects.AddEmitter(kind, position, rate))
             {
-                ConcurrentLogger.Instance.Log(LogLevel.Warning, $"Skipped a '{kind}' emitter, there is no such preset or its rate isn't above zero!");
+                Log.Warning($"Skipped a '{kind}' emitter, there is no such preset or its rate isn't above zero!");
             }
         }
 

@@ -19,7 +19,7 @@ internal static class Pushboxes
 
     // How hard they are shoved apart when one is right inside of the other, less the less they overlap.
     // Enough to win against somebody walking into it, not so much that anybody gets flung
-    private const float PUSH = 1400.0f;
+    private const float PUSH = 20000.0f;
 
     /// <summary>
     /// Called once per physics step with both fighters, shoves them apart if their pushboxes overlap.

@@ -1,3 +1,4 @@
+using Bogz.Logging;
 using System;
 
 using Fighter2D.Content;
@@ -33,7 +34,7 @@ internal class Program
         if (TryGetArgument(args, ARGUMENT_CONTENT, out string content))
         {
             if (Directory.Exists(Path.Combine(content, GameContent.MAPS_DIRECTORY))) GameContent.UseHome(content);
-            else Console.WriteLine($"There is no content in '{content}', going with what the game came with.");
+            else Log.Warning($"There is no content in '{content}', going with what the game came with.");
         }
 
         var engine = new GameEngine(new GameEngineConfiguration
@@ -96,7 +97,7 @@ internal class Program
     {
         if (MapLoader.TryFind(name, out map)) return true;
 
-        Console.WriteLine($"There is no map called '{name}', starting at the menu instead.");
+        Log.Warning($"There is no map called '{name}', starting at the menu instead.");
         return false;
     }
 }

@@ -80,7 +80,7 @@ internal sealed class MapPreview : GameObject
         base.UpdateState(dt);
     }
 
-    public override void Render(float dt, object? obj = null)
+    public override void Render(float dt)
     {
         // Loading a map makes a pile of things on the GPU, so it happens here on the render thread and not where it was asked for
         if (_wanted.FileName is { } file && file != _shownFile)
@@ -89,7 +89,7 @@ internal sealed class MapPreview : GameObject
             Load(_wanted);
         }
 
-        base.Render(dt, obj);
+        base.Render(dt);
     }
 
     private void Load(MapDefinition map)

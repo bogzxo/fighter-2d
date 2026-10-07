@@ -1,3 +1,4 @@
+using Bogz.Logging;
 using System;
 using System.IO;
 using System.Linq;
@@ -47,7 +48,7 @@ internal static class GameContent
     /// </summary>
     public static void UseLocal()
     {
-        if (Root != Home) Console.WriteLine("[Content] Back to our own content.");
+        if (Root != Home) Log.Info("[Content] Back to our own content.");
         Root = Home;
     }
 
@@ -56,7 +57,7 @@ internal static class GameContent
     /// </summary>
     public static void UseHome(string home)
     {
-        Console.WriteLine($"[Content] Our own content is in '{home}'.");
+        Log.Info($"[Content] Our own content is in '{home}'.");
         Home = Root = home;
     }
 
@@ -65,7 +66,7 @@ internal static class GameContent
     /// </summary>
     public static void Use(string root)
     {
-        Console.WriteLine($"[Content] Using the content in '{root}'.");
+        Log.Info($"[Content] Using the content in '{root}'.");
         Root = root;
     }
 

@@ -1,3 +1,4 @@
+using Bogz.Logging;
 using System;
 using System.IO;
 using System.Reflection;
@@ -48,7 +49,7 @@ internal static class PackedFiles
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
                 // Somewhere we can't write to. Whatever needs the file will complain about it better than we can
-                Console.Error.WriteLine($"'{target}' couldn't be unpacked: {exception.Message}");
+                Log.Warning($"'{target}' couldn't be unpacked: {exception.Message}");
             }
         }
     }

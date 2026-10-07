@@ -1,7 +1,6 @@
 using System.Numerics;
 
 using Bogz.Logging;
-using Bogz.Logging.Loggers;
 
 using Fighter2D.Character.Controllers;
 using Fighter2D.Content;
@@ -137,7 +136,7 @@ internal class Player() : Sprite(SIZE)
 
         if (!success)
         {
-            ConcurrentLogger.Instance.Log(LogLevel.Error, "Failed to load player sprite!");
+            Log.Error("Failed to load player sprite!");
         }
 
         Spritesheet = sheet;

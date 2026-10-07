@@ -1,3 +1,4 @@
+using Bogz.Logging;
 using System;
 using System.Numerics;
 
@@ -19,7 +20,7 @@ namespace Fighter2D.Networking;
 /// A few times a second each side also sends a snapshot of how its player is really doing, and whatever drifted gets fixed (see PlayerReconciler).
 /// It isn't rollback, but it isn't the old "send everything 60 times a second and pray" either.
 /// </summary>
-internal sealed class FightNetwork(NetSession session, RoundDirector round) : IGameComponent, IDisposable
+internal sealed class FightNetwork(NetSession session, RoundDirector round) : GameComponent, IDisposable
 {
     // How many ticks go by between two snapshots of our player, the inputs go out on every single one
     private const uint SNAPSHOT_INTERVAL = 6;
@@ -59,7 +60,7 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
     private PlayerController? Local => LocalPlayer?.Controller is { Player: not null, StateTracker: not null } controller ? controller : null;
     private PlayerController? Remote => RemotePlayer?.Controller is { Player: not null, StateTracker: not null } controller ? controller : null;
 
-    public void Initialize()
+    public override void Initialize()
     {
         session.Received += OnMessageReceived;
         session.PeerLeft += OnPeerLeft;
@@ -68,7 +69,7 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
         if (session.IsHost) round.PhaseChanged += OnPhaseChanged;
     }
 
-    public void UpdateState(float dt)
+    public override void UpdateState(float dt)
     {
         if (!session.IsConnected) return;
 
@@ -334,7 +335,7 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
 
     private void OnPeerLeft()
     {
-        Console.WriteLine("[FightNetwork] The other player rage quit!");
+        Log.Info("[FightNetwork] The other player rage quit!");
 
         // Nobody is left to ever unpause it
         RemotePaused = false;
@@ -342,9 +343,6 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
         // Whoever stays has won, there is nobody left to fight
         round.Forfeit(winner: 0);
     }
-
-    public void Render(float dt, object? obj = null) { }
-    public void UpdatePhysics(float dt) { }
 
     public void Dispose()
     {
@@ -358,8 +356,4 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : IG
         // The fight is what the session was for
         session.Dispose();
     }
-
-    public bool Enabled { get; set; } = true;
-    public string Name { get; set; } = "Fight Network";
-    public Entity Parent { get; set; } = null!;
 }

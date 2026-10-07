@@ -16,7 +16,7 @@ namespace Fighter2D.Character.Controllers;
 /// There is one of these per player and they are all the same, who presses the buttons is up to the <see cref="IPlayerInput"/> it is given.
 /// Everything runs on fixed ticks (see PlayerConfig.TICK_RATE) no matter how fast the game is drawn.
 /// </summary>
-internal sealed class PlayerController(IPlayerInput input) : IGameComponent
+internal sealed class PlayerController(IPlayerInput input) : GameComponent
 {
     // The most ticks one update catches up on. After a hitch the fight carries on from where it is rather than fast forwarding
     private const int MAX_TICKS_PER_UPDATE = 8;
@@ -37,10 +37,6 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
 
     public FightingMove CurrentMove => Playback?.Move ?? NoMove;
     public string ActiveAnimation { get; private set; } = "idle";
-
-    public bool Enabled { get; set; } = true;
-    public string Name { get; set; } = "Player Controller";
-    public Entity Parent { get; set; } = null!;
 
     /// <summary>
     /// The player we are fighting against.
@@ -118,7 +114,7 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
     // Whether we were knocked out on the last tick, for spotting the tick we go down on
     private bool _wasKnockedOut;
 
-    public void Initialize()
+    public override void Initialize()
     {
         Player = (Parent as Player)!;
         MoveList = Player.MoveList;
@@ -130,7 +126,7 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
         ChangeToMove(MoveIds.IDLE, forceRestart: true);
     }
 
-    public void UpdateState(float dt)
+    public override void UpdateState(float dt)
     {
         _tickTimer += dt;
 
@@ -147,7 +143,7 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
         }
     }
 
-    public void UpdatePhysics(float dt) => Movement?.UpdatePhysics(dt);
+    public override void UpdatePhysics(float dt) => Movement?.UpdatePhysics(dt);
 
     /// <summary>
     /// One tick of the fight for this player.
@@ -408,6 +404,4 @@ internal sealed class PlayerController(IPlayerInput input) : IGameComponent
         _frameProgress = 0.0f;
         ShowFrame();
     }
-
-    public void Render(float dt, object? obj = null) { }
 }

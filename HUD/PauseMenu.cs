@@ -21,7 +21,7 @@ namespace Fighter2D.HUD;
 /// Nobody is dropped straight back into the fight either. Once the pause is over (or the data has been reloaded) it counts
 /// down from three first, and the fight stays held until it gets to the end of that.
 /// </summary>
-internal sealed class PauseMenu : IGameComponent
+internal sealed class PauseMenu : GameComponent
 {
     private const string HINT = "[icon:dpad] choose    [icon:pad_a] pick    [icon:pad_b] carry on";
 
@@ -105,11 +105,7 @@ internal sealed class PauseMenu : IGameComponent
     public Action? ReloadData { get; init; }
     public Func<bool>? ToggleHitboxes { get; init; }
 
-    public bool Enabled { get; set; } = true;
-    public string Name { get; set; } = "Pause Menu";
-    public Entity Parent { get; set; } = null!;
-
-    public void Initialize()
+    public override void Initialize()
     {
         var camera = new Camera2D(GameEngine.Instance.WindowManager.ViewportSize);
         camera.Render(0);
@@ -190,7 +186,7 @@ internal sealed class PauseMenu : IGameComponent
         how();
     }
 
-    public void UpdateState(float dt)
+    public override void UpdateState(float dt)
     {
         if (_leaving) return;
 
@@ -267,9 +263,7 @@ internal sealed class PauseMenu : IGameComponent
         return false;
     }
 
-    public void UpdatePhysics(float dt) { }
-
-    public void Render(float dt, object? obj = null)
+    public override void Render(float dt)
     {
         if (HoldsFight) _compositor.Render(dt);
     }

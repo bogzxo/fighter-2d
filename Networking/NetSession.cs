@@ -1,3 +1,4 @@
+using Bogz.Logging;
 using System;
 using System.Linq;
 using System.Net;
@@ -72,11 +73,11 @@ internal sealed class NetSession : IDisposable
         {
             // Two players and one of them is us
             session._server.Start(PORT, 1, useMessageHandlers: false);
-            Console.WriteLine($"[NetSession] Hosting on port {PORT}.");
+            Log.Info($"[NetSession] Hosting on port {PORT}.");
         }
         catch (Exception e)
         {
-            Console.WriteLine($"[NetSession] Could not host on port {PORT}: {e.Message}");
+            Log.Warning($"[NetSession] Could not host on port {PORT}: {e.Message}");
             session.HasFailed = true;
         }
 
@@ -98,7 +99,7 @@ internal sealed class NetSession : IDisposable
         string target = address.Contains(':') ? address : $"{address}:{PORT}";
         if (!session._client.Connect(target, useMessageHandlers: false))
         {
-            Console.WriteLine($"[NetSession] '{target}' is not an address anybody could be at.");
+            Log.Warning($"[NetSession] '{target}' is not an address anybody could be at.");
             session.HasFailed = true;
         }
 
