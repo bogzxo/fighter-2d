@@ -59,8 +59,6 @@ internal class Program
         // Keeps the connection of an online fight alive from the lobby into the fight
         engine.AddEntity(new NetPump());
 
-        TmpDriver.Attach(engine); // TMP-HOOK
-
         if (TryGetArgument(args, ARGUMENT_MAP, out string mapName) && TryFindMap(mapName, out MapDefinition map))
         {
             TryGetArgument(args, ARGUMENT_CHARACTER, out string character);
