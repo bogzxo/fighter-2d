@@ -32,7 +32,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
     protected override void BuildUi(UILayout layout)
     {
         // The screen is laid out in Assets/ui/layouts/options.hor, what its rows choose between is decided here.
-        // So is the line about each of them. Labels don't wrap, so the ones that run long are broken in two by hand
+        // So is the line about each of them, which wraps by itself in the layout
         _ui = layout.Module.Compositor;
         _hint = layout.Get<Label>("hint");
         _description = layout.Get<Label>("description");

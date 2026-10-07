@@ -83,6 +83,7 @@ let hitboxes = compositor.selector({ parent: hitboxes_row, size: vec(400, 48), t
 
 // What the row the gamepad is on has to say for itself
 let description = compositor.label({
+    wrap: true,
     parent: panel,
     size: vec(708, 64),
     text: "",
