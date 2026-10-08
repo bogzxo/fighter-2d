@@ -168,7 +168,11 @@ internal class FightScene : Scene
             Lighting = Screen.WorldLighting,
 
             // The art is one world unit per pixel drawn at twice that, and the lighting follows the art
-            LightingPixelSize = 1.0f
+            LightingPixelSize = 1.0f,
+
+            // The corners go darker, the ground under a fighter's feet too, and the tile sets that brought an
+            // occlusion map of their own (japan did) have theirs taken as painted
+            AmbientOcclusion = { Enabled = true, Radius = 12.0f, Strength = 0.6f, Samples = 8 }
         });
 
         // The CRT last, on top of everything the others did to the picture.
