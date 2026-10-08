@@ -1035,7 +1035,7 @@
     <property name="light_height" type="float" value="90"/>
     <property name="light_intensity" type="float" value="0.45"/>
     <property name="light_radius" type="float" value="420"/>
-    <property name="light_reach" type="float" value="420"/>
+    <property name="light_reach" type="float" value="280"/>
     <property name="light_shadows" type="bool" value="true"/>
     <property name="light_size" type="float" value="14"/>
     <property name="light_sprite_shadow" type="float" value="0.85"/>
