@@ -146,10 +146,10 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
             },
             "Smears whatever moves along the way it is going,\nwhich hides that pixel art moves in steps.");
 
-        _settings.AddSwitch(layout, "fancy", GameOptions.Fancy,
+        _settings.AddSwitch(layout, "pathtraced", GameOptions.RenderPathtraced,
             on =>
             {
-                GameOptions.Fancy = on;
+                GameOptions.RenderPathtraced = on;
                 Screen.ApplyOptions(Canvas, _ui);
             },
             "Path traces the light of a fight, so it bounces off the arena\nand spills round corners. Wants a proper GPU.");

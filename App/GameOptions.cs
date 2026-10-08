@@ -72,7 +72,7 @@ internal static class GameOptions
 
     // Whether the lighting is path traced, light bouncing off the arena and spilling round corners, instead of the
     // cheap kind. Off until somebody with a GPU asks for it, it is a good few passes a frame
-    public static bool Fancy = false;
+    public static bool RenderPathtraced = false;
 
     // How big every UI is on top of fitting the window, 1 for as it was laid out
     public static float GuiScale = 1.0f;
@@ -129,7 +129,7 @@ internal static class GameOptions
             Transitions = HorReader.Named(options, "transitions", Transitions);
             Crt = HorReader.Bool(options, "crt", Crt);
             MotionBlur = HorReader.Bool(options, "motion_blur", MotionBlur);
-            Fancy = HorReader.Bool(options, "fancy", Fancy);
+            RenderPathtraced = HorReader.Bool(options, "fancy", RenderPathtraced);
             GuiScale = Closest(GuiScales, (float)HorReader.Number(options, "gui_scale", GuiScale));
             CameraZoom = Closest(CameraZooms, (float)HorReader.Number(options, "camera_zoom", CameraZoom));
 
@@ -172,7 +172,7 @@ internal static class GameOptions
         text.AppendLine($"    transitions: \"{Transitions.ToString().ToLowerInvariant()}\",");
         text.AppendLine($"    crt: {Write(Crt)},");
         text.AppendLine($"    motion_blur: {Write(MotionBlur)},");
-        text.AppendLine($"    fancy: {Write(Fancy)},");
+        text.AppendLine($"    fancy: {Write(RenderPathtraced)},");
         text.AppendLine($"    gui_scale: {GuiScale.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
         text.AppendLine($"    camera_zoom: {CameraZoom.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
         text.AppendLine($"    input_display: {Write(InputDisplay)},");

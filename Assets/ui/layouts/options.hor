@@ -63,9 +63,9 @@ let crt = compositor.selector({ parent: crt_row, size: vec(400, 48), text_scale:
 let motion_blur_row = compositor.stack({ parent: look_rows, direction: "horizontal", spacing: 28 });
 let motion_blur_title = compositor.label({ parent: motion_blur_row, size: vec(280, 0), text: "Motion blur", text_scale: 0.32, align: "left" });
 let motion_blur = compositor.selector({ parent: motion_blur_row, size: vec(400, 48), text_scale: 0.28 });
-let fancy_row = compositor.stack({ parent: look_rows, direction: "horizontal", spacing: 28 });
-let fancy_title = compositor.label({ parent: fancy_row, size: vec(280, 0), text: "Fancy lighting", text_scale: 0.32, align: "left" });
-let fancy = compositor.selector({ parent: fancy_row, size: vec(400, 48), text_scale: 0.28 });
+let pathtraced_row = compositor.stack({ parent: look_rows, direction: "horizontal", spacing: 28 });
+let pathtraced_title = compositor.label({ parent: pathtraced_row, size: vec(280, 0), text: "Pathtraced lighting", text_scale: 0.32, align: "left" });
+let pathtraced = compositor.selector({ parent: pathtraced_row, size: vec(400, 48), text_scale: 0.28 });
 
 // The fight tab
 let fight_rows = compositor.stack({ parent: tabs, spacing: 8, intro: "slide", intro_time: 0.25, intro_offset: vec(0, -24) });
