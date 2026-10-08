@@ -9,5 +9,4 @@ Source material. Nothing in here ships, the game only ever reads `Assets`.
 - `fonts/` two bitmap fonts nothing reads any more, the UI uses the engine's.
 - `tools/` the scripts that make the .ase files, see the top of each one for how.
 
-Old builds don't live in the repository any more, they were a couple of hundred megabytes of exes nobody diffs. The
-releases page is for those.
+Old builds are kept in `Build History`, one folder per build, that's the record of how the game looked along the way.

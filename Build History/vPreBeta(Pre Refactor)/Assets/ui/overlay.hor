@@ -1,0 +1,10 @@
+let sprite = {
+	sprite_size: { w: 128, h: 8},
+    grid_size: { w: 1, h: 2},
+    sprite_file: "bar.png",
+
+    animations: {
+        bg: {x: 0, y: 0, l: 1, t: 0.05 },
+        fg: {x: 0, y: 1, l: 1, t: 0.05 },
+    }
+}

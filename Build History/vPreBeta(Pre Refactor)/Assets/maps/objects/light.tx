@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+ <object type="light">
+  <properties>
+   <property name="light_colour" type="color" value="#ffffd9a8"/>
+   <property name="light_flicker" type="float" value="0"/>
+   <property name="light_glow" type="float" value="0"/>
+   <property name="light_intensity" type="float" value="1"/>
+   <property name="light_radius" type="float" value="200"/>
+   <property name="light_shadows" type="bool" value="true"/>
+  </properties>
+  <point/>
+ </object>
+</template>
