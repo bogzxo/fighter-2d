@@ -14,7 +14,7 @@ Anything the game wants of the GPU goes through the engine, there is no GL in he
 
 - `App/` the entry point (`Program.cs`, `--map <name>` drops straight into a fight, `--content <folder>` points at
   other content), `GameOptions.cs` (everything on the options screen, kept in `options.hor` next to the exe, with the
-  `Fancy` switch for the path traced lighting), `Screen.cs` (the effects every scene puts on, CRT, motion blur, which
+  `Fancy` switch for the path traced lighting), `Screen.cs` (the effects every scene puts on, the CRT, which
   lighting the world gets).
 - `Scenes/` one class per screen, `Menus/` for the menu layouts, `Widgets/` for the bits they share (the character
   portrait draws out of a character's atlas).

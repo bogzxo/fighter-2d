@@ -22,14 +22,6 @@ internal static class Screen
     // The art is drawn at twice its size, so that is how big one dot of the CRT is
     private const float CRT_PIXEL_SIZE = 2.0f;
 
-    // The motion blur of a fight, how long (in seconds) the shutter is open. Everything is smeared over as far as it
-    // moves in that time, which is what turns the rain into streaks and a kick into a swipe. Longer is dreamier and
-    // harder to read, a sixtieth is about what hides the stepping of the pixel art
-    private const float FIGHT_SHUTTER = 1.0f / 50.0f;
-
-    // The same for the menus, which only want their buttons to slide in smoothly
-    private const float MENU_SHUTTER = 1.0f / 60.0f;
-
     // Kept gentle, the menu buttons are laid over the screen and have to stay lined up with what is drawn behind them
     private static readonly Vector2 CrtWarp = new(1.0f / 64.0f, 1.0f / 48.0f);
 
@@ -104,35 +96,11 @@ internal static class Screen
     public static LightingMode WorldLighting => GameOptions.RenderPathtraced ? LightingMode.PathTraced : LightingMode.Direct;
 
     /// <summary>
-    /// Helper method to put motion blur on the world of a fight. It goes by how fast everything is going across the
-    /// screen, which the renderer keeps track of, so a street that goes by because the camera pans is smeared like
-    /// anything else that moves.
-    /// </summary>
-    public static void AddMotionBlur(DeferredRenderer2D world, Camera camera)
-    {
-        world.PostProcessing.Add(new MotionBlurEffect
-        {
-            Enabled = GameOptions.MotionBlur,
-            Shutter = FIGHT_SHUTTER
-        });
-    }
-
-    /// <summary>
-    /// Helper method to put motion blur on a UI. Only the UI gets blurred, whatever is behind it is left alone.
-    /// </summary>
-    public static void AddMotionBlur(UICompositor ui)
-    {
-        ui.PostProcessing.Add(new MotionBlurEffect { Enabled = GameOptions.MotionBlur, Shutter = MENU_SHUTTER });
-    }
-
-    /// <summary>
     /// Helper method to flip the effects of a scene that is already up to what the options say, for the options screen itself.
     /// </summary>
     public static void ApplyOptions(Renderer2D renderer, UICompositor? ui)
     {
         if (renderer.PostProcessing.Get<CrtEffect>() is { } crt) crt.Enabled = GameOptions.Crt;
         if (renderer is DeferredRenderer2D lit) lit.Lighting = WorldLighting;
-        if (renderer.PostProcessing.Get<MotionBlurEffect>() is { } blur) blur.Enabled = GameOptions.MotionBlur;
-        if (ui?.PostProcessing.Get<MotionBlurEffect>() is { } uiBlur) uiBlur.Enabled = GameOptions.MotionBlur;
     }
 }

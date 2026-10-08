@@ -138,14 +138,6 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
             },
             "Draws the game like it is on a crusty old picture tube.");
 
-        _settings.AddSwitch(layout, "motion_blur", GameOptions.MotionBlur,
-            on =>
-            {
-                GameOptions.MotionBlur = on;
-                Screen.ApplyOptions(Canvas, _ui);
-            },
-            "Smears whatever moves along the way it is going,\nwhich hides that pixel art moves in steps.");
-
         _settings.AddSwitch(layout, "pathtraced", GameOptions.RenderPathtraced,
             on =>
             {

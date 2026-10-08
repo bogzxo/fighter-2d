@@ -143,7 +143,10 @@ internal class MainMenuScene : MenuScene
                 return;
             }
 
-            _nav.Move(0, MenuInput.Vertical(gamepad));
+            // Up and down walk the menu, left and right walk a question's buttons, which sit side by side
+            int across = MenuInput.Horizontal(gamepad);
+            if (across != 0) _nav.Move(across, 0);
+            else _nav.Move(0, MenuInput.Vertical(gamepad));
 
             if (MenuInput.ConfirmPressed(gamepad))
             {

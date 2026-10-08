@@ -60,9 +60,6 @@ internal static class MenuLayouts
         compositor.DesignSize = DesignSize;
         compositor.Scale = GameOptions.GuiScale;
 
-        // The menus slide and pop into place, a bit of blur makes that look smooth
-        Screen.AddMotionBlur(compositor);
-
         return compositor;
     }
 }

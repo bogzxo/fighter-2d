@@ -67,9 +67,6 @@ internal static class GameOptions
     // Whether the game is drawn like it is on a crusty old CRT
     public static bool Crt = true;
 
-    // Whether moving things get smeared along the way they move, which hides that pixel art moves in steps
-    public static bool MotionBlur = true;
-
     // Whether the lighting is path traced, light bouncing off the arena and spilling round corners, instead of the
     // cheap kind. Off until somebody with a GPU asks for it, it is a good few passes a frame
     public static bool RenderPathtraced = false;
@@ -128,7 +125,6 @@ internal static class GameOptions
 
             Transitions = HorReader.Named(options, "transitions", Transitions);
             Crt = HorReader.Bool(options, "crt", Crt);
-            MotionBlur = HorReader.Bool(options, "motion_blur", MotionBlur);
             RenderPathtraced = HorReader.Bool(options, "fancy", RenderPathtraced);
             GuiScale = Closest(GuiScales, (float)HorReader.Number(options, "gui_scale", GuiScale));
             CameraZoom = Closest(CameraZooms, (float)HorReader.Number(options, "camera_zoom", CameraZoom));
@@ -171,7 +167,6 @@ internal static class GameOptions
         text.AppendLine($"    frame_limit: {FrameLimit},");
         text.AppendLine($"    transitions: \"{Transitions.ToString().ToLowerInvariant()}\",");
         text.AppendLine($"    crt: {Write(Crt)},");
-        text.AppendLine($"    motion_blur: {Write(MotionBlur)},");
         text.AppendLine($"    fancy: {Write(RenderPathtraced)},");
         text.AppendLine($"    gui_scale: {GuiScale.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
         text.AppendLine($"    camera_zoom: {CameraZoom.ToString(System.Globalization.CultureInfo.InvariantCulture)},");

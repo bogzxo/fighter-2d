@@ -171,9 +171,8 @@ internal class FightScene : Scene
             LightingPixelSize = 1.0f
         });
 
-        // Motion blur first and the CRT last, on top of everything the others did to the picture.
+        // The CRT last, on top of everything the others did to the picture.
         // The fight starts out behind the versus screen, so the arena starts out as a smear
-        Screen.AddMotionBlur(_renderer, _sceneCamera);
         _backdropBlur = _renderer.PostProcessing.Add(new BlurEffect { Radius = VERSUS_BLUR });
         Screen.AddCrt(_renderer, FightCamera.Zoom);
     }
