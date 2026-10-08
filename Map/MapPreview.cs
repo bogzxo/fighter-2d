@@ -57,6 +57,8 @@ internal sealed class MapPreview : GameObject
 
         _renderer = AddEntity(new DeferredRenderer2D((uint)_viewportSize.X, (uint)_viewportSize.Y)
         {
+            Lighting = Screen.WorldLighting,
+
             // The art is one world unit per pixel drawn at twice that, and the lighting follows the art
             LightingPixelSize = 1.0f
         });

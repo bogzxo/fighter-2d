@@ -165,6 +165,7 @@ internal class FightScene : Scene
         _renderer = AddEntity(new DeferredRenderer2D((uint)viewport.X, (uint)viewport.Y)
         {
             Ambient = _mapDefinition.Lighting.Ambient,
+            Lighting = Screen.WorldLighting,
 
             // The art is one world unit per pixel drawn at twice that, and the lighting follows the art
             LightingPixelSize = 1.0f

@@ -2,6 +2,7 @@ using System.Numerics;
 
 using Horizon.Engine;
 using Horizon.Rendering;
+using Horizon.Rendering.Lighting;
 using Horizon.Rendering.PostProcessing;
 using Horizon.Rendering.Transitions;
 using Horizon.UI;
@@ -99,6 +100,11 @@ internal static class Screen
     }
 
     /// <summary>
+    /// How the world of a fight is lit, by what the options say. The fancy one path traces.
+    /// </summary>
+    public static LightingMode WorldLighting => GameOptions.Fancy ? LightingMode.PathTraced : LightingMode.Direct;
+
+    /// <summary>
     /// Helper method to put motion blur on the world of a fight.
     /// </summary>
     /// <param name="camera">The camera the world is seen through. The blur follows it, so the street stays sharp when the camera pans.</param>
@@ -127,6 +133,7 @@ internal static class Screen
     public static void ApplyOptions(Renderer2D renderer, UICompositor? ui)
     {
         if (renderer.PostProcessing.Get<CrtEffect>() is { } crt) crt.Enabled = GameOptions.Crt;
+        if (renderer is DeferredRenderer2D lit) lit.Lighting = WorldLighting;
         if (renderer.PostProcessing.Get<MotionBlurEffect>() is { } blur) blur.Enabled = GameOptions.MotionBlur;
         if (ui?.PostProcessing.Get<MotionBlurEffect>() is { } uiBlur) uiBlur.Enabled = GameOptions.MotionBlur;
     }
