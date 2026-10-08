@@ -407,6 +407,9 @@
 </data>
  </layer>
  <layer id="1" name="playform" width="96" height="96">
+  <properties>
+   <property name="CastsShadows" type="bool" value="true"/>
+  </properties>
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -812,7 +815,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <layer id="5" name="colliders" width="96" height="96" tintcolor="#ff0000">
+ <layer id="5" name="colliders" width="96" height="96" visible="0" tintcolor="#ff0000">
   <properties>
    <property name="IsCollidable" type="bool" value="true"/>
   </properties>
@@ -921,7 +924,7 @@
     <property name="light_cone" type="float" value="170"/>
     <property name="light_cone_softness" type="float" value="0.65"/>
     <property name="light_flicker" type="float" value="0.15"/>
-    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
     <property name="light_sprite_shadow" type="float" value="0.55"/>
@@ -935,7 +938,7 @@
     <property name="light_cone" type="float" value="170"/>
     <property name="light_cone_softness" type="float" value="0.65"/>
     <property name="light_flicker" type="float" value="0.15"/>
-    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
     <property name="light_sprite_shadow" type="float" value="0.55"/>
@@ -949,7 +952,7 @@
     <property name="light_cone" type="float" value="170"/>
     <property name="light_cone_softness" type="float" value="0.65"/>
     <property name="light_flicker" type="float" value="0.15"/>
-    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
     <property name="light_sprite_shadow" type="float" value="0.55"/>
@@ -963,7 +966,7 @@
     <property name="light_cone" type="float" value="170"/>
     <property name="light_cone_softness" type="float" value="0.65"/>
     <property name="light_flicker" type="float" value="0.15"/>
-    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
     <property name="light_sprite_shadow" type="float" value="0.55"/>
@@ -977,7 +980,7 @@
     <property name="light_cone" type="float" value="170"/>
     <property name="light_cone_softness" type="float" value="0.65"/>
     <property name="light_flicker" type="float" value="0.15"/>
-    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
     <property name="light_sprite_shadow" type="float" value="0.55"/>
@@ -991,7 +994,7 @@
     <property name="light_cone" type="float" value="170"/>
     <property name="light_cone_softness" type="float" value="0.65"/>
     <property name="light_flicker" type="float" value="0.15"/>
-    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
     <property name="light_sprite_shadow" type="float" value="0.55"/>
@@ -1005,7 +1008,7 @@
     <property name="light_cone" type="float" value="170"/>
     <property name="light_cone_softness" type="float" value="0.65"/>
     <property name="light_flicker" type="float" value="0.15"/>
-    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
     <property name="light_sprite_shadow" type="float" value="0.55"/>
@@ -1019,7 +1022,7 @@
     <property name="light_cone" type="float" value="170"/>
     <property name="light_cone_softness" type="float" value="0.65"/>
     <property name="light_flicker" type="float" value="0.15"/>
-    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
     <property name="light_sprite_shadow" type="float" value="0.55"/>
@@ -1033,7 +1036,7 @@
     <property name="light_angle" type="float" value="-125"/>
     <property name="light_colour" type="color" value="#ff9fb4e6"/>
     <property name="light_height" type="float" value="90"/>
-    <property name="light_intensity" type="float" value="0.45"/>
+    <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="420"/>
     <property name="light_reach" type="float" value="280"/>
     <property name="light_shadows" type="bool" value="true"/>
