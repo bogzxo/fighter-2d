@@ -55,7 +55,7 @@ let logo = compositor.image({
     anchor: "top_left",
     pos: vec(12, 0),
     size: vec(500, 240),
-    file: "Assets/ui/new_logo.png",
+    file: "Assets/ui/logo.png",
     intro: "pop",
     intro_time: 0.7,
     intro_delay: 0.15
