@@ -22,6 +22,8 @@ internal static class DummyConfig
     public const float CLIMB_HEIGHT = 40f;         // How far above it the other player has to be for it to jump after them
     public const float CLIMB_RANGE = 140f;         // And how close to them it has to be for that
 
+    public const float ROUTE_TIME = 0.1f;          // How often it works out the way to the other player again, on the tiles of the stage (see StageRoute)
+
     public const float ROLL_IN_RANGE = 260f;       // How far away the other player has to be for it to roll towards them
     public const float ROLL_IN_CHANCE = 0.4f;      // How often it actually bothers when it thinks about it
     public const float ROLL_THINK_TIME = 1.0f;     // How often it thinks about it while they are that far away

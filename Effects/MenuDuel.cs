@@ -12,7 +12,7 @@ namespace Fighter2D.Effects;
 
 /// <summary>
 /// Two fighters going at each other forever, for the background of the main menu.
-/// Nobody plays them and nobody gets hurt (unfortunatly), they just loop through run up, kick, slide back and catch their breath.
+/// Nobody plays them and nobody gets hurt (unfortunatly), they just loop through run up, kick, back off and catch their breath.
 /// They get a physics world of their own with nothing in it but the ground and the two of them, which is what the sparks land on.
 /// </summary>
 internal class MenuDuel : GameObject
@@ -22,14 +22,28 @@ internal class MenuDuel : GameObject
     private const float GAP_FAR = 620;
     private const float GAP_NEAR = 170;
 
-    private const string CHARACTER_DIRECTORY = "Assets/sprites/characters/the_man";
+    // Who is in the blue corner and who is in the red one. Somebody the content doesn't have is whoever it has first
+    private const string CHARACTER_LEFT = "the_male";
+    private const string CHARACTER_RIGHT = "the_female";
+
+    // The animations the duel is made of. A character that doesn't have one of them stands that step out
+    private const string RUN = "run";
+    private const string KICK = "kick_high";
+    private const string BLOCK = "pull_heavy";
+    private const string BACK_OFF = "run_back";
+    private const string IDLE = "idle";
+
+    private static readonly string[] Animations = [RUN, KICK, BLOCK, BACK_OFF, IDLE];
+
+    // How many frames of animation a second the fighters run, back off and stand about at
+    private const float FRAME_RATE = 30;
 
     // The ground the sparks land on, how far it reaches to either side of the middle and how thick it is
     private const float GROUND_REACH = 4000;
     private const float GROUND_DEPTH = 200;
 
-    // How far into the kick (0 to 1) it connects
-    private const float STRIKE_MOMENT = 0.35f;
+    // How far into the kick (0 to 1) it connects, which is where the leg of the art is all the way out
+    private const float STRIKE_MOMENT = 0.45f;
 
     private static readonly Vector4 TintBlue = new(0.45f, 0.7f, 1.0f, 1.0f);
     private static readonly Vector4 TintRed = new(1.0f, 0.5f, 0.5f, 1.0f);
@@ -46,7 +60,7 @@ internal class MenuDuel : GameObject
     }
 
     // How long every step of the duel takes, in seconds
-    private static readonly float[] PhaseDurations = [0.85f, 0.55f, 0.8f, 1.1f];
+    private static readonly float[] PhaseDurations = [0.85f, 0.7f, 0.8f, 1.1f];
 
     /// <summary>
     /// Called the moment a kick lands, for whoever wants to shake along.
@@ -81,8 +95,8 @@ internal class MenuDuel : GameObject
         var spriteBatch = AddEntity<SpriteBatch>();
 
         // The fighter on the left is the blue corner, the one on the right the red one
-        _fighterLeft = AddEntity(CreateFighter(world, TintBlue));
-        _fighterRight = AddEntity(CreateFighter(world, TintRed));
+        _fighterLeft = AddEntity(CreateFighter(world, CHARACTER_LEFT, TintBlue));
+        _fighterRight = AddEntity(CreateFighter(world, CHARACTER_RIGHT, TintRed));
         _fighterRight.Flipped = true;
 
         spriteBatch.Add(_fighterLeft);
@@ -103,7 +117,7 @@ internal class MenuDuel : GameObject
         base.Initialize();
     }
 
-    private static MenuFighter CreateFighter(PhysicsWorld world, Vector4 tint) => new(FIGHTER_SIZE, CHARACTER_DIRECTORY)
+    private static MenuFighter CreateFighter(PhysicsWorld world, string character, Vector4 tint) => new(FIGHTER_SIZE, CharacterDefinition.Load(character), Animations)
     {
         BaseTint = tint,
         Tint = tint,
@@ -181,9 +195,10 @@ internal class MenuDuel : GameObject
         switch (_phase)
         {
             case DuelPhase.Approach:
-                int stride = (int)(_phaseTime * 16) % 12;
-                attacker.Show("run_loop", stride);
-                defender.Show("run_loop", (stride + 6) % 12);
+                // Out of step with each other, two people running in time look like a dance
+                int stride = (int)(_phaseTime * FRAME_RATE);
+                attacker.Show(RUN, stride % attacker.Length(RUN));
+                defender.Show(RUN, (stride + defender.Length(RUN) / 2) % defender.Length(RUN));
 
                 KickUpDust(1);
 
@@ -191,8 +206,10 @@ internal class MenuDuel : GameObject
                 return float.Lerp(GAP_FAR, GAP_NEAR, Ease.Apply(Easing.InOutSine, t));
 
             case DuelPhase.Strike:
-                attacker.Show("kick", Math.Min(4, (int)(t * 6)));
-                defender.Show("block", Math.Min(6, (int)(t * 9)));
+                attacker.ShowAt(KICK, t);
+
+                // The guard is up by the time the kick gets there and stays up
+                defender.ShowAt(BLOCK, MathF.Min(1.0f, t / STRIKE_MOMENT) * 0.5f);
 
                 if (!_struck && t > STRIKE_MOMENT)
                 {
@@ -203,8 +220,9 @@ internal class MenuDuel : GameObject
                 return GAP_NEAR;
 
             case DuelPhase.Recoil:
-                attacker.Show("run_stop", Math.Min(4, (int)(t * 5)));
-                defender.Show("run_stop", Math.Min(4, (int)(t * 5)));
+                int step = (int)(_phaseTime * FRAME_RATE);
+                attacker.Show(BACK_OFF, step % attacker.Length(BACK_OFF));
+                defender.Show(BACK_OFF, (step + defender.Length(BACK_OFF) / 2) % defender.Length(BACK_OFF));
 
                 if (t < 0.6f) KickUpDust(2);
 
@@ -212,8 +230,9 @@ internal class MenuDuel : GameObject
                 return float.Lerp(GAP_NEAR, GAP_FAR, Ease.Apply(Easing.OutQuad, t));
 
             default:
-                attacker.Show("idle", 0);
-                defender.Show("idle", 0);
+                int breath = (int)(_phaseTime * FRAME_RATE);
+                attacker.Show(IDLE, breath % attacker.Length(IDLE));
+                defender.Show(IDLE, breath % defender.Length(IDLE));
                 return GAP_FAR;
         }
     }

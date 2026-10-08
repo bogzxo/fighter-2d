@@ -15,12 +15,12 @@ internal static class MoveFileReader
     private static readonly HashSet<string> MoveKeys =
     [
         "input", "trigger", "priority", "stances", "damage", "knockback", "hitstun", "blockstun", "level", "knockdown", "meter_cost",
-        "cancellable", "steering", "turning", "status", "stance", "stance_after", "warns", "repeat", "phases", "stance_reroutes", "finish_reroutes"
+        "cancellable", "steering", "turning", "walk_scale", "status", "stance", "stance_after", "warns", "repeat", "phases", "stance_reroutes", "finish_reroutes"
     ];
 
     private static readonly HashSet<string> PhaseKeys =
     [
-        "animation", "frames", "hit", "cancel", "commit", "status", "status_frame", "loop_while", "until", "impulse", "effect", "effect_frames"
+        "animation", "start", "hold", "frames", "hit", "cancel", "commit", "status", "status_frame", "loop_while", "until", "impulse", "effect", "effect_frames"
     ];
 
     // What some keys used to be called, so an old file gets pointed at the new name instead of a shrug
@@ -81,6 +81,7 @@ internal static class MoveFileReader
             Cancellable = HorReader.Bool(move, "cancellable", true),
             AllowsSteering = steering,
             AllowsTurning = HorReader.Bool(move, "turning", steering),
+            WalkScale = Math.Clamp(HorReader.Number(move, "walk_scale", 1.0f), 0.0f, 4.0f),
             Status = ReadOptional<FighterStatus>(move, "status"),
             Stance = ReadOptional<Stance>(move, "stance"),
             StanceAfter = ReadOptional<Stance>(move, "stance_after"),
@@ -155,6 +156,8 @@ internal static class MoveFileReader
         return new MovePhase
         {
             Animation = phase.TryGetValue("animation", out var animation) ? HorReader.Text(animation, "animation") : null,
+            Start = (uint)Math.Max(0, HorReader.Number(phase, "start", 0)),
+            Hold = (uint)Math.Max(0, HorReader.Number(phase, "hold", 0)),
             Frames = (uint)HorReader.Number(phase, "frames", 0),
             HitFrame = (int)HorReader.Number(phase, "hit", -1),
             CancelFrame = (int)HorReader.Number(phase, "cancel", -1),

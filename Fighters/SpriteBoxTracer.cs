@@ -4,13 +4,10 @@ using System.Numerics;
 
 using Horizon.Core;
 
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-
 namespace Fighter2D.Fighters;
 
 /// <summary>
-/// Works out the hurtbox, the hitbox and the outline of one frame of a sprite sheet by looking at its pixels.
+/// Works out the hurtbox, the hitbox and the outline of one frame of animation by looking at its pixels.
 /// The hurtbox is the box around everything that is drawn. The hitbox is whatever limb sticks out in front of the body.
 /// </summary>
 internal static class SpriteBoxTracer
@@ -25,11 +22,12 @@ internal static class SpriteBoxTracer
     private static readonly FrameBoxes Empty = new(default, default, []);
 
     /// <summary>
-    /// Helper method to work out the boxes of the frame at the given spot of the sheet.
+    /// Helper method to work out the boxes of a frame.
     /// </summary>
-    public static FrameBoxes Trace(Image<Rgba32> image, int left, int top, int width, int height)
+    /// <param name="pixels">The frame as RGBA from its top left corner, 4 bytes a pixel.</param>
+    public static FrameBoxes Trace(ReadOnlySpan<byte> pixels, int width, int height)
     {
-        if (left < 0 || top < 0 || left + width > image.Width || top + height > image.Height) return Empty;
+        if (width < 1 || height < 1 || pixels.Length < width * height * 4) return Empty;
 
         // Which pixels are the character, and how many of them every column has
         var solid = new bool[width * height];
@@ -41,7 +39,7 @@ internal static class SpriteBoxTracer
         {
             for (int x = 0; x < width; x++)
             {
-                if (image[left + x, top + y].A < SOLID) continue;
+                if (pixels[(y * width + x) * 4 + 3] < SOLID) continue;
 
                 solid[y * width + x] = true;
                 columns[x]++;
@@ -53,16 +51,22 @@ internal static class SpriteBoxTracer
         // An empty frame can't be hit and hits nothing
         if (maxX < 0) return Empty;
 
-        int front = FindFrontOfBody(columns, minX, maxX);
-        Box hitbox = FindLimb(image, left, top, front, minX, minY, maxX, maxY, width, height);
+        int front = FindFrontOfBody(columns, minX, maxX, out int back);
+        Box hitbox = FindLimb(solid, front, minX, minY, maxX, maxY, width, height);
 
-        return new FrameBoxes(ToShare(minX, minY, maxX, maxY, width, height), hitbox, TraceOutline(solid, width, height));
+        // The body is as tall as what is drawn and as wide as the bulk of it. Standing that is the trunk, lying down it is all of them
+        return new FrameBoxes(
+            ToShare(minX, minY, maxX, maxY, width, height),
+            hitbox,
+            TraceOutline(solid, width, height),
+            ToShare(back, minY, front, maxY, width, height));
     }
 
     /// <summary>
     /// Helper method to find where the body ends, which is the last column going forwards from the fullest one that is still about as full.
     /// </summary>
-    private static int FindFrontOfBody(ReadOnlySpan<int> columns, int minX, int maxX)
+    /// <param name="back">Where it starts, found the same way going backwards.</param>
+    private static int FindFrontOfBody(ReadOnlySpan<int> columns, int minX, int maxX, out int back)
     {
         int peak = minX;
         float fullest = 0.0f;
@@ -75,20 +79,23 @@ internal static class SpriteBoxTracer
         int front = peak;
         while (front + 1 <= maxX && Smoothed(columns, front + 1) >= fullest * BODY_SHARE) front++;
 
+        back = peak;
+        while (back - 1 >= minX && Smoothed(columns, back - 1) >= fullest * BODY_SHARE) back--;
+
         return front;
     }
 
     /// <summary>
     /// Helper method to box whatever is drawn in front of the body, that is the fist or the foot doing the hitting.
     /// </summary>
-    private static Box FindLimb(Image<Rgba32> image, int left, int top, int front, int minX, int minY, int maxX, int maxY, int width, int height)
+    private static Box FindLimb(bool[] solid, int front, int minX, int minY, int maxX, int maxY, int width, int height)
     {
         int limbMinX = width, limbMaxX = -1, limbMinY = height, limbMaxY = -1, limbPixels = 0;
         for (int y = minY; y <= maxY; y++)
         {
             for (int x = front + 1; x <= maxX; x++)
             {
-                if (image[left + x, top + y].A < SOLID) continue;
+                if (!solid[y * width + x]) continue;
 
                 limbPixels++;
                 limbMinX = Math.Min(limbMinX, x); limbMaxX = Math.Max(limbMaxX, x);

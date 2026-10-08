@@ -17,6 +17,10 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
     private const float READY_TIME = 1.5f;
     private const float ROUND_OVER_TIME = 3.0f;
 
+    // A round that ended with somebody on the floor stays up for as long as the winner is busy gloating over them
+    // (see VictoryTaunt), but never longer than this
+    private const float LONGEST_ROUND_OVER_TIME = 10.0f;
+
     // How long the result of the match stays up at the most, and how soon a button can skip the rest of it
     private const float MATCH_OVER_TIME = 8.0f;
     private const float MATCH_OVER_SKIP = 1.5f;
@@ -114,6 +118,7 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
 
             case RoundPhase.RoundOver:
                 if (PhaseTime < ROUND_OVER_TIME) break;
+                if (PhaseTime < LONGEST_ROUND_OVER_TIME && (IsBusy(playerOne) || IsBusy(playerTwo))) break;
 
                 if (Score.IsOver) Enter(RoundPhase.MatchOver);
                 else StartRound();
@@ -287,6 +292,9 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
             Finished?.Invoke();
         }
     }
+
+    // Somebody in the middle of their victory lap, the next round can wait for that
+    private static bool IsBusy(Player player) => player.Controller?.Taunt is { IsBusy: true };
 
     private void ResetPlayers()
     {

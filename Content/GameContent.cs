@@ -15,7 +15,7 @@ internal static class GameContent
     public static readonly string[] Folders = ["Assets/data", "Assets/maps", "Assets/sprites"];
 
     // The kinds of file that count as content. Anything else lying around in those folders is left alone, and never accepted from anybody
-    public static readonly string[] Extensions = [".hor", ".tmx", ".tsx", ".tx", ".png"];
+    public static readonly string[] Extensions = [".hor", ".tmx", ".tsx", ".tx", ".png", ".ase", ".aseprite"];
 
     // Where the content of other machines is kept once it has been downloaded, one folder per set
     public const string CACHE_DIRECTORY = "cache/content";

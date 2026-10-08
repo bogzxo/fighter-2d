@@ -17,6 +17,9 @@ internal static class Fight
     // What every attack came to, the HUD listens in on this
     public static CombatLog CombatLog = new();
 
+    // The map the fight is on, for whoever needs to find their way around it
+    public static FightingStage? Stage;
+
     // Runs the rounds and says when the players are allowed to move
     public static RoundDirector? Round;
 
@@ -40,5 +43,6 @@ internal static class Fight
     {
         Round = null;
         Network = null;
+        Stage = null;
     }
 }

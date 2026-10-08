@@ -73,6 +73,15 @@ internal class MoveList
         }
     }
 
+    /// <summary>
+    /// The name of every animation any move of the list plays, each of them once.
+    /// </summary>
+    public IEnumerable<string> Animations => Moves.Values
+        .SelectMany(move => move.Phases)
+        .Select(phase => phase.Animation)
+        .OfType<string>()
+        .Distinct();
+
     public bool TryGetMove(string id, out FightingMove move)
     {
         if (Moves.TryGetValue(id, out var found))

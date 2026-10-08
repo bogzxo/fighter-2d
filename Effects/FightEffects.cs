@@ -101,34 +101,57 @@ internal class FightEffects : GameObject
     /// Dust kicked up along the ground by a jump or a roll.
     /// </summary>
     /// <param name="direction">The way the dust flies, -1 for left, 1 for right and 0 for both.</param>
-    public void Dust(Vector2 position, float direction, int count = 10)
+    public void Dust(Vector2 position, float direction, int count = 6)
     {
+        // Low and along the floor. It is a scuff of the feet, not a geyser
         if (direction != 0)
         {
-            ParticleSpray.Cone(_particles.Dust, position, new Vector2(direction, 0.35f), 0.7f, count, 30, 150);
+            ParticleSpray.Cone(_particles.Dust, position, new Vector2(direction, DUST_LIFT), DUST_SPREAD, count, DUST_MIN_SPEED, DUST_MAX_SPEED);
             return;
         }
 
-        ParticleSpray.Cone(_particles.Dust, position, new Vector2(-1, 0.35f), 0.7f, count / 2, 30, 150);
-        ParticleSpray.Cone(_particles.Dust, position, new Vector2(1, 0.35f), 0.7f, count / 2, 30, 150);
+        ParticleSpray.Cone(_particles.Dust, position, new Vector2(-1, DUST_LIFT), DUST_SPREAD, count / 2, DUST_MIN_SPEED, DUST_MAX_SPEED);
+        ParticleSpray.Cone(_particles.Dust, position, new Vector2(1, DUST_LIFT), DUST_SPREAD, count / 2, DUST_MIN_SPEED, DUST_MAX_SPEED);
     }
+
+    // How much of the way dust is thrown is up rather than along, how wide it fans out (in radians) and how fast it leaves
+    private const float DUST_LIFT = 0.22f;
+    private const float DUST_SPREAD = 0.5f;
+    private const float DUST_MIN_SPEED = 25.0f;
+    private const float DUST_MAX_SPEED = 95.0f;
 
     /// <summary>
     /// Dust thrown to both sides by a landing, the longer the fall the bigger the cloud.
     /// </summary>
     public void Land(Vector2 position, float fallDuration)
     {
-        Dust(position, 0, Math.Clamp((int)(fallDuration * 80), 8, 48));
-        Shockwave(position, Math.Clamp(fallDuration * 220, 50, 110), Math.Clamp(fallDuration * 500, 90, 240));
+        Dust(position, 0, Math.Clamp((int)(fallDuration * 40), 4, 18));
+
+        // Enough to ruffle whatever is lying about (blood, puddles), not enough to throw it over anybody's head
+        Shockwave(position, Math.Clamp(fallDuration * 180, 40, 80), Math.Clamp(fallDuration * 220, 40, 110));
     }
 
+    // How many puffs of haze a second hang around a head. It used to be three for every frame of animation, which for a
+    // character that plays at 60 frames a second buried them in the stuff
+    private const float HAZE_PER_SECOND = 22.0f;
+
+    // What is owed of a puff, the rate rarely comes to a whole number of them per frame
+    private float _hazeOwed;
+
     /// <summary>
-    /// The haze around the head of a player in hitstun, has to be called every frame for as long as it lasts.
+    /// The haze around the head of a player in hitstun, has to be called every frame of their animation for as long as it lasts.
     /// </summary>
-    public void Haze(Vector2 position)
+    /// <param name="frameRate">How many frames a second the caller calls this, so that a character who animates fast doesn't get more of it.</param>
+    public void Haze(Vector2 position, float frameRate)
     {
-        const float radius = 18f;
-        Span<Particle2D> particles = stackalloc Particle2D[3];
+        const float radius = 16f;
+
+        _hazeOwed += HAZE_PER_SECOND / MathF.Max(1.0f, frameRate);
+        int count = Math.Min((int)_hazeOwed, 4);
+        if (count < 1) return;
+        _hazeOwed -= count;
+
+        Span<Particle2D> particles = stackalloc Particle2D[count];
 
         for (int i = 0; i < particles.Length; i++)
         {

@@ -10,15 +10,22 @@ internal static class CombatRules
        A move starts out BASE_DISADVANTAGE ticks minus on hit and earns STARTUP_REWARD ticks back for every tick of startup.
        So jabs are a bit minus and the victim can mash out of them with something fast.
        Slow moves end up plus, which is the window to link a quick one after them. That is a combo. */
-    public const float BASE_DISADVANTAGE = 6.0f;
+    public const float BASE_DISADVANTAGE = 4.0f;
     public const float STARTUP_REWARD = 0.75f;
     public const float MAX_ADVANTAGE = 24.0f;
-    public const int MIN_HITSTUN = 4;
+
+    /* The least hitstun any hit gives. It used to be 4 ticks, which is over before anybody has seen it: a quick jab with next to
+       no recovery came out at the minimum, the victim never looked hit and could act the frame after. A fifth of a second is
+       long enough to read as a hit and still short enough to mash out of */
+    public const int MIN_HITSTUN = 12;
+
+    // Every point of damage holds the victim a little longer on top, so a heavy hit feels heavier than a jab with the same startup
+    public const float HITSTUN_PER_DAMAGE = 0.6f;
 
     /* Blocking. A blocked hit still costs something: the blocker is stuck in their block for a share of the hitstun,
        gets shoved back, and takes a sliver of the damage as chip. Chip never finishes anybody off */
     public const float BLOCKSTUN_SCALE = 0.7f;
-    public const int MIN_BLOCKSTUN = 3;
+    public const int MIN_BLOCKSTUN = 7;
     public const float CHIP_DAMAGE_SCALE = 0.12f;
     public const float BLOCK_PUSHBACK = 420.0f;
 
@@ -40,7 +47,7 @@ internal static class CombatRules
 
     /* Knockdowns. How long somebody lies on the floor before they get up, during which nothing can hit them.
        Getting up has i-frames of its own, those are the get_up move's business */
-    public const int KNOCKDOWN_TICKS = 40;
+    public const int KNOCKDOWN_TICKS = 55;
 
     // How long both players freeze on the frame a hit landed
     public const int HITSTOP = 4;

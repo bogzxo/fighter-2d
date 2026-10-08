@@ -54,11 +54,14 @@ internal sealed class PlayerMovement(PlayerController controller)
             _positionError -= step;
         }
 
-        // rudementary temporary move logic
-        float direction = controller.CanSteer ? controller.Inputs.Steering : 0;
+        // The winner of a round walks themselves over to the loser, see VictoryTaunt
+        bool strolling = controller.Taunt.IsWalking;
+
+        float direction = strolling ? controller.Taunt.Steering : controller.CanSteer ? controller.Inputs.Steering : 0;
         if (direction == 0) return;
 
-        float targetVelocity = direction * Player.Character.WalkSpeed * controller.Input.WalkSpeedScale;
+        float pace = strolling ? controller.Taunt.WalkScale : controller.Input.WalkSpeedScale * controller.CurrentMove.WalkScale;
+        float targetVelocity = direction * Player.Character.WalkSpeed * pace;
         float velocityDiff = targetVelocity - body.Velocity.X;
 
         body.ApplyForce(new Vector2(velocityDiff * body.Mass * WALK_ACCELERATION, 0));

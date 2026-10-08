@@ -23,6 +23,11 @@ public static class MoveIds
     public const string KNOCKED_DOWN = "knocked_down";
     public const string GET_UP = "get_up";
 
+    // What the winner of a round plays over whoever they knocked out, if the move list has it (see VictoryTaunt),
+    // and the move they walk over there with
+    public const string VICTORY = "victory";
+    public const string RUN = "run";
+
     // For a controller that hasn't picked a move yet
     public const string NONE = "";
 }

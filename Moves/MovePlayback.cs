@@ -28,8 +28,14 @@ internal sealed class MovePlayback(PlayerController controller)
     // How many frames the phase lasts before it is over or loops
     private uint _frames;
 
-    // The frame that gets drawn next, and how many frames of the phase have had their go at an effect
-    private uint _nextShown, _effectFrame;
+    // The frame of the animation the playing started on, how many frames of the move have been played of it since and how
+    // many of those every frame of the animation is held for. Which frame gets drawn next comes out of the three
+    private uint _shownStart, _shownSteps, _hold = 1;
+
+    // How many frames of the phase have had their go at an effect
+    private uint _effectFrame;
+
+    private uint NextShown => _shownStart + _shownSteps / _hold;
 
     // Whether a phase is playing, and whether any phase has spent a frame since the move last started over
     private bool _inPhase, _tookTime;
@@ -41,7 +47,8 @@ internal sealed class MovePlayback(PlayerController controller)
     {
         Move = move;
         Phase = -1;
-        Frame = Shown = _frames = _nextShown = _effectFrame = 0;
+        Frame = Shown = _frames = _shownStart = _shownSteps = _effectFrame = 0;
+        _hold = 1;
         _inPhase = _tookTime = IsFinished = false;
 
         var state = controller.State;
@@ -80,7 +87,8 @@ internal sealed class MovePlayback(PlayerController controller)
                     PlayFrame(phase, (int)Frame);
 
                     Frame++;
-                    Shown = _nextShown++;
+                    Shown = NextShown;
+                    _shownSteps++;
                     _tookTime = true;
                     return true;
                 }
@@ -150,7 +158,11 @@ internal sealed class MovePlayback(PlayerController controller)
 
         controller.PlayAnimation(animation);
         Shown = shown;
-        _nextShown = shown + 1;
+
+        // Carries on from the frame after, at the pace of the phase it was dropped into
+        _hold = _inPhase ? Math.Max(1, move.Phases[Phase].Hold) : 1;
+        _shownStart = shown + 1;
+        _shownSteps = 0;
     }
 
     private bool ShouldLeave(MovePhase phase) =>
@@ -179,14 +191,23 @@ internal sealed class MovePlayback(PlayerController controller)
         if (phase.Animation is not null)
         {
             controller.PlayAnimation(phase.Animation);
-            _nextShown = 0;
+            _shownStart = phase.Start;
+            _shownSteps = 0;
+            _hold = Math.Max(1, phase.Hold);
+        }
+        else if (phase.Hold > 0 && phase.Hold != _hold)
+        {
+            // The same animation carries on at another pace, from the frame it is on
+            _shownStart = NextShown;
+            _shownSteps = 0;
+            _hold = phase.Hold;
         }
 
         _frames = LengthOf(phase);
         Frame = 0;
     }
 
-    private uint LengthOf(MovePhase phase) => phase.Frames > 0 ? phase.Frames : controller.GetAnimationLength(phase.Animation);
+    private uint LengthOf(MovePhase phase) => phase.LengthFor(controller.GetAnimationLength(phase.Animation));
 
     /// <summary>
     /// Helper method for everything a phase does on one of its frames.
@@ -198,7 +219,7 @@ internal sealed class MovePlayback(PlayerController controller)
         if (phase.Status is { } status && frame == phase.StatusFrame) controller.State.CurrentStatus = status;
 
         // The hitbox is read off the frame that is being drawn
-        if (frame == phase.HitFrame) controller.ThrowHit(_nextShown);
+        if (frame == phase.HitFrame) controller.ThrowHit(NextShown);
 
         if (phase.Effect is not null && (phase.EffectFrames == 0 || _effectFrame < phase.EffectFrames))
         {
@@ -224,6 +245,9 @@ internal sealed class MovePlayback(PlayerController controller)
     private bool IsHeld()
     {
         if (Move.Status == FighterStatus.Blocking && controller.State.IsInBlockstun) return true;
+
+        // Somebody walking over to gloat is walking, whatever their thumbs are doing
+        if (Move.Id == MoveIds.RUN && controller.Taunt.IsWalking) return true;
 
         foreach (InputFlags signature in Move.InputSignatures)
         {

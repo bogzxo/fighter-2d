@@ -1,9 +1,10 @@
 // The characters of the game, in the order the character select screen shows them.
-// Each one has a folder in Assets/sprites/characters with its sprite sheet and the definition of its animations.
-// The source art of a sheet is in Art/characters, which the game doesn't load and doesn't send to whoever joins.
+// Each one has a folder in Assets/sprites/characters with its .ase file in it, which Aseprite opens and the game reads as it is.
+// Every tag of the file is an animation by the name of the tag, see Art/tools/build_ase.py for how the files were first put together.
+// What the files were made from is in Art/characters, which the game doesn't load and doesn't send to whoever joins.
 //
 //   pretty_name   what the character is called on screen
-//   sprites       the folder its sprite sheet and animation definition are in
+//   sprites       its .ase file. A folder with a spritesheet.png and a definition.hor in it (how characters used to come) works as well
 //   moves         the files its moves come from. A move in a later file replaces the one of the same name from an earlier one,
 //                 so a character can share most of its moves with another and only change a few
 //   walk_speed    the speed it walks up to
@@ -13,26 +14,44 @@
 //                 how a character really plays is up to its moves and the numbers above
 
 let characters = {
-    the_man: {
-        pretty_name: "The Man",
-        sprites: "Assets/sprites/characters/the_man",
+    the_male: {
+        pretty_name: "The Male",
+        sprites: "Assets/sprites/characters/the_male/the_male.ase",
         moves: {
-            movement: "Assets/data/movement_moves.hor",
-            fighting: "Assets/data/fighting_moves.hor"
+            shared: "Assets/data/mannequin_moves.hor",
+            own: "Assets/data/the_male_moves.hor"
         },
-        walk_speed: 2000,
-        frame_rate: 24,
+        walk_speed: 1500,
+        frame_rate: 45,
         stats: {
-            speed: 50,
+            speed: 45,
             health: 50,
-            bulk: 50,
+            bulk: 70,
+            complexity: 40
+        }
+    },
+
+    the_female: {
+        pretty_name: "The Female",
+        sprites: "Assets/sprites/characters/the_female/the_female.ase",
+        moves: {
+            shared: "Assets/data/mannequin_moves.hor",
+            own: "Assets/data/the_female_moves.hor"
+        },
+        walk_speed: 1750,
+        frame_rate: 45,
+        scale: 0.95,
+        stats: {
+            speed: 70,
+            health: 50,
+            bulk: 40,
             complexity: 50
         }
     },
 
     cammy: {
         pretty_name: "Cammy",
-        sprites: "Assets/sprites/characters/cammy",
+        sprites: "Assets/sprites/characters/cammy/cammy.ase",
         moves: {
             movement: "Assets/data/movement_moves.hor",
             fighting: "Assets/data/fighting_moves.hor",
@@ -46,6 +65,25 @@ let characters = {
             health: 40,
             bulk: 30,
             complexity: 65
+        }
+    },
+
+    // The one the game started out with. He has the plain move list every other one was built on top of: a kick and a punch
+    // on two buttons each, a jump kick, a block and a roll, and nothing that costs meter
+    the_man: {
+        pretty_name: "The Man",
+        sprites: "Assets/sprites/characters/the_man/the_man.ase",
+        moves: {
+            movement: "Assets/data/movement_moves.hor",
+            fighting: "Assets/data/fighting_moves.hor"
+        },
+        walk_speed: 2000,
+        frame_rate: 24,
+        stats: {
+            speed: 50,
+            health: 50,
+            bulk: 50,
+            complexity: 20
         }
     }
 }

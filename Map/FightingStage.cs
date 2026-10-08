@@ -46,6 +46,12 @@ internal sealed class FightingStage : IDisposable
     /// </summary>
     public bool HasBounds => Min.X <= Max.X;
 
+    /// <summary>
+    /// Finds the way from one spot of the stage to another around its solid tiles, for anybody who walks somewhere without
+    /// a player steering them (see StageRoute). Null for a stage nobody stands on.
+    /// </summary>
+    public TileMapPathfinder? Paths { get; }
+
     private readonly OcclusionMap2D _occlusion;
 
     // The stuff the map asked for, kept until there is somebody to hand it to
@@ -76,7 +82,11 @@ internal sealed class FightingStage : IDisposable
             .WithProperty("emitter_type", ReadEmitter)
             .WithProperty("light_radius", ReadLight));
 
-        if (world is not null) BuildColliders(world);
+        if (world is not null)
+        {
+            BuildColliders(world);
+            Paths = Map.CreatePathfinder();
+        }
         renderer.Occlusion = _occlusion = BuildOcclusion();
         MeasureBounds();
 

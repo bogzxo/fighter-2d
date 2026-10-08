@@ -139,7 +139,7 @@ internal class FightScene : Scene
 
         CreateRenderer(viewport);
 
-        _stage = new FightingStage(_mapDefinition, _renderer, _world);
+        Fight.Stage = _stage = new FightingStage(_mapDefinition, _renderer, _world);
         Vector2 ourSpawn = StartsOnTheRight ? _stage.RightSpawn : _stage.LeftSpawn;
         Vector2 theirSpawn = StartsOnTheRight ? _stage.LeftSpawn : _stage.RightSpawn;
 
@@ -343,8 +343,7 @@ internal class FightScene : Scene
         Log.Info("[Fight] Reading the data again.");
 
         // What was worked out from the old files is no good for the new ones
-        CharacterBoxes.Forget();
-        CharacterPortrait.Forget();
+        CharacterArt.Forget();
 
         var resume = new FightResume(_round.TakeSnapshot(), FighterResume.Of(Fight.PlayerOne), FighterResume.Of(Fight.PlayerTwo));
 

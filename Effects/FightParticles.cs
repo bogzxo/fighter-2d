@@ -159,9 +159,12 @@ internal sealed class FightParticles
     {
         StartColor = new Vector3(0.85f, 0.82f, 0.75f),
         EndColor = new Vector3(0.3f, 0.3f, 0.3f),
-        ParticleSize = 2.0f,
-        MaxAge = 0.6f,
-        Gravity = new Vector2(0, 60)
+        ParticleSize = 1.5f,
+        MaxAge = 0.45f,
+
+        // Down, and properly. It used to be 60 the other way, which had every puff drifting up past the head of whoever
+        // kicked it up like there was no gravity at all. Dust hops off the floor and is back on it before it is gone
+        Gravity = new Vector2(0, -420)
     };
 
     /// <summary>
@@ -171,7 +174,7 @@ internal sealed class FightParticles
     {
         StartColor = new Vector3(0.8f, 0.7f, 1.0f),
         EndColor = new Vector3(0.3f, 0.2f, 0.5f),
-        ParticleSize = 2.5f,
+        ParticleSize = 2.0f,
         MaxAge = 0.9f,
         Gravity = new Vector2(0, 30),
 

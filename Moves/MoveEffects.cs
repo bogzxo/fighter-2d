@@ -22,18 +22,18 @@ internal static class MoveEffects
         {
             case JUMP:
                 Fight.Effects.Dust(player.FeetPosition, 0);
-                Fight.Effects.Shockwave(player.FeetPosition, 45, 110);
+                Fight.Effects.Shockwave(player.FeetPosition, 40, 45);
                 break;
 
             case ROLL:
                 // A trail of dust behind us. This comes every frame of the roll so each puff has to be a small one
-                Fight.Effects.Dust(player.FeetPosition, -player.Facing, 8);
-                Fight.Effects.Shockwave(player.FeetPosition, 70, 45);
+                Fight.Effects.Dust(player.FeetPosition, -player.Facing, 3);
+                Fight.Effects.Shockwave(player.FeetPosition, 60, 30);
                 break;
 
             case HAZE:
                 // The little cloud around the head of somebody who just got their bell rung
-                Fight.Effects.Haze(player.HeadPosition);
+                Fight.Effects.Haze(player.HeadPosition, player.Character.FrameRate);
                 break;
         }
     }

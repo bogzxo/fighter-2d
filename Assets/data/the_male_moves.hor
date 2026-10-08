@@ -1,0 +1,77 @@
+// What The Male does differently. Everything else is in mannequin_moves.hor, and fighting_moves.hor explains what the keys mean.
+//
+// He is the heavy one of the two. His big buttons hurt more and take a few frames longer to come out, and where she steps back
+// out of trouble he shoves it away:
+//   LeftTrigger   shove, both hands to the chest. Next to no damage, but whoever eats it ends up across the stage
+
+let moves = {
+    punch_right: {
+        input: "Y",
+        trigger: "pressed",
+        priority: 34,
+        stances: "standing | crouching",
+        damage: 11,
+        knockback: vec(550, 0),
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: {
+            crouching: "uppercut"
+        },
+        phases: {
+            swing: { animation: "punch_straight", start: 8, frames: 31, hit: 16 }
+        }
+    },
+
+    kick_right: {
+        input: "B",
+        trigger: "pressed",
+        priority: 30,
+        stances: "standing | falling | jumping | crouching",
+        damage: 12,
+        knockback: vec(620, 350),
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: {
+            jumping: "jump_kick",
+            falling: "jump_kick",
+            crouching: "sweep"
+        },
+        phases: {
+            swing: { animation: "kick_head", start: 4, frames: 35, hit: 13 }
+        }
+    },
+
+    spin_kick: {
+        input: "A + B",
+        trigger: "pressed",
+        priority: 5,
+        stances: "standing | crouching",
+        damage: 16,
+        knockback: vec(950, 1600),
+        knockdown: true,
+        meter_cost: 25,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        phases: {
+            wheel: { animation: "kick_spin_high", start: 4, frames: 38, hit: 17, impulse: vec(900, 0) }
+        }
+    },
+
+    shove: {
+        input: "LeftTrigger",
+        trigger: "pressed",
+        priority: 38,
+        stances: "standing",
+        damage: 3,
+        knockback: vec(1300, 300),
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        phases: {
+            push: { animation: "push", start: 10, frames: 30, hit: 12, impulse: vec(600, 0) }
+        }
+    }
+}

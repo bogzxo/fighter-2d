@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Numerics;
 
 using Bogz.Logging;
@@ -24,6 +25,9 @@ internal class Player() : Sprite(SIZE)
 
     // The size a character is drawn at before its own scale
     private static readonly Vector2 SIZE = new(128);
+
+    // The animation a character shows before its controller has said anything
+    private const string IDLE_ANIMATION = "idle";
 
     internal PlayerController Controller { get; init; } = null!;
     public Vector2 SpawnPosition { get; set; }
@@ -74,6 +78,11 @@ internal class Player() : Sprite(SIZE)
 
     public MoveList MoveList { get; private set; } = null!;
     public PhysicsBodyComponent2D PhysicsBody { get; internal set; } = null!;
+
+    /// <summary>
+    /// What of the player stands on the map and bumps into it, shaped like whatever frame they are showing. See <see cref="PlayerBody"/>.
+    /// </summary>
+    public PlayerBody Body { get; private set; } = null!;
 
     /// <summary>
     /// The hurtbox and hitbox of the player, see <see cref="PlayerBoxes"/>.
@@ -135,7 +144,7 @@ internal class Player() : Sprite(SIZE)
     {
         base.UpdateState(dt);
 
-        if (Controller is not null && AnimationManager is not null) Boxes?.Sync();
+        if (Controller is not null && Atlas is not null) Boxes?.Sync();
     }
 
     public override void Initialize()
@@ -151,56 +160,55 @@ internal class Player() : Sprite(SIZE)
 
         Boxes = new PlayerBoxes(this, boxes);
 
-        SetAnimation("idle");
         AddComponent(Controller);
     }
 
     /// <summary>
-    /// Helper method to load the sprite sheet of the character and everything that depends on its animations.
+    /// Helper method to load the art of the character and everything that depends on its animations.
     /// </summary>
     private CharacterBoxes? LoadSprites()
     {
-        string directory = GameContent.PathOf(Character.SpriteDirectory);
-        var (success, sheet, manager) = SpriteSheet.LoadSpriteSheetFromDirectory(directory);
-
-        if (!success)
-        {
-            Log.Error("Failed to load player sprite!");
-        }
-
-        Spritesheet = sheet;
-        AnimationManager = manager;
-
-        // The controller decides which frame is shown, not the animation manager
-        AnimationManager.AnimateFrames = false;
-
         // Some characters are bigger than others, and everything about them is
         Scale = Character.Scale;
         Transform.Size = SIZE * Scale;
         StencilTransform.Size = SIZE * Scale;
 
-        // A sheet that isn't drawn at its own size would come out with uneven pixels otherwise
-        Smooth = success && sheet.SpriteSize != SIZE * Scale;
+        // The controller decides which frame is shown, the sprite doesn't play anything by itself
+        Animated = false;
+
+        CharacterArt? art = CharacterArt.Load(Character);
+        if (art is null)
+        {
+            Log.Error("Failed to load player sprite!");
+            MoveList.Bake(_ => 1, Character.FrameRate);
+            return null;
+        }
+
+        // Every animation a move can play is in the atlas before the fight starts, nothing turns up late
+        art.Prepare(MoveList.Animations);
+
+        // Whatever the character has to stand around in, the controller picks the real one on its first tick
+        string first = art.Has(IDLE_ANIMATION) ? IDLE_ANIMATION : MoveList.Animations.FirstOrDefault(art.Has) ?? IDLE_ANIMATION;
+        ConfigureAtlas(art.Atlas, art.Sprites, first);
+
+        // Art that isn't drawn at its own size would come out with uneven pixels otherwise
+        Smooth = art.FrameSize != SIZE * Scale;
 
         // The frame data of a move depends on how long the animations it plays are
-        MoveList.Bake(
-            animation => animation is not null && manager.Animations.TryGetValue(animation, out var found) ? found.Length : 1,
-            Character.FrameRate);
+        MoveList.Bake(animation => (uint)Math.Max(1, art.FrameCount(animation)), Character.FrameRate);
 
-        return success ? CharacterBoxes.Load(directory, manager) : null;
+        return art.Boxes;
     }
 
     /// <summary>
-    /// Helper method to create the body that stands on the map. The boxes that get hit are not part of it, those follow the sprite.
+    /// Helper method to create the body that stands on the map. What it is shaped like follows the sprite frame by frame (see
+    /// <see cref="PlayerBody"/>), and so do the boxes that get hit, which are not part of it.
     /// </summary>
     private void CreateBody()
     {
         var world = Parent.GetComponent<PhysicsWorld>();
         PhysicsBody = AddComponent(world.CreateBody(PhysicsBodySimulationType.Dynamic, SpawnPosition));
-
-        PhysicsBody.CreateCircleFixture(Vector2.UnitY * (-48 * Scale), 16.0f * Scale);
-        PhysicsBody.CreateCircleFixture(new Vector2(0, -32 * Scale), 16.0f * Scale);
-        PhysicsBody.CreateCircleFixture(Vector2.UnitY * (-64 * Scale), 12.0f * Scale, true, FEET_TAG);
+        Body = new PlayerBody(this, world);
 
         PhysicsBody.CollisionGroup = FIGHTER_GROUP;
         PhysicsBody.LinearDrag = 16.0f;

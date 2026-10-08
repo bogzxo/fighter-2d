@@ -1,14 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Numerics;
 
 using Bogz.Logging;
 
 using Horizon.Rendering.Spriting;
-
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace Fighter2D.Fighters;
 
@@ -16,91 +12,76 @@ namespace Fighter2D.Fighters;
 /// The boxes of one frame of animation, plus the outline of what is drawn on it (as line pieces of two points each).
 /// Everything is a share of the frame where (0, 0) is its middle, x is the way the character faces and y is up.
 /// </summary>
-internal readonly record struct FrameBoxes(Box Hurtbox, Box Hitbox, Vector2[] Outline);
+/// <param name="Hurtbox">The box around everything that is drawn, which is where the character can be hit.</param>
+/// <param name="Hitbox">The limb that sticks out in front, which is what the character hits with.</param>
+/// <param name="Body">The bulk of the character without the limbs that stick out, which is what stands on the map and bumps into it.</param>
+internal readonly record struct FrameBoxes(Box Hurtbox, Box Hitbox, Vector2[] Outline, Box Body = default);
 
 /// <summary>
-/// The hurtbox and hitbox of a character for every frame of every animation, read straight off its sprite sheet.
+/// The hurtbox and hitbox of a character for every frame of every animation, read straight off its art.
 /// Nobody has to draw boxes by hand, the art is the boxes (see <see cref="SpriteBoxTracer"/>).
+/// An animation is traced the first time it is asked for, a character has a lot of them that a fight never shows.
 /// </summary>
-internal sealed class CharacterBoxes
+internal sealed class CharacterBoxes(SpriteSheetDefinition sprites)
 {
-    private const string SHEET_FILE = "spritesheet.png";
+    private static readonly FrameBoxes NoBoxes = new(default, default, []);
 
-    // Sheets are big and every player of a character shares them, so each is only ever traced once
-    private static readonly Dictionary<string, CharacterBoxes?> cache = [];
-
+    // An animation that couldn't be traced is in here with no frames, so it is only tried once
     private readonly Dictionary<string, FrameBoxes[]> _animations = [];
 
     /// <summary>
-    /// Forgets every sheet that was traced, for when the art on disk has changed. The next fight traces what it needs again.
+    /// Traces every frame of an animation, unless that has been done already. Does nothing for one the character doesn't have.
     /// </summary>
-    public static void Forget()
-    {
-        lock (cache) cache.Clear();
-    }
-
-    /// <summary>
-    /// Helper method to read the boxes of a character off its sprite sheet, null if the sheet can't be read.
-    /// </summary>
-    /// <param name="directory">The folder the sprite sheet is in.</param>
-    /// <param name="animations">The animations of the sheet, which is how the frames are found on it.</param>
-    public static CharacterBoxes? Load(string directory, SpriteSheetAnimationManager animations)
-    {
-        lock (cache)
-        {
-            if (cache.TryGetValue(directory, out var known)) return known;
-
-            CharacterBoxes? read = null;
-            try
-            {
-                string file = Path.Combine(directory, SHEET_FILE);
-                if (File.Exists(file))
-                {
-                    using var image = Image.Load<Rgba32>(file);
-                    read = new CharacterBoxes(image, animations);
-                }
-            }
-            catch (Exception exception)
-            {
-                // A character without boxes still works, it just falls back to a dumb box in the middle
-                Log.Error($"Couldn't read the hitboxes of '{directory}': {exception.Message}");
-            }
-
-            return cache[directory] = read;
-        }
-    }
-
-    private CharacterBoxes(Image<Rgba32> image, SpriteSheetAnimationManager animations)
-    {
-        foreach (var (name, animation) in animations.Animations)
-        {
-            int width = (int)animation.FirstFrame.Size.X, height = (int)animation.FirstFrame.Size.Y;
-            if (width < 1 || height < 1) continue;
-
-            var frames = new FrameBoxes[Math.Max(1, animation.Length)];
-            for (int i = 0; i < frames.Length; i++)
-            {
-                // The frames of an animation sit next to each other on the sheet
-                int left = ((int)animation.FirstFrame.Position.X + i) * width, top = (int)animation.FirstFrame.Position.Y * height;
-                frames[i] = SpriteBoxTracer.Trace(image, left, top, width, height);
-            }
-
-            _animations[name] = frames;
-        }
-    }
+    public void Trace(string animation) => FramesOf(animation);
 
     /// <summary>
     /// Helper method to get the boxes of a frame, false for an animation or a frame the character doesn't have.
     /// </summary>
     public bool TryGet(string animation, uint frame, out FrameBoxes boxes)
     {
-        if (_animations.TryGetValue(animation, out var frames) && frames.Length > 0)
+        FrameBoxes[] frames = FramesOf(animation);
+        if (frames.Length > 0)
         {
             boxes = frames[Math.Min(frame, (uint)frames.Length - 1)];
             return boxes.Hurtbox.Max.X > boxes.Hurtbox.Min.X;
         }
 
-        boxes = new FrameBoxes(default, default, []);
+        boxes = NoBoxes;
         return false;
+    }
+
+    private FrameBoxes[] FramesOf(string animation)
+    {
+        lock (_animations)
+        {
+            if (_animations.TryGetValue(animation, out var known)) return known;
+
+            FrameBoxes[] traced = [];
+            try
+            {
+                if (sprites.TryGetSprite(animation, null, out SpriteSource source)) traced = TraceFrames(source);
+            }
+            catch (Exception exception)
+            {
+                // A character without boxes still works, it just falls back to a dumb box in the middle
+                Log.Error($"Couldn't read the hitboxes of '{animation}' ({sprites.Path}): {exception.Message}");
+            }
+
+            return _animations[animation] = traced;
+        }
+    }
+
+    private static FrameBoxes[] TraceFrames(in SpriteSource source)
+    {
+        var frames = new FrameBoxes[Math.Max(1, source.Frames)];
+
+        for (int i = 0; i < frames.Length; i++)
+        {
+            frames[i] = source.ReadFrame(i) is { } pixels
+                ? SpriteBoxTracer.Trace(pixels.Data, pixels.Width, pixels.Height)
+                : NoBoxes;
+        }
+
+        return frames;
     }
 }

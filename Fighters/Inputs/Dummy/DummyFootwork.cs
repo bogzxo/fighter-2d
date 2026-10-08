@@ -4,12 +4,17 @@ namespace Fighter2D.Fighters.Inputs.Dummy;
 
 /// <summary>
 /// The legs of the dummy. Walks up to the other player, jumps whatever is in the way, rolls in from far away and hops over rolls coming at it.
-/// It has no idea what the map looks like, all it knows is whether it is getting anywhere.
+/// It knows what the map looks like (see <see cref="StageRoute"/>). The way to the player is found on its tiles, so a step, a gap
+/// or a ledge is jumped from the right tile at the first try and the landing is aimed in the air. On a map where no way can be
+/// found it is back to noticing that it isn't getting anywhere and jumping at whatever that is.
 /// </summary>
 internal sealed class DummyFootwork(PlayerController controller, DummyHands hands)
 {
     // A roll is a double tap. So let go, tap, let go, and then walking on is the second tap. One entry per tick
     private static readonly bool[] RollTaps = [false, false, false, true, true, true, false, false, false];
+
+    private readonly StageRoute _route = new(controller);
+    private float _routeAge = DummyConfig.ROUTE_TIME;
 
     private float _walkPause, _stuckTimer, _stuckX, _rollCooldown;
     private float _rollThink = DummyConfig.ROLL_THINK_TIME;
@@ -29,6 +34,8 @@ internal sealed class DummyFootwork(PlayerController controller, DummyHands hand
     /// </summary>
     public void Stop()
     {
+        _route.Forget();
+        _routeAge = DummyConfig.ROUTE_TIME;
         if (!_walking) return;
 
         _walking = false;
@@ -52,31 +59,73 @@ internal sealed class DummyFootwork(PlayerController controller, DummyHands hand
         if (_rollTap >= 0) return ContinueRoll(view);
 
         // Walk up to the other player, also turn around when they have gotten behind us (rolled past etc.)
-        bool walking = (view.Distance > DummyConfig.ATTACK_RANGE || view.FacingAway) && _walkPause <= 0;
-        if (walking) _walking = true;
-        else Stop();
+        bool walking = (!view.InRange || view.FacingAway) && _walkPause <= 0;
+        if (!walking)
+        {
+            Stop();
+            JumpIfStuck(false);
+            return InputFlags.None;
+        }
+
+        _walking = true;
+
+        // With a way to go by, the way says which way to walk and when to jump. It also aims the landing, so in the air it is
+        // the only thing listened to
+        FollowRoute(view);
+        if (_route.Found)
+        {
+            if (_route.ShouldJump && controller.CanSteer) hands.Jump();
+
+            // Still, a tile can be wrong about what a fighter fits past. Not getting anywhere gets a jump as it always did
+            JumpIfStuck(true);
+            return Direction(_route.Steering);
+        }
 
         if (!view.Grounded)
         {
             _stuckTimer = 0;
-            return walking ? view.Towards : InputFlags.None;
+            return view.Towards;
         }
 
-        if (walking && ShouldRollIn(view))
+        if (ShouldRollIn(view))
         {
             _rollTap = 0;
             _rollCooldown = DummyConfig.ROLL_COOLDOWN;
             return ContinueRoll(view);
         }
 
-        JumpIfStuck(walking);
+        JumpIfStuck(true);
 
         // They are up on something right next to us, walking around underneath them gets us nowhere
         bool climb = view.ToOpponent.Y > DummyConfig.CLIMB_HEIGHT && view.Distance < DummyConfig.CLIMB_RANGE && view.Them.State.IsGrounded;
         if (climb) hands.Jump();
 
-        return walking || climb ? view.Towards : InputFlags.None;
+        return view.Towards;
     }
+
+    /// <summary>
+    /// Helper method to keep the way to the other player fresh. They don't stand still while we walk, so it is worked out again
+    /// every so often, but only from the ground. In the air the way stays what it was when we took off
+    /// </summary>
+    private void FollowRoute(in DummyView view)
+    {
+        _routeAge += DummyConfig.TICK;
+
+        if (view.Grounded && _routeAge >= DummyConfig.ROUTE_TIME)
+        {
+            _routeAge = 0.0f;
+            _route.TryFind(controller.Opponent.FeetPosition, DummyConfig.WALK_SPEED_SCALE);
+        }
+
+        _route.Update();
+    }
+
+    private static InputFlags Direction(float steering) => steering switch
+    {
+        < 0.0f => InputFlags.DPadLeft,
+        > 0.0f => InputFlags.DPadRight,
+        _ => InputFlags.None
+    };
 
     /// <summary>
     /// Helper method to decide (once per roll) whether a dodge roll coming our way gets jumped over.
@@ -137,7 +186,7 @@ internal sealed class DummyFootwork(PlayerController controller, DummyHands hand
         float x = controller.Player.Transform.Position.X;
 
         // Only a move that can be walked in counts, standing still in an attack isn't being stuck
-        if (!walking || !controller.CanSteer)
+        if (!walking || !controller.CanSteer || !controller.State.IsGrounded)
         {
             _stuckX = x;
             _stuckTimer = 0;

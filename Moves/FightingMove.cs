@@ -50,6 +50,9 @@ public class FightingMove
     public bool AllowsSteering { get; init; } = true;
     public bool AllowsTurning { get; init; } = true;
 
+    // How fast the player walks during the move against the walk speed of their character, creeping along crouched is slower than running
+    public float WalkScale { get; init; } = 1.0f;
+
     // What the player is for as long as the move lasts (attacking, blocking, invulnerable), null leaves that alone
     public FighterStatus? Status { get; init; }
 

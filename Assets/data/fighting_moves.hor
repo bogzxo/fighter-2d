@@ -11,6 +11,10 @@
 //   stances           the stances it can be started from, "standing | crouching | jumping | falling" or a list of them.
 //   damage            how much health a hit takes, out of 100.
 //   knockback         the shove whoever gets hit is given, vec(away from the attacker, up). Anything with an up part is a launcher.
+//                     Away, every 100 slides them about 6 units (a fighter is about 30 wide, a tile 16), and a hit with no knockback
+//                     slides them 19. Up is not that simple, gravity gets a say: 1100 lifts them about 30 (a sweep, off their feet
+//                     and no more), 1500 about 50, 2000 about 75 (a fighter is about 73 tall, this is the height to juggle at)
+//                     and anything past 2500 puts them over everybody's head.
 //   hitstun           how long whoever gets hit loses the controls for, in frames of this move's own animation.
 //                     Leave it out and it is worked out from the startup of the move, see the bottom of this comment.
 //   blockstun         how long whoever blocks it is stuck in their block for, in frames of this move's own animation.
@@ -23,6 +27,7 @@
 //                     matched against the next move instead (A + B without the meter for the special is a plain kick).
 //   cancellable       whether the move can be cancelled into another one at all. Its phases say from which frame.
 //   steering          whether the player can walk during the move.
+//   walk_scale        how fast they walk during it against the walk speed of their character, 1 if it doesn't say. Creeping along crouched is slower.
 //   turning           whether the player can turn around during the move, the same as steering if it doesn't say.
 //   status            what the player is while the move lasts. "attacking", "blocking" (hits from the front bounce off and the player
 //                     can't turn around) or "invulnerable" (i-frames, hits go straight through).
@@ -34,8 +39,11 @@
 //   phases            what the move actually does, see below.
 //
 // The phases of a move play one after the other in the order they are written. What a phase can have:
-//   animation         the animation to play, out of the character's sprite definition. Without one the animation of the phase before carries on.
-//   frames            how many frames the phase lasts, as long as its animation if it doesn't say.
+//   animation         the animation to play, which is a tag of the character's .ase file. Without one the animation of the phase before carries on.
+//   start             the frame of the animation the phase starts on, 0 if it doesn't say. For an animation that only gets going a few frames in.
+//   hold              how many frames of the move every frame of the animation is held for, 1 if it doesn't say. An animation drawn for
+//                     half the frame rate of the character plays the way it was made with hold: 2.
+//   frames            how many frames the phase lasts, as long as what is left of its animation if it doesn't say.
 //   hit               the frame the hit comes out on, counted from 0. Everything before it is startup and everything after it is recovery.
 //   cancel            the frame from which the move can be cancelled into another one.
 //   commit            the frame from which the player is committed and can't cancel any more.
@@ -48,13 +56,16 @@
 //
 // The conditions are "held" (the input of the move is), "hitstun", "jumping" (on the way up), "falling" and "always".
 //
-// Six names mean something to the game. "idle" is what a player does when they do nothing (and has to be there),
+// Eight names mean something to the game. "idle" is what a player does when they do nothing (and has to be there),
 // "hit_stun" is what they are put in while they are in hitstun, "knocked_out" is where they stay once their health is gone
 // (without one they stay in "hit_stun"), "heavy_land" is what a long fall ends in if there is one, "knocked_down" is where they
 // lie after a knockdown (hit_stun without one) and "get_up" is how they get back up from it (straight to idle without one).
+// "victory" is what the winner of a round plays over whoever they knocked out, after walking over to their head with "run". A character
+// without one just stands there like a decent person.
 //
 // How hits work (the numbers behind all of this are in Combat/CombatRules.cs):
 //   - Every hit puts the victim in hitstun. They are stuck in "hit_stun" and can't do anything until it runs out.
+//     No hit gives less than a fifth of a second of it, and every point of damage adds a little on top.
 //   - A fast move is a little minus on hit, meaning the victim can act before the attacker can. Mash a jab at them and they can jab you first.
 //   - The longer the startup of a move the more plus it is on hit. From some point the attacker recovers first with time to spare,
 //     which is the window to link a fast move after it. That is a combo.
@@ -192,7 +203,7 @@ let moves = {
     jump_kick: {
         stances: "jumping | falling",
         damage: 8,
-        knockback: vec(900, 1900),
+        knockback: vec(600, 1300),
         hitstun: 12,
         level: "overhead",
         knockdown: true,

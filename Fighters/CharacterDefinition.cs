@@ -19,8 +19,8 @@ internal class CharacterDefinition
     public string Id { get; private init; } = string.Empty;
     public string PrettyName { get; private init; } = string.Empty;
 
-    // The folder of the sprite sheet and its definition, relative to the content
-    public string SpriteDirectory { get; private init; } = string.Empty;
+    // Where the art is, relative to the content. An .ase file with a tag for every animation, or a folder with an old sprite sheet and its definition.hor
+    public string Sprites { get; private init; } = string.Empty;
 
     // The move files of the character, relative to the content. A later file can replace moves of an earlier one
     public string[] MoveFiles { get; private init; } = [];
@@ -86,7 +86,7 @@ internal class CharacterDefinition
         {
             Id = id,
             PrettyName = HorReader.Text(character, "pretty_name", id),
-            SpriteDirectory = HorReader.Text(character, "sprites"),
+            Sprites = HorReader.Text(character, "sprites"),
             MoveFiles = [.. moveFiles.Values.OfType<StringValue>().Select(moveFile => moveFile.Value)],
             WalkSpeed = HorReader.Number(character, "walk_speed", DEFAULT_WALK_SPEED),
             FrameRate = MathF.Max(1, HorReader.Number(character, "frame_rate", DEFAULT_FRAME_RATE)),

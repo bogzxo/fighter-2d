@@ -37,7 +37,7 @@ public readonly record struct MoveFrameData(int Startup, int Recovery, int Hitst
 
         foreach (MovePhase phase in move.Phases)
         {
-            uint frames = phase.Frames > 0 ? phase.Frames : Math.Max(1, animationLength(phase.Animation));
+            uint frames = phase.LengthFor(animationLength(phase.Animation));
 
             if (hitFrame < 0 && phase.HitFrame >= 0) hitFrame = (int)total + phase.HitFrame;
             total += frames;
@@ -53,7 +53,8 @@ public readonly record struct MoveFrameData(int Startup, int Recovery, int Hitst
         // One that doesn't gets it from its startup, the longer the windup the more plus it is on hit
         float hitstun = move.Hitstun >= 0
             ? move.Hitstun * ticksPerFrame
-            : recovery + MathF.Min(CombatRules.MAX_ADVANTAGE, startup * CombatRules.STARTUP_REWARD - CombatRules.BASE_DISADVANTAGE);
+            : recovery + MathF.Min(CombatRules.MAX_ADVANTAGE, startup * CombatRules.STARTUP_REWARD - CombatRules.BASE_DISADVANTAGE)
+                + move.Damage * CombatRules.HITSTUN_PER_DAMAGE;
         hitstun = MathF.Max(CombatRules.MIN_HITSTUN, hitstun);
 
         // The same for the blockstun, which is a share of the hitstun unless the move says. Short enough that a blocked move

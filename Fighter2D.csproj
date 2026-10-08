@@ -141,7 +141,7 @@
     <None Update="Assets\maps\underground.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\sprites\characters\**\*.hor;Assets\sprites\characters\**\*.png">
+    <None Update="Assets\sprites\characters\**\*.hor;Assets\sprites\characters\**\*.png;Assets\sprites\characters\**\*.ase">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\ui\bar.png">

@@ -97,6 +97,9 @@ internal sealed class PlayerBoxes
         // A hitbox is gone with the frame it came out on
         HitboxFixture.Bounds = new PhysicsRectangle(Vector2.Zero, Vector2.Zero);
 
+        // What stands on the map is shaped like the frame as well, somebody lying down is long and low
+        _player.Body.Fit(_boxes is not null && _boxes.TryGet(animation, frame, out var traced) ? traced : null);
+
         SyncOutline(animation, frame);
     }
 
@@ -117,9 +120,7 @@ internal sealed class PlayerBoxes
     private (string Animation, uint Frame) ShownFrame()
     {
         string animation = _player.Controller.ActiveAnimation;
-        uint frame = _player.AnimationManager.Animations.TryGetValue(animation, out var playing) ? playing.Index : 0;
-
-        return (animation, frame);
+        return (animation, (uint)_player.Frame);
     }
 
     /// <summary>

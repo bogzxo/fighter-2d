@@ -1,0 +1,95 @@
+// What The Female does differently. Everything else is in mannequin_moves.hor, and fighting_moves.hor explains what the keys mean.
+//
+// She is the quick one of the two. Her jab and her high kick are out a couple of frames sooner and back sooner, her big buttons
+// hurt a little less, and she has a way out that he doesn't:
+//   LeftTrigger   backstep, a hop away from whoever she is facing with i-frames on the way out
+
+let moves = {
+    punch_left: {
+        input: "X",
+        trigger: "pressed",
+        priority: 24,
+        stances: "standing | crouching",
+        damage: 4,
+        cancellable: false,
+        status: "attacking",
+        stance_reroutes: {
+            crouching: "body_blow"
+        },
+        phases: {
+            swing: { animation: "punch_1", start: 9, frames: 12, hit: 5 }
+        }
+    },
+
+    kick_left: {
+        input: "A",
+        trigger: "pressed",
+        priority: 20,
+        stances: "standing | falling | jumping | crouching",
+        damage: 6,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: {
+            jumping: "jump_kick",
+            falling: "jump_kick",
+            crouching: "low_kick"
+        },
+        phases: {
+            swing: { animation: "kick_high", start: 5, frames: 22, hit: 8 }
+        }
+    },
+
+    punch_right: {
+        input: "Y",
+        trigger: "pressed",
+        priority: 34,
+        stances: "standing | crouching",
+        damage: 8,
+        knockback: vec(420, 0),
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: {
+            crouching: "uppercut"
+        },
+        phases: {
+            swing: { animation: "punch_straight", start: 11, frames: 26, hit: 13 }
+        }
+    },
+
+    kick_right: {
+        input: "B",
+        trigger: "pressed",
+        priority: 30,
+        stances: "standing | falling | jumping | crouching",
+        damage: 9,
+        knockback: vec(480, 300),
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: {
+            jumping: "jump_kick",
+            falling: "jump_kick",
+            crouching: "sweep"
+        },
+        phases: {
+            swing: { animation: "kick_head", start: 7, frames: 30, hit: 10 }
+        }
+    },
+
+    backstep: {
+        input: "LeftTrigger",
+        trigger: "pressed",
+        priority: 38,
+        stances: "standing | crouching",
+        cancellable: true,
+        steering: false,
+        turning: false,
+        status: "invulnerable",
+        phases: {
+            hop: { animation: "dodge_back", start: 6, frames: 16, impulse: vec(-2600, 0), effect: "roll", effect_frames: 4 },
+            settle: { frames: 8, cancel: 0 }
+        }
+    }
+}

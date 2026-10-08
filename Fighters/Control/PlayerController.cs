@@ -31,6 +31,11 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     public MovePlayback Playback { get; private set; } = null!;
     public PlayerMovement Movement { get; private set; } = null!;
 
+    /// <summary>
+    /// What we do over the body of whoever we just knocked out, see <see cref="VictoryTaunt"/>.
+    /// </summary>
+    public VictoryTaunt Taunt { get; private set; } = null!;
+
     public FightingMove CurrentMove => Playback?.Move ?? NoMove;
     public string ActiveAnimation { get; private set; } = "idle";
 
@@ -121,6 +126,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         State = new FighterState(Player);
         Playback = new MovePlayback(this);
         Movement = new PlayerMovement(this);
+        Taunt = new VictoryTaunt(this);
 
         Input.Attach(this);
         ChangeToMove(MoveIds.IDLE, forceRestart: true);
@@ -156,7 +162,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         bool frozen = Fight.PlayersFrozen;
         Inputs.Push(Tick, ReadInput(frozen));
 
-        // Update physiscs cues such as crouching, falling and grounded
+        // Update the physics side of the state, crouching, falling and grounded
         State.UpdatePhysicsState(FightTicks.TICK_TIME);
 
         if (_hitstop > 0)
@@ -183,6 +189,9 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
             // Whatever we were in the middle of (running, crouching) ends here, but an attack that is already out gets to finish
             if (!_frozen && IsInControl && State.CurrentStatus != FighterStatus.Attacking) ChangeToMove(MoveIds.IDLE);
             _frozen = true;
+
+            // Unless there is somebody on the floor to gloat over
+            Taunt.Update();
             return;
         }
         _frozen = false;
@@ -198,10 +207,11 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// </summary>
     private InputFlags ReadInput(bool frozen)
     {
-        // A network player's inputs always get taken off the pile, or they would all be waiting when the round starts
-        InputFlags held = frozen && !IsRemote ? InputFlags.None : Input.Read();
+        if (!frozen) return Input.Read();
 
-        return frozen ? InputFlags.None : held;
+        // A network player's inputs still get taken off the pile, or they would all be waiting when the round starts
+        if (IsRemote) Input.Read();
+        return InputFlags.None;
     }
 
     /// <summary>
@@ -329,9 +339,9 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// </summary>
     public uint GetAnimationLength(string? animName)
     {
-        if (animName is null || !Player.AnimationManager.Animations.TryGetValue(animName, out var animation)) return 1;
+        if (animName is null) return 1;
 
-        return Math.Max(1, animation.Length);
+        return (uint)Math.Max(1, Player.GetFrameCount(animName));
     }
 
     /// <summary>
@@ -339,9 +349,10 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// </summary>
     private void ShowFrame()
     {
-        if (!Player.AnimationManager.Animations.ContainsKey(ActiveAnimation)) return;
+        // The sprite is on the animation the move last asked for, unless the character doesn't have it
+        if (Player.FrameName != ActiveAnimation) return;
 
-        Player.AnimationManager.SetFrame(ActiveAnimation, ClampFrame(Playback.Shown));
+        Player.Frame = (int)ClampFrame(Playback.Shown);
     }
 
     private uint ClampFrame(uint frame) => Math.Min(frame, GetAnimationLength(ActiveAnimation) - 1);
@@ -413,6 +424,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         _frameProgress = 0.0f;
         _wasKnockedOut = false;
         Movement.Reset();
+        Taunt.Reset();
 
         ChangeToMove(MoveIds.IDLE, forceRestart: true);
         Inputs.Release();
