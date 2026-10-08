@@ -119,9 +119,10 @@ internal sealed class FightParticles
             MaxAge = 3.2f,
             Gravity = new Vector2(0, -1100),
 
-            // Visible on a dark map without glowing on a bright one
+            // Visible on a dark map without glowing on a bright one, and no lamp either
             StartEmissive = 0.3f,
-            EndEmissive = 0.1f
+            EndEmissive = 0.1f,
+            Lights = false
         };
     }
 
@@ -136,7 +137,10 @@ internal sealed class FightParticles
         Stretch = 0.05f,
         MaxStretch = 30.0f,
         MaxAge = 0.16f,
-        Emissive = 1.0f
+        Emissive = 1.0f,
+
+        // Bright, not a lamp, or every punch would light the arena up and down like a strobe in the path traced mode
+        Lights = false
     };
 
     /// <summary>
@@ -149,7 +153,8 @@ internal sealed class FightParticles
         ParticleSize = 1.0f,
         MaxAge = 0.5f,
         Gravity = new Vector2(0, -260),
-        Emissive = 0.3f
+        Emissive = 0.3f,
+        Lights = false
     };
 
     /// <summary>
@@ -178,7 +183,8 @@ internal sealed class FightParticles
         MaxAge = 0.9f,
         Gravity = new Vector2(0, 30),
 
-        // Somebody in hitstun has to be seen to be, however dark the map is
-        Emissive = 0.7f
+        // Somebody in hitstun has to be seen to be, however dark the map is, which is not the same as lighting it
+        Emissive = 0.7f,
+        Lights = false
     };
 }
