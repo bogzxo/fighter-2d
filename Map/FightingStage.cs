@@ -109,6 +109,9 @@ internal sealed class FightingStage : IDisposable
 
         // The parallax layers line up the way they were drawn when the camera is between the two spawns
         Map.ParallaxOrigin = (LeftSpawn + RightSpawn) / 2.0f;
+
+        // How much its corners darken, out of what was painted and out of how it is shaped, see DeferedStyle
+        DeferedStyle.Apply(Map);
     }
 
     /// <summary>
@@ -129,14 +132,9 @@ internal sealed class FightingStage : IDisposable
     /// </summary>
     private OcclusionMap2D BuildOcclusion()
     {
-        var occlusion = new OcclusionMap2D(Map.Width, Map.Height, Map.Origin, Map.TileSize);
-
-        foreach (Vector2 solid in Map.ShadowCasters())
-        {
-            occlusion.Set(solid, true);
-        }
-
-        return occlusion;
+        // By the shape of every tile and not the square it sits in, or the wall behind the corners of a pot
+        // gets lit as if it were inside of one
+        return Map.CreateOcclusion();
     }
 
     private void MeasureBounds()

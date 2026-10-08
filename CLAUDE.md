@@ -15,7 +15,9 @@ Anything the game wants of the GPU goes through the engine, there is no GL in he
 - `App/` the entry point (`Program.cs`, `--map <name>` drops straight into a fight, `--content <folder>` points at
   other content), `GameOptions.cs` (everything on the options screen, kept in `options.hor` next to the exe, with the
   `Fancy` switch for the path traced lighting), `Screen.cs` (the effects every scene puts on, the CRT, which
-  lighting the world gets).
+  lighting the world gets), `DeferedStyle.cs` (every number of how the world is shaded that is a matter of taste,
+  the highlights, the shadows, how much the corners darken out of the painted maps, the map's shape and the
+  fighters, tune the look there and nowhere else).
 - `Scenes/` one class per screen, `Menus/` for the menu layouts, `Widgets/` for the bits they share (the character
   portrait draws out of a character's atlas).
 - `Fighters/` a fighter in the arena. `Player.cs` is the sprite plus the body plus the health, `CharacterArt.cs` reads
@@ -33,7 +35,8 @@ Anything the game wants of the GPU goes through the engine, there is no GL in he
 `Assets/` is exactly what the game reads and it ships by one glob in the csproj, nothing in it is optional.
 
 - `data/` the .hor files, `characters.hor` and `maps.hor` are the lists, `*_moves.hor` the move sets.
-- `maps/` the Tiled maps, `tilesets/` with `_albedo`, `_normal` and `_specular` images, `objects/` the templates.
+- `maps/` the Tiled maps, `tilesets/` with `_albedo`, `_normal`, `_specular` and `_ao` images (the last made by
+  `Art/tools/build_ao.py` out of the albedo, run it again when the art changes), `objects/` the templates.
 - `sprites/characters/<name>/<name>.ase` the characters, one Aseprite file each, a tag per animation, read by the
   engine as they are. A folder with a `spritesheet.png` and a `definition.hor` still works for the old ones.
 - `backgrounds/` the two the menus use, `ui/layouts/` the UIX layouts, `ui/logo.png`.

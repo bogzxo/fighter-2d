@@ -57,11 +57,11 @@ internal sealed class MapPreview : GameObject
 
         _renderer = AddEntity(new DeferredRenderer2D((uint)_viewportSize.X, (uint)_viewportSize.Y)
         {
-            Lighting = Screen.WorldLighting,
-
-            // The art is one world unit per pixel drawn at twice that, and the lighting follows the art
-            LightingPixelSize = 1.0f
+            Lighting = Screen.WorldLighting
         });
+
+        // Shaded the way the fight is, or the preview is a lie
+        DeferedStyle.Apply(_renderer);
 
         // Back and forth forever, slowly
         _tweens.Play(Tween.To(() => _drift, drift => _drift = drift, 1.0f, DRIFT_TIME / 2).SetEasing(Easing.InOutSine).SetLoops(-1, LoopMode.PingPong));
