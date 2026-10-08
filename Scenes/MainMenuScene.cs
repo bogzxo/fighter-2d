@@ -3,15 +3,13 @@ using System.Numerics;
 
 using Horizon.Rendering;
 using Horizon.Input;
-using Horizon.OpenGL.Assets;
 using Horizon.Rendering.Spriting;
 using Horizon.UI;
 using Horizon.UI.Components;
 
-using Silk.NET.OpenGL;
 
 using Button = Horizon.UI.Components.Button;
-using Texture = Horizon.OpenGL.Assets.Texture;
+using Horizon.Graphics;
 
 namespace Fighter2D.Scenes;
 

@@ -22,14 +22,13 @@ internal static class Screen
     // The art is drawn at twice its size, so that is how big one dot of the CRT is
     private const float CRT_PIXEL_SIZE = 2.0f;
 
-    // The motion blur of a fight. How long (in seconds) a trail takes to fade and how much of it shows over the sharp picture, 0 to 1.
-    // This is what turns the rain into soft streaks and a kick into a swipe. Longer and stronger is dreamier and harder to read
-    private const float FIGHT_TRAIL = 0.05f;
-    private const float FIGHT_TRAIL_STRENGTH = 0.7f;
+    // The motion blur of a fight, how long (in seconds) the shutter is open. Everything is smeared over as far as it
+    // moves in that time, which is what turns the rain into streaks and a kick into a swipe. Longer is dreamier and
+    // harder to read, a sixtieth is about what hides the stepping of the pixel art
+    private const float FIGHT_SHUTTER = 1.0f / 50.0f;
 
     // The same for the menus, which only want their buttons to slide in smoothly
-    private const float MENU_TRAIL = 0.04f;
-    private const float MENU_TRAIL_STRENGTH = 0.6f;
+    private const float MENU_SHUTTER = 1.0f / 60.0f;
 
     // Kept gentle, the menu buttons are laid over the screen and have to stay lined up with what is drawn behind them
     private static readonly Vector2 CrtWarp = new(1.0f / 64.0f, 1.0f / 48.0f);
@@ -102,20 +101,19 @@ internal static class Screen
     /// <summary>
     /// How the world of a fight is lit, by what the options say. The fancy one path traces.
     /// </summary>
-    public static LightingMode WorldLighting => GameOptions.Fancy ? LightingMode.PathTraced : LightingMode.Direct;
+    public static LightingMode WorldLighting => GameOptions.RenderPathtraced ? LightingMode.PathTraced : LightingMode.Direct;
 
     /// <summary>
-    /// Helper method to put motion blur on the world of a fight.
+    /// Helper method to put motion blur on the world of a fight. It goes by how fast everything is going across the
+    /// screen, which the renderer keeps track of, so a street that goes by because the camera pans is smeared like
+    /// anything else that moves.
     /// </summary>
-    /// <param name="camera">The camera the world is seen through. The blur follows it, so the street stays sharp when the camera pans.</param>
     public static void AddMotionBlur(DeferredRenderer2D world, Camera camera)
     {
         world.PostProcessing.Add(new MotionBlurEffect
         {
             Enabled = GameOptions.MotionBlur,
-            Trail = FIGHT_TRAIL,
-            Strength = FIGHT_TRAIL_STRENGTH,
-            Camera = camera
+            Shutter = FIGHT_SHUTTER
         });
     }
 
@@ -124,7 +122,7 @@ internal static class Screen
     /// </summary>
     public static void AddMotionBlur(UICompositor ui)
     {
-        ui.PostProcessing.Add(new MotionBlurEffect { Enabled = GameOptions.MotionBlur, Trail = MENU_TRAIL, Strength = MENU_TRAIL_STRENGTH });
+        ui.PostProcessing.Add(new MotionBlurEffect { Enabled = GameOptions.MotionBlur, Shutter = MENU_SHUTTER });
     }
 
     /// <summary>

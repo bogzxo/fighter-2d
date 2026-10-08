@@ -1,8 +1,7 @@
 using System.Numerics;
 
 using Horizon.Engine;
-using Horizon.OpenGL.Assets;
-using Horizon.OpenGL.Descriptions;
+using Horizon.Graphics;
 using Horizon.Rendering;
 using Horizon.Rendering.Spriting;
 using Horizon.UI;
@@ -42,7 +41,7 @@ internal abstract class MenuScene : Scene
     public override void Initialize()
     {
         ActiveCamera = Camera = AddEntity(new Camera2D(CameraSize));
-        Engine.GL.ClearColor(ClearColor);
+        Engine.Graphics.ClearColor = new Vector4(ClearColor.R, ClearColor.G, ClearColor.B, ClearColor.A) / 255.0f;
 
         Canvas = Screen.CreateRenderer(this);
 

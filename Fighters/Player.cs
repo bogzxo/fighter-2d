@@ -151,6 +151,9 @@ internal class Player() : Sprite(SIZE)
     {
         base.Initialize();
 
+        // A fighter throws a shadow as sharp as their pixels and bounces the light of the arena, see DeferredRenderer2D.SpriteShadows
+        CastsShadows = true;
+
         // Everything a character is comes out of the content, which online can be the content of whoever hosts the fight
         Character = CharacterDefinition.Load(CharacterId);
         MoveList = Character.LoadMoves();
