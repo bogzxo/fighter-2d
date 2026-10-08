@@ -59,8 +59,9 @@
   <Target Name="PackEngineFiles" BeforeTargets="PrepareResources" DependsOnTargets="ResolvePackageAssets;GetCopyToOutputDirectoryItems" Condition="'$(Configuration)' == 'Release' and '$(PublishAot)' == 'true' and '$(RuntimeIdentifier)' != ''">
     <ItemGroup>
       <!-- Not what only a build needs to know about itself (which with some settings includes a launcher of the game
-           that isn't there yet), and not the odd test file a project leaves lying about -->
-      <_PackedFile Include="@(AllItemsFullPathWithTargetPath)" Condition="!$([System.String]::Copy('%(TargetPath)').StartsWith('Assets')) and '%(Extension)' != '.json' and '%(Extension)' != '.pdb' and '%(Extension)' != '.exe' and '%(Filename)%(Extension)' != 'test.hor'" />
+           that isn't there yet, Fighter2D.exe on Windows and plain Fighter2D on Linux), and not the odd test file a
+           project leaves lying about -->
+      <_PackedFile Include="@(AllItemsFullPathWithTargetPath)" Condition="!$([System.String]::Copy('%(TargetPath)').StartsWith('Assets')) and '%(Extension)' != '.json' and '%(Extension)' != '.pdb' and '%(Extension)' != '.exe' and '%(TargetPath)' != '$(AssemblyName)' and '%(Filename)%(Extension)' != 'test.hor'" />
       <_PackedFile Include="@(NativeCopyLocalItems)" TargetPath="%(NativeCopyLocalItems.DestinationSubPath)" />
 
       <EmbeddedResource Include="@(_PackedFile)" LogicalName="packed/$([System.String]::Copy('%(_PackedFile.TargetPath)').Replace('\', '/'))" Type="Non-Resx" WithCulture="false" />
@@ -78,87 +79,8 @@
   </Target>
 
   <ItemGroup>
-    <None Update="Assets\backgrounds\background_layer_albedo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\backgrounds\menu.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\backgrounds\menu_sheet.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\backgrounds\player_select_bg.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\data\*.hor">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\objects\*.tx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\dungeon.tmx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\japan.tmx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\adve.tsx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\adve_albedo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\adve_normal.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\adve_specular.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\Background.tsx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\Background_albedo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\oak_woods.tsx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\oak_woods_tileset_albedo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\Platform-and-Objects.tsx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\Platform-and-Objects_albedo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\Sky.tsx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\tilesets\Sky_albedo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\maps\underground.tmx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\sprites\characters\**\*.hor;Assets\sprites\characters\**\*.png;Assets\sprites\characters\**\*.ase">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\ui\bar.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\ui\new_logo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\ui\layouts\*.hor">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\ui\logo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\backgrounds\player_select_bg.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <!-- Everything under Assets ships next to the exe as it is, Art is the source material and stays home -->
+    <None Update="Assets\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

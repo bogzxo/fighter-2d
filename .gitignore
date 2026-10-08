@@ -504,3 +504,6 @@ FodyWeavers.xsd
 /bin/x64/Debug/net10.0/Hid.Net.dll
 /bin/x64/Debug/net10.0/Microsoft.Extensions.Logging.Abstractions.dll
 /bin/x64/Debug/net10.0/System.Reactive.dll
+
+# Old builds live on GitHub releases, not in the tree
+Build History/
