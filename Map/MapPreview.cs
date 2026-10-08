@@ -76,6 +76,7 @@ internal sealed class MapPreview : GameObject
 
     public override void UpdateState(float dt)
     {
+        _stage?.Tick(dt);
         // Loaded with the game standing still, see LoadWanted
         if (_wanted.FileName is { } file && file != _shownFile)
             GameEngine.Instance.WindowManager.RequestExclusive();

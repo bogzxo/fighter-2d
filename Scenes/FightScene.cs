@@ -490,6 +490,7 @@ internal class FightScene : Scene
         // Hits and thunder both rattle the view
         _camera.Shake(_weather.Shake + Fight.Effects.Shake);
         _playerLights.Follow(Fight.PlayerOne, Fight.PlayerTwo);
+        _stage.Tick(dt);
 
         // The lab tops the health back up once the dust has settled, only while the round is actually on
         if (_round.Phase == RoundPhase.Fight) _training?.Update(dt);

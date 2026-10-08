@@ -57,6 +57,17 @@ internal sealed class FightingStage : IDisposable
     // The stuff the map asked for, kept until there is somebody to hand it to
     private readonly List<(string Kind, Vector2 Position, float Rate)> _emitters = [];
     private readonly List<Light2D> _lights = [];
+
+    // The lights that move by themselves, a lantern swinging in the wind or a beacon going round, and how
+    private readonly List<AnimatedLight> _animated = [];
+    private float _time;
+
+    /// <summary>
+    /// A light of the map that turns by itself. It swings either side of the way it was placed (light_sway, in
+    /// degrees, light_sway_rate times a second) and spins (light_spin, degrees a second), both at once if asked.
+    /// Every one is a little out of step with the others, a row of lanterns swinging in time would look like a machine.
+    /// </summary>
+    private sealed record AnimatedLight(Light2D Light, float Rest, float Sway, float SwayRate, float Spin, float Phase);
     private readonly Vector2?[] _spawns = new Vector2?[2];
 
     /// <param name="world">The physics world the collision of the map goes into, null for a stage nobody is going to stand on (the map preview).</param>
@@ -169,6 +180,11 @@ internal sealed class FightingStage : IDisposable
 
     /// <summary>
     /// Called for every object of the map that has a light_radius. Anything with a radius is a light, the rest is optional.
+    /// light_type is "point" (the usual), "spot" (shines in a cone, light_angle in degrees with 0 along the ground to
+    /// the right and 90 straight up, light_cone the width of the cone in degrees, light_cone_softness how much of
+    /// its edge fades) or "directional" (the moon, the same everywhere, light_angle the way its rays go,
+    /// light_reach how far it looks for shadows). light_sprite_shadow is how much of the light the fighters take when
+    /// they stand in its way, 1 for all of it. light_sway, light_sway_rate and light_spin set it moving, see AnimatedLight.
     /// </summary>
     private void ReadLight(TileMapObject light)
     {
@@ -180,9 +196,20 @@ internal sealed class FightingStage : IDisposable
         }
 
         Vector4 colour = light.Properties.GetColor("light_colour", Vector4.One);
-
-        _lights.Add(new Light2D
+        LightType type = light.Properties.GetString("light_type", "point").ToLowerInvariant() switch
         {
+            "spot" => LightType.Spot,
+            "directional" => LightType.Directional,
+            _ => LightType.Point
+        };
+
+        // Tiled's y goes down the screen, the world's goes up, so the angle is read the way a person thinks of it
+        // (up is up) and turned into the engine's
+        float angle = light.Properties.GetFloat("light_angle", -90.0f) * MathF.PI / 180.0f;
+
+        var made = new Light2D
+        {
+            Type = type,
             Position = light.Position,
             Radius = radius,
             Color = new Vector3(colour.X, colour.Y, colour.Z),
@@ -191,8 +218,43 @@ internal sealed class FightingStage : IDisposable
             Flicker = light.Properties.GetFloat("light_flicker"),
             Size = light.Properties.GetFloat("light_size", DEFAULT_LIGHT_SIZE),
             Height = light.Properties.GetFloat("light_height", DEFAULT_LIGHT_HEIGHT),
-            CastsShadows = light.Properties.GetBool("light_shadows", true)
-        });
+            CastsShadows = light.Properties.GetBool("light_shadows", true),
+            SpriteShadow = light.Properties.GetFloat("light_sprite_shadow", 1.0f),
+            Direction = angle,
+            ConeAngle = light.Properties.GetFloat("light_cone", 90.0f) * MathF.PI / 180.0f,
+            ConeSoftness = light.Properties.GetFloat("light_cone_softness", 0.5f),
+            Reach = light.Properties.GetFloat("light_reach", radius)
+        };
+        _lights.Add(made);
+
+        float sway = light.Properties.GetFloat("light_sway");
+        float spin = light.Properties.GetFloat("light_spin");
+        if (sway != 0.0f || spin != 0.0f)
+        {
+            _animated.Add(new AnimatedLight(
+                made,
+                angle,
+                sway * MathF.PI / 180.0f,
+                light.Properties.GetFloat("light_sway_rate", 0.5f),
+                spin * MathF.PI / 180.0f,
+                _animated.Count * 1.7f));
+        }
+    }
+
+    /// <summary>
+    /// Moves the lights that move by themselves on a step. Every update of the fight, with the fight's clock, so
+    /// they hang still when the fight is paused.
+    /// </summary>
+    public void Tick(float dt)
+    {
+        if (_animated.Count == 0) return;
+
+        _time += dt;
+        foreach (AnimatedLight light in _animated)
+        {
+            float swing = light.Sway * MathF.Sin((_time * light.SwayRate + light.Phase) * MathF.Tau);
+            light.Light.Direction = light.Rest + swing + light.Spin * _time;
+        }
     }
 
     /// <summary>

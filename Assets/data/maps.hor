@@ -21,7 +21,7 @@
             shake: 2
         },
         lighting: {
-            ambient: vec(238, 234, 226)
+            ambient: vec(165, 172, 200)
         },
         spawn_pos: { x: 30, y: -12 }
     },

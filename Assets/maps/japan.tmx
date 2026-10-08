@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="96" height="96" tilewidth="16" tileheight="16" infinite="0" nextlayerid="28" nextobjectid="11">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="96" height="96" tilewidth="16" tileheight="16" infinite="0" nextlayerid="28" nextobjectid="12">
  <editorsettings>
   <chunksize width="96" height="96"/>
  </editorsettings>
@@ -563,11 +563,11 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,47,0,0,0,0,0,0,0,0,0,0,47,0,0,0,0,0,0,0,0,0,47,0,0,0,0,0,0,0,0,0,0,0,47,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,47,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,47,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,47,0,0,0,0,0,0,0,0,0,0,47,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,46,0,0,0,0,0,0,0,0,0,0,0,
@@ -667,11 +667,11 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,48,0,0,0,0,0,0,0,0,0,0,48,0,0,0,0,0,0,0,0,0,48,0,0,0,0,0,0,0,0,0,0,0,48,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,48,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,48,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,48,0,0,0,0,0,0,0,0,0,0,48,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -916,69 +916,132 @@
 </data>
  </layer>
  <objectgroup id="25" name="lanterns">
-  <object id="1" template="objects/lantern.tx" name="lantern" x="106.5" y="964">
+  <object id="1" template="objects/lantern.tx" name="lantern" x="106.5" y="932">
    <properties>
-    <property name="light_flicker" type="float" value="0.2"/>
-    <property name="light_intensity" type="float" value="0.75"/>
-    <property name="light_radius" type="float" value="100"/>
+    <property name="light_cone" type="float" value="170"/>
+    <property name="light_cone_softness" type="float" value="0.65"/>
+    <property name="light_flicker" type="float" value="0.15"/>
+    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
+    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sway" type="float" value="9"/>
+    <property name="light_sway_rate" type="float" value="0.3"/>
+    <property name="light_type" value="spot"/>
    </properties>
   </object>
-  <object id="2" template="objects/lantern.tx" name="lantern" x="283" y="949">
+  <object id="2" template="objects/lantern.tx" name="lantern" x="283" y="917">
    <properties>
-    <property name="light_flicker" type="float" value="0.2"/>
-    <property name="light_intensity" type="float" value="0.75"/>
-    <property name="light_radius" type="float" value="100"/>
+    <property name="light_cone" type="float" value="170"/>
+    <property name="light_cone_softness" type="float" value="0.65"/>
+    <property name="light_flicker" type="float" value="0.15"/>
+    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
+    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sway" type="float" value="9"/>
+    <property name="light_sway_rate" type="float" value="0.3"/>
+    <property name="light_type" value="spot"/>
    </properties>
   </object>
-  <object id="3" template="objects/lantern.tx" name="lantern" x="475" y="964.5">
+  <object id="3" template="objects/lantern.tx" name="lantern" x="475" y="932.5">
    <properties>
-    <property name="light_flicker" type="float" value="0.2"/>
-    <property name="light_intensity" type="float" value="0.75"/>
-    <property name="light_radius" type="float" value="100"/>
+    <property name="light_cone" type="float" value="170"/>
+    <property name="light_cone_softness" type="float" value="0.65"/>
+    <property name="light_flicker" type="float" value="0.15"/>
+    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
+    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sway" type="float" value="9"/>
+    <property name="light_sway_rate" type="float" value="0.3"/>
+    <property name="light_type" value="spot"/>
    </properties>
   </object>
-  <object id="4" template="objects/lantern.tx" name="lantern" x="651.5" y="964.5">
+  <object id="4" template="objects/lantern.tx" name="lantern" x="651.5" y="932.5">
    <properties>
-    <property name="light_flicker" type="float" value="0.2"/>
-    <property name="light_intensity" type="float" value="0.75"/>
-    <property name="light_radius" type="float" value="100"/>
+    <property name="light_cone" type="float" value="170"/>
+    <property name="light_cone_softness" type="float" value="0.65"/>
+    <property name="light_flicker" type="float" value="0.15"/>
+    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
+    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sway" type="float" value="9"/>
+    <property name="light_sway_rate" type="float" value="0.3"/>
+    <property name="light_type" value="spot"/>
    </properties>
   </object>
-  <object id="5" template="objects/lantern.tx" name="lantern" x="827.5" y="933">
+  <object id="5" template="objects/lantern.tx" name="lantern" x="827.5" y="901">
    <properties>
-    <property name="light_flicker" type="float" value="0.2"/>
-    <property name="light_intensity" type="float" value="0.75"/>
-    <property name="light_radius" type="float" value="100"/>
+    <property name="light_cone" type="float" value="170"/>
+    <property name="light_cone_softness" type="float" value="0.65"/>
+    <property name="light_flicker" type="float" value="0.15"/>
+    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
+    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sway" type="float" value="9"/>
+    <property name="light_sway_rate" type="float" value="0.3"/>
+    <property name="light_type" value="spot"/>
    </properties>
   </object>
-  <object id="6" template="objects/lantern.tx" name="lantern" x="1003" y="932.5">
+  <object id="6" template="objects/lantern.tx" name="lantern" x="1003" y="900.5">
    <properties>
-    <property name="light_flicker" type="float" value="0.2"/>
-    <property name="light_intensity" type="float" value="0.75"/>
-    <property name="light_radius" type="float" value="100"/>
+    <property name="light_cone" type="float" value="170"/>
+    <property name="light_cone_softness" type="float" value="0.65"/>
+    <property name="light_flicker" type="float" value="0.15"/>
+    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
+    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sway" type="float" value="9"/>
+    <property name="light_sway_rate" type="float" value="0.3"/>
+    <property name="light_type" value="spot"/>
    </properties>
   </object>
-  <object id="7" template="objects/lantern.tx" name="lantern" x="1163.5" y="932.5">
+  <object id="7" template="objects/lantern.tx" name="lantern" x="1163.5" y="900.5">
    <properties>
-    <property name="light_flicker" type="float" value="0.2"/>
-    <property name="light_intensity" type="float" value="0.75"/>
-    <property name="light_radius" type="float" value="100"/>
+    <property name="light_cone" type="float" value="170"/>
+    <property name="light_cone_softness" type="float" value="0.65"/>
+    <property name="light_flicker" type="float" value="0.15"/>
+    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
+    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sway" type="float" value="9"/>
+    <property name="light_sway_rate" type="float" value="0.3"/>
+    <property name="light_type" value="spot"/>
    </properties>
   </object>
-  <object id="8" template="objects/lantern.tx" name="lantern" x="1355.5" y="930.5">
+  <object id="8" template="objects/lantern.tx" name="lantern" x="1355.5" y="898.5">
    <properties>
-    <property name="light_flicker" type="float" value="0.2"/>
-    <property name="light_intensity" type="float" value="0.75"/>
-    <property name="light_radius" type="float" value="100"/>
+    <property name="light_cone" type="float" value="170"/>
+    <property name="light_cone_softness" type="float" value="0.65"/>
+    <property name="light_flicker" type="float" value="0.15"/>
+    <property name="light_intensity" type="float" value="1.2"/>
+    <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
+    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sway" type="float" value="9"/>
+    <property name="light_sway_rate" type="float" value="0.3"/>
+    <property name="light_type" value="spot"/>
    </properties>
+  </object>
+  <object id="11" name="moon" type="light" x="760" y="600">
+   <properties>
+    <property name="light_angle" type="float" value="-125"/>
+    <property name="light_colour" type="color" value="#ff9fb4e6"/>
+    <property name="light_height" type="float" value="90"/>
+    <property name="light_intensity" type="float" value="0.45"/>
+    <property name="light_radius" type="float" value="420"/>
+    <property name="light_reach" type="float" value="420"/>
+    <property name="light_shadows" type="bool" value="true"/>
+    <property name="light_size" type="float" value="14"/>
+    <property name="light_sprite_shadow" type="float" value="0.85"/>
+    <property name="light_type" value="directional"/>
+   </properties>
+   <point/>
   </object>
  </objectgroup>
  <objectgroup id="27" name="spawns" visible="0">
