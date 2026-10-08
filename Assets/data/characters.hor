@@ -22,7 +22,7 @@ let characters = {
             own: "Assets/data/the_male_moves.hor"
         },
         walk_speed: 1500,
-        frame_rate: 45,
+        frame_rate: 60,
         stats: {
             speed: 45,
             health: 50,
@@ -39,7 +39,7 @@ let characters = {
             own: "Assets/data/the_female_moves.hor"
         },
         walk_speed: 1750,
-        frame_rate: 45,
+        frame_rate: 60,
         scale: 0.95,
         stats: {
             speed: 70,
