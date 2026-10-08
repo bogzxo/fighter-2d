@@ -31,9 +31,10 @@ internal sealed class CharacterArt
     public SpriteSheetDefinition Sprites { get; }
 
     /// <summary>
-    /// What the frames are drawn out of. It outlives whatever scene asked for it first.
+    /// What the frames are drawn out of. It outlives whatever scene asked for it first, and keeps only the pixels of a
+    /// frame that are anything, a mannequin in the middle of 128 by 128 of air is mostly air.
     /// </summary>
-    public TextureAtlas Atlas { get; } = new(ATLAS_WIDTH, ATLAS_HEIGHT, shared: true);
+    public TextureAtlas Atlas { get; } = new(ATLAS_WIDTH, ATLAS_HEIGHT, shared: true) { Trim = true };
 
     /// <summary>
     /// The hurtbox, hitbox and outline of every frame, see <see cref="CharacterBoxes"/>.
