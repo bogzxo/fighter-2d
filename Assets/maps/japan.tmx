@@ -927,7 +927,7 @@
     <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
-    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sprite_shadow" type="float" value="0.15"/>
     <property name="light_sway" type="float" value="9"/>
     <property name="light_sway_rate" type="float" value="0.3"/>
     <property name="light_type" value="spot"/>
@@ -941,7 +941,7 @@
     <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
-    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sprite_shadow" type="float" value="0.15"/>
     <property name="light_sway" type="float" value="9"/>
     <property name="light_sway_rate" type="float" value="0.3"/>
     <property name="light_type" value="spot"/>
@@ -955,7 +955,7 @@
     <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
-    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sprite_shadow" type="float" value="0.15"/>
     <property name="light_sway" type="float" value="9"/>
     <property name="light_sway_rate" type="float" value="0.3"/>
     <property name="light_type" value="spot"/>
@@ -969,7 +969,7 @@
     <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
-    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sprite_shadow" type="float" value="0.15"/>
     <property name="light_sway" type="float" value="9"/>
     <property name="light_sway_rate" type="float" value="0.3"/>
     <property name="light_type" value="spot"/>
@@ -983,7 +983,7 @@
     <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
-    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sprite_shadow" type="float" value="0.15"/>
     <property name="light_sway" type="float" value="9"/>
     <property name="light_sway_rate" type="float" value="0.3"/>
     <property name="light_type" value="spot"/>
@@ -997,7 +997,7 @@
     <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
-    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sprite_shadow" type="float" value="0.15"/>
     <property name="light_sway" type="float" value="9"/>
     <property name="light_sway_rate" type="float" value="0.3"/>
     <property name="light_type" value="spot"/>
@@ -1011,7 +1011,7 @@
     <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
-    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sprite_shadow" type="float" value="0.15"/>
     <property name="light_sway" type="float" value="9"/>
     <property name="light_sway_rate" type="float" value="0.3"/>
     <property name="light_type" value="spot"/>
@@ -1025,7 +1025,7 @@
     <property name="light_intensity" type="float" value="1"/>
     <property name="light_radius" type="float" value="180"/>
     <property name="light_shadows" type="bool" value="true"/>
-    <property name="light_sprite_shadow" type="float" value="0.55"/>
+    <property name="light_sprite_shadow" type="float" value="0.15"/>
     <property name="light_sway" type="float" value="9"/>
     <property name="light_sway_rate" type="float" value="0.3"/>
     <property name="light_type" value="spot"/>
@@ -1036,12 +1036,12 @@
     <property name="light_angle" type="float" value="-125"/>
     <property name="light_colour" type="color" value="#ff9fb4e6"/>
     <property name="light_height" type="float" value="90"/>
-    <property name="light_intensity" type="float" value="1"/>
+    <property name="light_intensity" type="float" value="0.1"/>
     <property name="light_radius" type="float" value="420"/>
     <property name="light_reach" type="float" value="280"/>
     <property name="light_shadows" type="bool" value="true"/>
     <property name="light_size" type="float" value="14"/>
-    <property name="light_sprite_shadow" type="float" value="0.85"/>
+    <property name="light_sprite_shadow" type="float" value="0.15"/>
     <property name="light_type" value="directional"/>
    </properties>
    <point/>
