@@ -167,16 +167,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\horizon\Bogz.Logging\Bogz.Logging.csproj" />
-    <ProjectReference Include="..\horizon\Horizon.Content\Horizon.Content.csproj" />
-    <ProjectReference Include="..\horizon\Horizon.Core\Horizon.Core.csproj" />
-    <ProjectReference Include="..\horizon\Horizon.Engine\Horizon.Engine.csproj" />
+    <ProjectReference Include="..\horizon\Horizon\Horizon.csproj" />
     <ProjectReference Include="..\horizon\Horizon.HIDL\Horizon.HIDL.csproj" />
-    <ProjectReference Include="..\horizon\Horizon.Input\Horizon.Input.csproj" />
-    <ProjectReference Include="..\horizon\Horizon.OpenGL\Horizon.OpenGL.csproj" />
-    <ProjectReference Include="..\horizon\Horizon.Physics\Horizon.Physics.csproj" />
-    <ProjectReference Include="..\horizon\Horizon.Rendering.UIX\Horizon.Rendering.UIX.csproj" />
-    <ProjectReference Include="..\horizon\Horizon.Rendering\Horizon.Rendering.csproj" />
   </ItemGroup>
 
 </Project>

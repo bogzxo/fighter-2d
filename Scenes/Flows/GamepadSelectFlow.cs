@@ -1,6 +1,6 @@
 
 using Horizon.Input;
-using Horizon.Rendering.UIX.Components;
+using Horizon.UI.Components;
 
 namespace Fighter2D.Scenes.Flows;
 

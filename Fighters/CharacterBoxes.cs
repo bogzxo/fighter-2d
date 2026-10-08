@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-using Bogz.Logging;
+using Horizon.Logging;
 
 using Horizon.Rendering.Spriting;
 

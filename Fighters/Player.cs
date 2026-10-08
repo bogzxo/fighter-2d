@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 
-using Bogz.Logging;
+using Horizon.Logging;
 
 using Horizon.Physics;
 using Horizon.Rendering.Spriting;

@@ -1,7 +1,7 @@
 using System;
 
 using Horizon.Rendering.Spriting;
-using Horizon.Rendering.UIX.Components;
+using Horizon.UI.Components;
 
 namespace Fighter2D.Scenes.Widgets;
 

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Horizon.Core;
 using Horizon.Core.Components;
 using Horizon.Engine;
-using Horizon.Rendering.UIX;
+using Horizon.UI;
 
 namespace Fighter2D.HUD;
 

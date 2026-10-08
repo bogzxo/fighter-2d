@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-using Bogz.Logging;
+using Horizon.Logging;
 
 using Horizon.HIDL;
 using Horizon.HIDL.Library;

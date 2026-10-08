@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-using Horizon.Rendering.UIX;
-using Horizon.Rendering.UIX.Components;
+using Horizon.UI;
+using Horizon.UI.Components;
 
 namespace Fighter2D.Scenes.Menus;
 

@@ -3,7 +3,7 @@ using System.Numerics;
 
 using Horizon.Core;
 using Horizon.Engine;
-using Horizon.Rendering.UIX;
+using Horizon.UI;
 
 namespace Fighter2D.Scenes.Menus;
 

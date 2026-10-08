@@ -1,4 +1,4 @@
-using Bogz.Logging;
+using Horizon.Logging;
 using System;
 
 using Horizon.Core;
@@ -51,7 +51,7 @@ internal class Program
         engine.AddEntity(new NetPump());
 
         // FPS, the loops, garbage: F3 goes round it, the options screen sets where it starts
-        Screen.Performance = engine.AddEntity(new Horizon.Rendering.UIX.PerformanceOverlay(GameOptions.Performance));
+        Screen.Performance = engine.AddEntity(new Horizon.UI.PerformanceOverlay(GameOptions.Performance));
 
         if (TryGetArgument(args, ARGUMENT_MAP, out string mapName) && TryFindMap(mapName, out MapDefinition map))
         {

@@ -1,4 +1,4 @@
-using Bogz.Logging;
+using Horizon.Logging;
 using System;
 using System.IO;
 using System.Numerics;
@@ -93,7 +93,7 @@ internal static class GameOptions
     /* Under the hood */
 
     // How much of the engine's performance overlay is up (F3 goes round them too, but that isn't saved)
-    public static Horizon.Rendering.UIX.PerformanceDetail Performance = Horizon.Rendering.UIX.PerformanceDetail.Off;
+    public static Horizon.UI.PerformanceDetail Performance = Horizon.UI.PerformanceDetail.Off;
 
     /// <summary>
     /// The options of the window the way the engine wants them, see <see cref="WindowManager.Apply"/>.

@@ -1,4 +1,4 @@
-using Bogz.Logging;
+using Horizon.Logging;
 using System;
 using System.IO;
 using System.Linq;

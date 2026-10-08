@@ -5,7 +5,7 @@ using Horizon.OpenGL.Assets;
 using Horizon.OpenGL.Descriptions;
 using Horizon.Rendering;
 using Horizon.Rendering.Spriting;
-using Horizon.Rendering.UIX;
+using Horizon.UI;
 
 namespace Fighter2D.Scenes.Menus;
 

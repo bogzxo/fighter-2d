@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Text;
 
-using Horizon.Rendering.UIX;
-using Horizon.Rendering.UIX.Components;
+using Horizon.UI;
+using Horizon.UI.Components;
 
 namespace Fighter2D.HUD;
 

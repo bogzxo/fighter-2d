@@ -3,10 +3,10 @@ using System;
 using Horizon.Core.Components;
 using Horizon.Core.Threading;
 using Horizon.Input;
-using Horizon.Rendering.UIX;
-using Horizon.Rendering.UIX.Components;
+using Horizon.UI;
+using Horizon.UI.Components;
 
-using Button = Horizon.Rendering.UIX.Components.Button;
+using Button = Horizon.UI.Components.Button;
 
 namespace Fighter2D.HUD;
 

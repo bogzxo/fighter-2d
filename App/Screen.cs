@@ -4,7 +4,7 @@ using Horizon.Engine;
 using Horizon.Rendering;
 using Horizon.Rendering.PostProcessing;
 using Horizon.Rendering.Transitions;
-using Horizon.Rendering.UIX;
+using Horizon.UI;
 
 namespace Fighter2D.App;
 
@@ -16,7 +16,7 @@ namespace Fighter2D.App;
 internal static class Screen
 {
     /// <summary>The engine's performance overlay, made once in Program and set from the options screen.</summary>
-    public static Horizon.Rendering.UIX.PerformanceOverlay? Performance { get; set; }
+    public static Horizon.UI.PerformanceOverlay? Performance { get; set; }
 
     // The art is drawn at twice its size, so that is how big one dot of the CRT is
     private const float CRT_PIXEL_SIZE = 2.0f;

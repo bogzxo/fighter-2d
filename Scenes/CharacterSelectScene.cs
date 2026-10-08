@@ -4,8 +4,8 @@ using System.Numerics;
 using System.Text;
 
 using Horizon.Input;
-using Horizon.Rendering.UIX;
-using Horizon.Rendering.UIX.Components;
+using Horizon.UI;
+using Horizon.UI.Components;
 
 namespace Fighter2D.Scenes;
 

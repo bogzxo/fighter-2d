@@ -4,8 +4,8 @@ using Horizon.Core;
 using Horizon.Core.Components;
 using Horizon.Core.Threading;
 using Horizon.Engine;
-using Horizon.Rendering.UIX;
-using Horizon.Rendering.UIX.Components;
+using Horizon.UI;
+using Horizon.UI.Components;
 
 namespace Fighter2D.HUD;
 

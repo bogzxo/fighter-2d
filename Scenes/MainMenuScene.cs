@@ -5,12 +5,12 @@ using Horizon.Rendering;
 using Horizon.Input;
 using Horizon.OpenGL.Assets;
 using Horizon.Rendering.Spriting;
-using Horizon.Rendering.UIX;
-using Horizon.Rendering.UIX.Components;
+using Horizon.UI;
+using Horizon.UI.Components;
 
 using Silk.NET.OpenGL;
 
-using Button = Horizon.Rendering.UIX.Components.Button;
+using Button = Horizon.UI.Components.Button;
 using Texture = Horizon.OpenGL.Assets.Texture;
 
 namespace Fighter2D.Scenes;

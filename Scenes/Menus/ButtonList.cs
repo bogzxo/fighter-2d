@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-using Button = Horizon.Rendering.UIX.Components.Button;
+using Button = Horizon.UI.Components.Button;
 
 namespace Fighter2D.Scenes.Menus;
 

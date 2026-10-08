@@ -2,8 +2,8 @@ using System.Numerics;
 using System.Text;
 
 using Horizon.Core.Tweening;
-using Horizon.Rendering.UIX;
-using Horizon.Rendering.UIX.Components;
+using Horizon.UI;
+using Horizon.UI.Components;
 
 namespace Fighter2D.HUD;
 
