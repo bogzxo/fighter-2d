@@ -26,6 +26,17 @@ internal enum TransitionStyle
 }
 
 /// <summary>
+/// How finely the pathtraced lighting works its light out, which is how many cascades it has (see
+/// <see cref="Screen.TracedCascades"/>). Low is about half the cost of High.
+/// </summary>
+internal enum LightQuality
+{
+    Low,
+    Medium,
+    High
+}
+
+/// <summary>
 /// The settings a player can flip on the options screen. They are kept in options.hor next to the game between runs.
 /// To add one give it a field here, a line in Load and Save, and a row on the options screen (OptionsScene and options.hor).
 /// </summary>
@@ -70,6 +81,9 @@ internal static class GameOptions
     // Whether the lighting is path traced, light bouncing off the arena and spilling round corners, instead of the
     // cheap kind. Off until somebody with a GPU asks for it, it is a good few passes a frame
     public static bool RenderPathtraced = false;
+
+    // And how finely, when it is. High until somebody wants the frames back
+    public static LightQuality LightQuality = LightQuality.High;
 
     // How big every UI is on top of fitting the window, 1 for as it was laid out
     public static float GuiScale = 1.0f;
@@ -126,6 +140,7 @@ internal static class GameOptions
             Transitions = HorReader.Named(options, "transitions", Transitions);
             Crt = HorReader.Bool(options, "crt", Crt);
             RenderPathtraced = HorReader.Bool(options, "fancy", RenderPathtraced);
+            LightQuality = HorReader.Named(options, "light_quality", LightQuality);
             GuiScale = Closest(GuiScales, (float)HorReader.Number(options, "gui_scale", GuiScale));
             CameraZoom = Closest(CameraZooms, (float)HorReader.Number(options, "camera_zoom", CameraZoom));
 
@@ -168,6 +183,7 @@ internal static class GameOptions
         text.AppendLine($"    transitions: \"{Transitions.ToString().ToLowerInvariant()}\",");
         text.AppendLine($"    crt: {Write(Crt)},");
         text.AppendLine($"    fancy: {Write(RenderPathtraced)},");
+        text.AppendLine($"    light_quality: \"{LightQuality.ToString().ToLowerInvariant()}\",");
         text.AppendLine($"    gui_scale: {GuiScale.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
         text.AppendLine($"    camera_zoom: {CameraZoom.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
         text.AppendLine($"    input_display: {Write(InputDisplay)},");

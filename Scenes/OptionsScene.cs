@@ -145,6 +145,14 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 Screen.ApplyOptions(Canvas, _ui);
             },
             "Path traces the light of a fight, so it bounces off the arena\nand spills round corners. Wants a proper GPU.");
+
+        _settings.Add(layout, "light_quality", Enum.GetValues<LightQuality>(), GameOptions.LightQuality, quality => quality.ToString(),
+            quality =>
+            {
+                GameOptions.LightQuality = quality;
+                Screen.ApplyOptions(Canvas, _ui);
+            },
+            "How finely the pathtraced light is worked out. Low costs about half\nof High, the light round small lamps shimmers a touch more.");
     }
 
     private void AddFightOptions(UILayout layout)

@@ -96,11 +96,28 @@ internal static class Screen
     public static LightingMode WorldLighting => GameOptions.RenderPathtraced ? LightingMode.PathTraced : LightingMode.Direct;
 
     /// <summary>
+    /// How many cascades the pathtraced lighting works its light out with, by the quality the options say. Every
+    /// cascade costs as much as the next, three is about half of all of them, and the light settling over a few
+    /// frames is what keeps three looking like the lot. Under three it goes blotchy whatever, see
+    /// <see cref="Horizon.Rendering.Lighting.PathTracedLighting2D.MaxCascades"/>.
+    /// </summary>
+    public static int TracedCascades => GameOptions.LightQuality switch
+    {
+        LightQuality.Low => 3,
+        LightQuality.Medium => 4,
+        _ => 6
+    };
+
+    /// <summary>
     /// Helper method to flip the effects of a scene that is already up to what the options say, for the options screen itself.
     /// </summary>
     public static void ApplyOptions(Renderer2D renderer, UICompositor? ui)
     {
         if (renderer.PostProcessing.Get<CrtEffect>() is { } crt) crt.Enabled = GameOptions.Crt;
-        if (renderer is DeferredRenderer2D lit) lit.Lighting = WorldLighting;
+        if (renderer is DeferredRenderer2D lit)
+        {
+            lit.Lighting = WorldLighting;
+            lit.PathTracing.MaxCascades = TracedCascades;
+        }
     }
 }

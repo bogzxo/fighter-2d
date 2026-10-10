@@ -81,6 +81,7 @@ internal static class DeferedStyle
         renderer.PathTracing.Strength = BOUNCE_STRENGTH;
         renderer.PathTracing.Bounce = BOUNCE_CARRY;
         renderer.PathTracing.AmbientScale = BOUNCE_AMBIENT;
+        renderer.PathTracing.MaxCascades = Screen.TracedCascades;
 
         var occlusion = renderer.AmbientOcclusion;
         occlusion.Enabled = OCCLUSION;
