@@ -69,7 +69,7 @@ internal sealed class HitCalloutDisplay : IHudDisplay
             Show(_callouts[i], text, color, HOLD_TIME);
 
             // The counter only shows up once it is actually a combo, and goes away with the next thing that isn't one
-            if (report.ComboCount >= MIN_COMBO) Show(_combos[i], $"{report.ComboCount} HITS    {report.ComboDamage} DMG", color, HOLD_TIME);
+            if (report.ComboCount >= MIN_COMBO) Show(_combos[i], $"{report.ComboCount} COMBO\t{report.ComboDamage} DMG", color, HOLD_TIME);
             else _combos[i].FadeOut(FADE_TIME);
 
             if (GameOptions.FrameData) Show(_frames[i], DescribeFrames(report), FrameDataColor, FRAME_DATA_HOLD_TIME);
