@@ -93,6 +93,7 @@ internal static class HitResolver
         victim.Player.GainMeter((int)MathF.Round(damage * CombatRules.METER_PER_DAMAGE_TAKEN));
 
         Shove(victim.Player, move, direction);
+        Shove(attacker.Player, move, -direction);
         victim.ApplyHitstun(HitstunFor(victim, move, counter), damage, move.Knockdown);
 
         // A knockdown that doesn't lift them off the ground puts them down right here, the others wait for the landing
