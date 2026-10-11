@@ -10,10 +10,13 @@ using Button = Horizon.UI.Components.Button;
 namespace Fighter2D.Scenes;
 
 /// <summary>
-/// Scene where the bindings of one gamepad can be changed.
+/// Scene where the bindings of one gamepad can be changed. It is got to from the fight setup screen and from the
+/// options, and goes back to whichever it was.
 /// Leaving the scene saves the bindings of every gamepad, see <see cref="GameInput.Save"/>.
 /// </summary>
-internal class BindingsScene(int slot, MatchSetup setup) : MenuScene
+/// <param name="title">What the screen is called, whose bindings these are.</param>
+/// <param name="back">Makes the scene to go back to.</param>
+internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> back) : MenuScene
 {
     private const string HINT_BROWSE = "[icon:dpad] choose    [icon:pad_a] change    [icon:pad_x] add another    [icon:pad_y] clear    [icon:pad_b] done";
     private const string TEXT_LISTENING = "press a button...";
@@ -41,10 +44,8 @@ internal class BindingsScene(int slot, MatchSetup setup) : MenuScene
 
     protected override void BuildUi(UILayout layout)
     {
-        // The screen is laid out in Assets/ui/layouts/bindings.hor, the row of an action in binding_row.hor.
-        // The player is whoever picked this gamepad, which is not the same thing as the slot it is plugged into
-        int player = Math.Max(0, setup.Slots.IndexOf(slot));
-        layout.Get<Label>("title").Text = $"Bindings of player {player + 1}";
+        // The screen is laid out in Assets/ui/layouts/bindings.hor, the row of an action in binding_row.hor
+        layout.Get<Label>("title").Text = title;
         layout.Get<Label>("gamepad_name").Text = _gamepad?.Name ?? string.Empty;
 
         BuildRows(layout);
@@ -217,7 +218,7 @@ internal class BindingsScene(int slot, MatchSetup setup) : MenuScene
     private void Leave()
     {
         GameInput.Save();
-        GoTo(new GamepadSelectorScene(setup));
+        GoTo(back());
     }
 
     /// <summary>

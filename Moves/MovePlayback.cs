@@ -218,8 +218,10 @@ internal sealed class MovePlayback(PlayerController controller)
         if (frame == phase.CommitFrame) controller.CanCancel = false;
         if (phase.Status is { } status && frame == phase.StatusFrame) controller.State.CurrentStatus = status;
 
-        // The hitbox is read off the frame that is being drawn
+        // The hitbox is read off the frame that is being drawn. It comes out on the hit frame and stays out for the
+        // move's active frames, or until it lands
         if (frame == phase.HitFrame) controller.ThrowHit(NextShown);
+        else controller.KeepHitting(NextShown);
 
         if (phase.Effect is not null && (phase.EffectFrames == 0 || _effectFrame < phase.EffectFrames))
         {

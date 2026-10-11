@@ -17,7 +17,12 @@ internal sealed class SettingList
     /// <summary>One row. What it is called, what it is set to, what writes a choice back and what it has to say for itself.</summary>
     private sealed record Setting(Label Title, Selector Selector, Action<int> Apply, string Hint);
 
+    // What the row the gamepad is on is laid over, when the layout made its rows panels. Barely there, it only has to be findable
+    private static readonly Vector4 RowHighlight = new(0.71f, 0.59f, 0.94f, 0.16f);
+
     private readonly List<Setting> _settings = [];
+
+    public int Count => _settings.Count;
 
     /// <summary>
     /// The row the gamepad is on.
@@ -28,6 +33,11 @@ internal sealed class SettingList
     /// What the row the gamepad is on has to say for itself, empty if it was added without a hint.
     /// </summary>
     public string Hint => _settings.Count > 0 ? _settings[Selected].Hint : string.Empty;
+
+    /// <summary>
+    /// What the row the gamepad is on is called, as its title in the layout has it.
+    /// </summary>
+    public string Title => _settings.Count > 0 ? _settings[Selected].Title.Text : string.Empty;
 
     /// <summary>
     /// Called after any of the settings was changed, by the gamepad or by a click. For whoever wants to save them all.
@@ -69,11 +79,23 @@ internal sealed class SettingList
         if (_settings.Count == 0) return;
 
         Selected = Math.Clamp(index, 0, _settings.Count - 1);
+        Light(Selected);
+    }
 
-        // The row the gamepad is on is written in white, the others are dimmed
+    /// <summary>
+    /// Helper method to dim every row, for a list the gamepad isn't on at all right now. Where it was is remembered.
+    /// </summary>
+    public void Dim() => Light(-1);
+
+    /// <summary>
+    /// The row the gamepad is on is written in white with a wash of colour behind it, the others are dimmed.
+    /// </summary>
+    private void Light(int lit)
+    {
         for (int i = 0; i < _settings.Count; i++)
         {
-            _settings[i].Title.Color = i == Selected ? Vector4.One : MenuColors.Hint;
+            _settings[i].Title.Color = i == lit ? Vector4.One : MenuColors.Hint;
+            if (_settings[i].Title.Parent is Panel row) row.Color = i == lit ? RowHighlight : null;
         }
     }
 
@@ -85,11 +107,16 @@ internal sealed class SettingList
     /// <summary>
     /// Helper method to set the row the gamepad is on to the choice before or after the one it has, wrapping around at the ends.
     /// </summary>
-    public void Step(int direction)
-    {
-        if (_settings.Count == 0 || direction == 0) return;
+    public void Step(int direction) => Step(Selected, direction);
 
-        Setting setting = _settings[Selected];
+    /// <summary>
+    /// Helper method to step a row whether the gamepad is on it or not, for a shortcut to one of them (the bumpers and the map).
+    /// </summary>
+    public void Step(int row, int direction)
+    {
+        if (row < 0 || row >= _settings.Count || direction == 0) return;
+
+        Setting setting = _settings[row];
 
         int count = setting.Selector.Options.Length;
         if (count < 2) return;

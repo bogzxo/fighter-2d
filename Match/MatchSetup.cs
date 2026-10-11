@@ -34,11 +34,15 @@ internal class MatchSetup(MatchMode mode)
 
     public bool IsReady => Slots.Count >= PlayerCount;
 
-    // The rules of the match, picked after the map (MatchRulesScene) and kept for the next match
+    // The rules of the match, picked on the fight setup screen (FightSetupScene) and kept for the rematch
     public MatchRules Rules { get; } = new();
 
     // The character every player of this machine has picked, by its id in the content
     private readonly List<string> _characters = [];
+
+    // The character the dummy is in a practice fight, by its id in the content. Empty for the first one there is.
+    // The training menu changes it mid fight, and it stays changed for the rematch
+    public string DummyCharacter { get; set; } = string.Empty;
 
     // The connection to the other machine and what has been agreed on over it, only there for an online fight
     public NetSession? Session { get; private set; }
@@ -47,8 +51,8 @@ internal class MatchSetup(MatchMode mode)
     public string Title => Mode switch
     {
         MatchMode.Pvp => "Player vs Player",
-        MatchMode.Host => "Host Server",
-        MatchMode.Join => "Multiplayer",
+        MatchMode.Host => "Online, hosting",
+        MatchMode.Join => "Online",
         _ => "Practice"
     };
 
@@ -108,6 +112,10 @@ internal class MatchSetup(MatchMode mode)
 
             StartsOnTheRight = Lobby is { LocalSide: 1 },
             CharacterId = GetCharacter(0),
+
+            // The dummy of a practice fight, and the training menu's way of swapping it for somebody else
+            OpponentCharacterId = Mode == MatchMode.Practice && DummyCharacter.Length > 0 ? DummyCharacter : null,
+            OpponentChanged = Mode == MatchMode.Practice ? id => DummyCharacter = id : null,
 
             // Online both machines play by what the host settled on, which came along with the map
             Rules = Lobby?.StartedRules ?? Rules,

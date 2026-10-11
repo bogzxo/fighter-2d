@@ -8,8 +8,8 @@ using Button = Horizon.UI.Components.Button;
 namespace Fighter2D.Scenes.Widgets;
 
 /// <summary>
-/// One cell of the character select grid, a button with a character in it (or a question mark if there is nobody for it).
-/// The cell itself comes out of Assets/ui/layouts/character_cell.hor.
+/// One cell of the roster on the fight setup screen, a button with a character in it (or a question mark if there is nobody for it).
+/// The cell itself comes out of Assets/ui/layouts/fighter_cell.hor.
 /// </summary>
 internal sealed class CharacterCell
 {
@@ -44,11 +44,12 @@ internal sealed class CharacterCell
     }
 
     /// <summary>
-    /// Shows which players are standing on the cell (as "P1 P2"), lit up if anybody is.
+    /// Shows who is on the cell (as "P1 P2", or a tag for somebody no gamepad of this machine picks).
     /// </summary>
-    public void ShowPlayers(string tags, Vector4 color)
+    /// <param name="lit">Whether the cell is lit up, which it is with somebody's cursor on it.</param>
+    public void ShowPlayers(string tags, Vector4 color, bool lit)
     {
-        Box.Selected = tags.Length > 0;
+        Box.Selected = lit;
         _tags.Text = tags;
         _tags.Color = color;
     }

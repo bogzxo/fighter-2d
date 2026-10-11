@@ -60,6 +60,30 @@ internal class FightScene : Scene
     public string? CharacterId { get; init; }
 
     /// <summary>
+    /// Which character the dummy is, for a practice fight. Null for the first one there is, and nothing at all when player two is a person.
+    /// </summary>
+    public string? OpponentCharacterId { get; init; }
+
+    /// <summary>
+    /// Where the two players stand at the start of every round, in units of the world across the stage, each facing
+    /// the other. Null for the spawn of the map (both on it, pushed apart by their bodies, which lands them somewhere a
+    /// little different every time). For tests that have to start from the same place every time (--positions).
+    /// </summary>
+    public (float One, float Two)? TestPositions { get; init; }
+
+    /// <summary>
+    /// What the dummy does from the very first tick, rather than fighting until somebody changes it in the pause menu
+    /// (by which time it has dashed off somewhere). For tests (--dummy stand). Null for the usual, it fights.
+    /// </summary>
+    public DummyMode? StartingDummyMode { get; init; }
+
+    /// <summary>
+    /// Called with the id of the character the dummy should be from now on, when the training menu changes it. Whoever makes the fight
+    /// keeps the choice, the fight itself is built again from where it was (the way a reload does it) with the new dummy in it.
+    /// </summary>
+    public Action<string>? OpponentChanged { get; init; }
+
+    /// <summary>
     /// Makes this same fight all over again, for a rematch. Null if there is none to be had, which also means no pause menu (its restart needs this).
     /// A fight can't just start itself over, its players and everything else in it belong to this scene and go when it does.
     /// </summary>
@@ -182,7 +206,8 @@ internal class FightScene : Scene
         Fight.PlayerOne = new Player()
         {
             Controller = new PlayerController(new GamepadPlayerInput(_gamepadIndex)),
-            SpawnPosition = spawn,
+            SpawnPosition = TestPositions is { } placed ? spawn with { X = placed.One } : spawn,
+            StartFacing = TestPositions is { } facing ? MathF.Sign(facing.Two - facing.One) : null,
             CharacterId = CharacterId
         };
 
@@ -195,12 +220,18 @@ internal class FightScene : Scene
         if (_opponent is null)
         {
             var dummy = new DummyPlayerInput();
-            _opponent = new Player { Controller = new PlayerController(dummy) };
-            _training = new TrainingMode(dummy, Fight.PlayerOne, _opponent);
+            if (StartingDummyMode is { } mode) dummy.Mode = mode;
+            _opponent = new Player { Controller = new PlayerController(dummy), CharacterId = OpponentCharacterId };
+            _training = new TrainingMode(dummy, Fight.PlayerOne, _opponent)
+            {
+                // Swapping the dummy for another character is a reload with a different player two
+                ChangeOpponent = OpponentChanged is null || Reload is null ? null : ChangeOpponent
+            };
         }
 
         Fight.PlayerTwo = _opponent;
-        Fight.PlayerTwo.SpawnPosition = spawn;
+        Fight.PlayerTwo.SpawnPosition = TestPositions is { } placed ? spawn with { X = placed.Two } : spawn;
+        if (TestPositions is { } facing) Fight.PlayerTwo.StartFacing = MathF.Sign(facing.One - facing.Two);
         players.Add(AddEntity(Fight.PlayerTwo));
     }
 
@@ -331,6 +362,17 @@ internal class FightScene : Scene
 
         Log.Warning("[Fight] The other machine never said it has the data, nothing was reloaded.");
         if (_transfer is not null) _transfer.Waiting = string.Empty;
+    }
+
+    /// <summary>
+    /// Helper method to put another character in the dummy's place. The fight is built again around it, from where it was.
+    /// </summary>
+    private void ChangeOpponent(string characterId)
+    {
+        if (OpponentChanged is null) return;
+
+        OpponentChanged(characterId);
+        ReloadNow();
     }
 
     /// <summary>

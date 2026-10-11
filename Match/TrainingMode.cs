@@ -3,10 +3,46 @@ namespace Fighter2D.Match;
 /// <summary>
 /// The lab. A practice fight against the dummy gets these on top of the fight itself, from the pause menu: what the dummy does with
 /// itself (fights, stands there, crouches, blocks high or low), health that comes back once a combo is over so nobody has to restart
-/// the round to try again, and a button that puts both fighters back on their marks.
+/// the round to try again, a button that puts both fighters back on their marks, and which character the dummy is.
 /// </summary>
 internal sealed class TrainingMode(DummyPlayerInput dummy, Player playerOne, Player playerTwo)
 {
+    // Every character there is, for the dummy to be. Read once, the menu steps through them
+    private readonly List<CharacterDefinition> _characters = CharacterDefinition.LoadAll();
+
+    /// <summary>
+    /// What swapping the dummy for another character comes to, by the id of the character. Null when the fight can't be built again,
+    /// in which case the menu doesn't offer it.
+    /// </summary>
+    public Action<string>? ChangeOpponent { get; init; }
+
+    /// <summary>
+    /// Whether the dummy can be swapped for another character at all.
+    /// </summary>
+    public bool CanChangeOpponent => ChangeOpponent is not null && _characters.Count > 1;
+
+    /// <summary>
+    /// The characters the dummy can be, as the training menu lists them.
+    /// </summary>
+    public string[] OpponentChoices => [.. _characters.Select(character => character.PrettyName)];
+
+    /// <summary>
+    /// Which of <see cref="OpponentChoices"/> the dummy is. Setting it swaps the dummy, which builds the fight again around the new one.
+    /// </summary>
+    public int OpponentChoice
+    {
+        get
+        {
+            string? id = playerTwo.Character?.Id ?? playerTwo.CharacterId;
+            return Math.Max(0, _characters.FindIndex(character => character.Id == id));
+        }
+        set
+        {
+            if (ChangeOpponent is null || value < 0 || value >= _characters.Count || value == OpponentChoice) return;
+            ChangeOpponent(_characters[value].Id);
+        }
+    }
+
     // How long (in seconds) both fighters have to be out of a scrap before the health comes back
     private const float SETTLE_TIME = 1.2f;
 

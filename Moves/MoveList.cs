@@ -24,14 +24,25 @@ internal class MoveList
     /// </summary>
     public static MoveList Load(params string[] files)
     {
-        var list = new MoveList();
-
+        var read = new List<FightingMove>();
         foreach (string file in files)
         {
-            foreach (FightingMove move in MoveFileReader.Read(file))
-            {
-                list.Moves[move.Id] = move;
-            }
+            read.AddRange(MoveFileReader.Read(file));
+        }
+
+        return Of(read);
+    }
+
+    /// <summary>
+    /// Helper method to make a move list out of moves that were read already, a later one replacing an earlier one of
+    /// the same name. Throws the same as <see cref="Load"/> if the lot of them makes no sense.
+    /// </summary>
+    public static MoveList Of(IEnumerable<FightingMove> moves)
+    {
+        var list = new MoveList();
+        foreach (FightingMove move in moves)
+        {
+            list.Moves[move.Id] = move;
         }
 
         list.Validate();

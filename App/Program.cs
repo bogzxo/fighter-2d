@@ -12,10 +12,16 @@ internal class Program
     // Add "--character cammy" to play as somebody else than the first character. Handy for working on a map or the fight itself
     private const string ARGUMENT_MAP = "--map";
     private const string ARGUMENT_CHARACTER = "--character";
+    private const string ARGUMENT_OPPONENT = "--opponent";
+    private const string ARGUMENT_POSITIONS = "--positions";
+    private const string ARGUMENT_DUMMY = "--dummy";
 
     // "--content C:/wherever/Fighter2D" loads the moves, characters, maps and art from that folder (the one with Assets in it)
     // instead of from the copy next to the exe. With the host tools of the pause menu that is edit a file, reload, see it, no build in between
     private const string ARGUMENT_CONTENT = "--content";
+
+    // "--windowed" keeps it out of fullscreen for this once whatever the options say, the hitbox editor starts it like that
+    private const string ARGUMENT_WINDOWED = "--windowed";
 
     private static void Main(string[] args)
     {
@@ -24,6 +30,7 @@ internal class Program
 
         // Whatever the player set on the options screen last time, the window is made the way they left it
         GameOptions.Load();
+        if (args.Contains(ARGUMENT_WINDOWED)) GameOptions.Fullscreen = false;
 
         if (TryGetArgument(args, ARGUMENT_CONTENT, out string content))
         {
@@ -57,9 +64,27 @@ internal class Program
         {
             TryGetArgument(args, ARGUMENT_CHARACTER, out string character);
 
+            // The dummy's character, which the training menu can change mid fight
+            TryGetArgument(args, ARGUMENT_OPPONENT, out string dummy);
+
+            // --positions 520,600 puts player one at 520 and player two at 600 at the start of every round, facing each other,
+            // so a scripted test starts from exactly the same place every time
+            (float, float)? positions = null;
+            if (TryGetArgument(args, ARGUMENT_POSITIONS, out string placed) && placed.Split(',') is [var one, var two]
+                && float.TryParse(one, System.Globalization.CultureInfo.InvariantCulture, out float x1)
+                && float.TryParse(two, System.Globalization.CultureInfo.InvariantCulture, out float x2))
+                positions = (x1, x2);
+
+            // --dummy stand (or crouch, block, crouchblock) has the dummy do that from the first tick, the AI switched off
+            DummyMode? dummyMode = TryGetArgument(args, ARGUMENT_DUMMY, out string mode) && Enum.TryParse(mode, ignoreCase: true, out DummyMode parsed) ? parsed : null;
+
             FightScene CreateFight(FightResume? resume = null) => new(MapLoader.TryFind(map.FileName, out MapDefinition fresh) ? fresh : map, 0)
             {
+                TestPositions = positions,
+                StartingDummyMode = dummyMode,
                 CharacterId = character.Length > 0 ? character : null,
+                OpponentCharacterId = dummy.Length > 0 ? dummy : null,
+                OpponentChanged = id => dummy = id,
                 Resume = resume,
                 Rematch = () => CreateFight(),
                 Reload = CreateFight

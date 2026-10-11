@@ -41,6 +41,9 @@ internal class MainMenuScene : MenuScene
     // Whether the hint is busy saying something else than which buttons to press
     private bool _hintIsMessage;
 
+    // The gamepad that pressed the button being acted on, null for a click of the mouse
+    private int? _pressedBy;
+
     protected override void BuildBackdrop()
     {
         // The picture goes in a batch of its own so it ends up behind everything else
@@ -94,7 +97,16 @@ internal class MainMenuScene : MenuScene
         _descriptions[button] = description;
     }
 
-    private void Play(MatchMode mode) => GoTo(new GamepadSelectorScene(new MatchSetup(mode)));
+    private void Play(MatchMode mode) => GoTo(new FightSetupScene(Claim(new MatchSetup(mode))));
+
+    /// <summary>
+    /// Whoever picked the fight with a gamepad is player one with it, they don't get asked to press a button on it all over again.
+    /// </summary>
+    private MatchSetup Claim(MatchSetup setup)
+    {
+        if (_pressedBy is { } slot) setup.Slots.Add(slot);
+        return setup;
+    }
 
     private void HostServer()
     {
@@ -107,7 +119,7 @@ internal class MainMenuScene : MenuScene
             return;
         }
 
-        GoTo(new GamepadSelectorScene(MatchSetup.Online(session)));
+        GoTo(new FightSetupScene(Claim(MatchSetup.Online(session))));
     }
 
     private void AskToQuit()
@@ -150,7 +162,9 @@ internal class MainMenuScene : MenuScene
 
             if (MenuInput.ConfirmPressed(gamepad))
             {
+                _pressedBy = gamepad.Slot;
                 _nav.Activate();
+                _pressedBy = null;
                 return;
             }
         }

@@ -75,6 +75,14 @@ public class FightingMove
     // Carries on into a different move once this one is finished, depending on the stance the player is in by then
     public Dictionary<Stance, string>? FinishReroutes { get; init; }
 
+    // The hitboxes drawn by hand for the move (see CustomHitboxes), one for every active frame from the hit frame on,
+    // null for the limb its art has sticking out
+    internal Fighters.Box[]? CustomHitboxes { get; set; }
+
+    // How many frames of the move its hitbox stays out for from the hit frame, the active frames. 1 unless the hand drawn
+    // hitboxes say more. The move tries to land on every one of them until it does, a hit is a hit once
+    public int ActiveFrames { get; internal set; } = 1;
+
     // Startup, recovery and hitstun in ticks, worked out once the character's animations are known
     public MoveFrameData FrameData { get; internal set; }
 

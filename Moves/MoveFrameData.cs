@@ -7,7 +7,7 @@ namespace Fighter2D.Moves;
 /// Characters animate at different rates so animation frames can't be compared between them, ticks can.
 /// </summary>
 /// <param name="Startup">How long after the move starts its hit comes out, 0 for a move that doesn't hit.</param>
-/// <param name="Recovery">How long the move goes on for after the hit came out.</param>
+/// <param name="Recovery">How long the move goes on for after its last active frame, see <see cref="FightingMove.ActiveFrames"/>.</param>
 /// <param name="Hitstun">How long whoever it lands on is in hitstun for.</param>
 /// <param name="Blockstun">How long whoever blocks it is stuck in their block for.</param>
 public readonly record struct MoveFrameData(int Startup, int Recovery, int Hitstun, int Blockstun)
@@ -46,8 +46,10 @@ public readonly record struct MoveFrameData(int Startup, int Recovery, int Hitst
         // Nothing to work out for a move that doesn't hit
         if (hitFrame < 0) return default;
 
+        // Startup, then the active frames the hitbox is out for, then recovery, which is everything after the last of them
+        int active = Math.Max(1, move.ActiveFrames);
         float startup = hitFrame * ticksPerFrame;
-        float recovery = (total - hitFrame) * ticksPerFrame;
+        float recovery = Math.Max(1, (int)total - hitFrame - (active - 1)) * ticksPerFrame;
 
         // A move that says its hitstun is taken at its word, in frames of its own animation.
         // One that doesn't gets it from its startup, the longer the windup the more plus it is on hit

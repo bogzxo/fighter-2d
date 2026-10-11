@@ -34,7 +34,7 @@ internal class CharacterDefinition
     // How much bigger or smaller than the others the character is, sprite, body and boxes alike
     public float Scale { get; private init; } = 1f;
 
-    // The bars on the character select screen, each from 0 to 1. They are only for show
+    // The bars on the fight setup screen, each from 0 to 1. They are only for show
     public float Speed { get; private init; } = DEFAULT_STAT;
     public float Health { get; private init; } = DEFAULT_STAT;
     public float Bulk { get; private init; } = DEFAULT_STAT;

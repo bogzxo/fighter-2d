@@ -15,8 +15,14 @@ internal static class ButtonGlyphs
     // What a text starts with to be shown with the icons of a PlayStation gamepad. Which icons those are is up to the skin (icon_sets in skin.hor)
     private const string PLAYSTATION_ICONS = "[icons:playstation]";
 
+    // The same for a keyboard, whose icons are its keys. A keyboard has no d-pad to draw, it has four arrows
+    private const string KEYBOARD_ICONS = "[icons:keyboard]";
+    private const string DPAD_ICON = "[icon:dpad]";
+    private const string ARROW_KEYS = "[icon:key_left][icon:key_right][icon:key_up][icon:key_down]";
+
     // Hints are asked for on every update, so every text is only ever translated once
     private static readonly Dictionary<string, string> playStationTexts = [];
+    private static readonly Dictionary<string, string> keyboardTexts = [];
 
     // The same for what is held, which the input display asks for every line on every tick a button is held. There
     // aren't that many ways to mash a pad, and building them anew every time was a pile of garbage a second for nowt
@@ -45,6 +51,16 @@ internal static class ButtonGlyphs
     /// <param name="gamepad">The gamepad the text is for, null leaves the text as it is.</param>
     public static string Localize(string text, Gamepad? gamepad)
     {
+        if (gamepad?.Kind == GamepadKind.Keyboard)
+        {
+            lock (keyboardTexts)
+            {
+                if (keyboardTexts.TryGetValue(text, out string? keys)) return keys;
+
+                return keyboardTexts[text] = KEYBOARD_ICONS + text.Replace(DPAD_ICON, ARROW_KEYS);
+            }
+        }
+
         if (gamepad?.Kind != GamepadKind.PlayStation) return text;
 
         lock (playStationTexts)

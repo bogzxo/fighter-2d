@@ -8,7 +8,7 @@ using Horizon.Rendering;
 namespace Fighter2D.Map;
 
 /// <summary>
-/// A live picture of a map, for the map select screen. It is the real thing and not a screenshot, the same tiles, lights and weather a fight on it would have.
+/// A live picture of a map, behind the fight setup screen. It is the real thing and not a screenshot, the same tiles, lights and weather a fight on it would have.
 /// Nobody is standing on it so it has no collision, and the camera just drifts back and forth over where the fight would start.
 /// Ask for a map with <see cref="Show"/> from wherever, it gets loaded at the start of the next frame with the game standing still.
 /// </summary>

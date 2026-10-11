@@ -34,7 +34,7 @@ internal sealed class PlayerBoxes
     public RectanglePhysicsFixture HurtboxFixture { get; }
 
     /// <summary>
-    /// What the player last hit with. It is only there for the frame the hit comes out on.
+    /// What the player hits with. It's there for the active frames of the move, from the hit frame on, and gone otherwise.
     /// </summary>
     public RectanglePhysicsFixture HitboxFixture { get; }
 
@@ -50,6 +50,9 @@ internal sealed class PlayerBoxes
 
         HurtboxFixture = player.PhysicsBody.CreateRectangularFixture(Vector2.Zero, Vector2.Zero, true, "hurtbox");
         HitboxFixture = player.PhysicsBody.CreateRectangularFixture(Vector2.Zero, Vector2.Zero, true, "hitbox");
+
+        // Red like it is in the hitbox editor, a little orange so it isn't the red of the map's colliders
+        HitboxFixture.DebugColour = new Vector3(1.0f, 0.3f, 0.1f);
         OutlineFixture = player.PhysicsBody.CreateOutlineFixture("outline");
     }
 
@@ -70,8 +73,17 @@ internal sealed class PlayerBoxes
     /// </summary>
     public Box Hitbox(uint frame)
     {
-        string animation = _player.Controller.ActiveAnimation;
-        Box hitbox = ToWorld(_boxes is not null && _boxes.TryGet(animation, frame, out var boxes) ? boxes.Hitbox : FallbackBox, HITBOX_REACH);
+        // A box drawn by hand for the move is where it was drawn for the active frame it's on, to the pixel, nothing added to it
+        Box hitbox;
+        if (_player.Controller.CurrentMove.CustomHitboxes is { Length: > 0 } custom)
+        {
+            hitbox = ToWorld(custom[Math.Clamp(_player.Controller.ActiveFrame, 0, custom.Length - 1)], 0);
+        }
+        else
+        {
+            string animation = _player.Controller.ActiveAnimation;
+            hitbox = ToWorld(_boxes is not null && _boxes.TryGet(animation, frame, out var boxes) ? boxes.Hitbox : FallbackBox, HITBOX_REACH);
+        }
 
         // Put it where the physics (and whoever is looking at its debug overlay) can see it
         HitboxFixture.Bounds = new PhysicsRectangle(hitbox.Min - _player.Transform.Position, hitbox.Max - hitbox.Min);
@@ -85,7 +97,12 @@ internal sealed class PlayerBoxes
     {
         var (animation, frame) = ShownFrame();
 
-        // Nothing to do unless what is drawn of us has changed
+        // The hitbox is out for as long as the move's active frames last, where the frame on screen puts it. It used to
+        // be cleared with the frame it came out on, which was the same tick, so the hitbox view never once showed it
+        if (_player.Controller.ActiveFrame >= 0) Hitbox(frame);
+        else HitboxFixture.Bounds = new PhysicsRectangle(Vector2.Zero, Vector2.Zero);
+
+        // Nothing else to do unless what is drawn of us has changed
         if (_shown == (animation, frame, _player.Flipped)) return;
         _shown = (animation, frame, _player.Flipped);
 
@@ -93,9 +110,6 @@ internal sealed class PlayerBoxes
         HurtboxFixture.Bounds = new PhysicsRectangle(
             hurtbox.Min - _player.Transform.Position - new Vector2(HURTBOX_PADDING),
             hurtbox.Max - hurtbox.Min + new Vector2(HURTBOX_PADDING * 2));
-
-        // A hitbox is gone with the frame it came out on
-        HitboxFixture.Bounds = new PhysicsRectangle(Vector2.Zero, Vector2.Zero);
 
         // What stands on the map is shaped like the frame as well, somebody lying down is long and low
         _player.Body.Fit(_boxes is not null && _boxes.TryGet(animation, frame, out var traced) ? traced : null);

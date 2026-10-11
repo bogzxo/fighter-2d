@@ -67,6 +67,11 @@ internal static class GameInput
             // The file remembers the defaults it was saved with, ours may have changed since
             Manager.DefaultBindings.CopyFrom(CreateDefaultBindings());
         }
+
+        // The keyboard is a gamepad like any other from here on, which is what makes every menu (they all listen to
+        // every gamepad) work off the keys, and lets somebody without a gamepad into a fight. After the file, it takes
+        // the slot and the bindings it was saved with
+        Manager.AddKeyboardGamepad(engine.Input.Keyboard);
     }
 
     /// <summary>

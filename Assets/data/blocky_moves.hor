@@ -1,0 +1,556 @@
+// Blocky's whole move list. He is the test fighter rendered off the 3D mannequin (New Art 3D/tools/build_blocky.bat), and
+// the point of him is to have a move in every slot the game knows about, each with art of its own. What every key means is
+// written down at the top of fighting_moves.hor. He plays at 12 frames a second, which is what his art was rendered at, so
+// nothing in here needs a hold.
+//
+// Nothing here lets you walk during an attack (steering: false on every one of them), that is the rule across the game.
+//
+//                 standing            crouching           in the air
+//   X             jab                 crouching jab       jump punch (overhead)
+//   Y             straight            crouching uppercut  jump punch (overhead)
+//   A             high kick           low kick (low)      jump kick (overhead, knocks down)
+//   B             roundhouse          sweep (low, knocks down)   jump kick
+//   LeftBumper    hook, an overhead that has to be blocked standing
+//   LeftTrigger   shove, next to no damage but they end up across the stage
+//   RightTrigger  uppercut, the launcher. Crouching it is the crouching uppercut, which launches a little less
+//   A + B         spin kick, launches and knocks down. A quarter of the meter
+//   X + Y         flurry, jab, hook, straight, three hits. A quarter of the meter
+//   Y + B         dragon punch, up off the ground with i-frames on the way up. Half the meter
+//   A + B in the air   dive kick, straight down and forward
+//   RightBumper   block, crouching block with down held
+//   double tap a direction   the roll, with i-frames
+//
+// The uppercut (RightTrigger) puts them up at juggle height (knockback up 2000), the crouching one a sweep's worth lower.
+// Anything in the air after that can be hit again, and every hit up there adds a little more hitstun (see Combat/CombatRules.cs).
+// Jab into straight links on the ground, the straight into the uppercut, and the dragon punch ends it.
+
+let moves = {
+    /* Getting around */
+
+    idle: {
+        stances: "standing",
+        cancellable: true,
+        stance: "standing",
+        phases: {
+            stand: { animation: "idle", loop_while: "always", cancel: 0 }
+        }
+    },
+
+    run: {
+        input: "DPadLeft | DPadRight",
+        trigger: "held",
+        priority: 70,
+        stances: "standing",
+        cancellable: true,
+        repeat: "held",
+        finish_reroutes: {
+            standing: "idle"
+        },
+        phases: {
+            stride: { animation: "run_loop", loop_while: "held", cancel: 0 },
+            stop: { animation: "run_stop", until: "held", cancel: 0 }
+        }
+    },
+
+    crouch: {
+        input: "DPadDown",
+        trigger: "held",
+        priority: 60,
+        stances: "crouching | standing",
+        cancellable: true,
+        steering: false,
+        stance: "crouching",
+        stance_after: "standing",
+        phases: {
+            duck: { animation: "crouch_start", cancel: 0 },
+            stay: { animation: "crouch_loop", loop_while: "held", cancel: 0 },
+            rise: { animation: "crouch_end", cancel: 0 }
+        }
+    },
+
+    // Crouching without ducking first, for somebody who is down there already (after a crouching attack, or creeping to a stop)
+    crouch_hold: {
+        input: "DPadDown",
+        trigger: "held",
+        priority: 61,
+        stances: "crouching",
+        cancellable: true,
+        steering: false,
+        stance: "crouching",
+        stance_after: "standing",
+        phases: {
+            stay: { animation: "crouch_loop", loop_while: "held", cancel: 0 },
+            rise: { animation: "crouch_end", cancel: 0 }
+        }
+    },
+
+    crouch_walk: {
+        input: ["DPadDown + DPadLeft", "DPadDown + DPadRight"],
+        trigger: "held",
+        priority: 55,
+        stances: "crouching | standing",
+        cancellable: true,
+        walk_scale: 0.4,
+        stance: "crouching",
+        finish_reroutes: {
+            crouching: "crouch_hold",
+            standing: "crouch_hold"
+        },
+        phases: {
+            creep: { animation: "crouch_walk", loop_while: "held", cancel: 0 }
+        }
+    },
+
+    jump: {
+        input: "DPadUp",
+        trigger: "held",
+        priority: 50,
+        stances: "standing | crouching",
+        cancellable: true,
+        finish_reroutes: {
+            falling: "fall"
+        },
+        phases: {
+            launch: { animation: "jump", frames: 2, impulse: vec(0, 3500), effect: "jump" },
+            rise: { animation: "jump", start: 2, loop_while: "jumping", cancel: 0 }
+        }
+    },
+
+    fall: {
+        stances: "falling",
+        cancellable: true,
+        stance: "falling",
+        stance_after: "standing",
+        phases: {
+            drop: { animation: "fall", loop_while: "falling", cancel: 0 }
+        }
+    },
+
+    heavy_land: {
+        stances: "standing | crouching | falling",
+        cancellable: true,
+        steering: false,
+        phases: {
+            land: { animation: "heavy_land", cancel: 3 }
+        }
+    },
+
+    dodge_roll: {
+        input: "DPadLeft | DPadRight",
+        trigger: "double_tap",
+        priority: 10,
+        stances: "standing | crouching",
+        cancellable: true,
+        steering: false,
+        status: "invulnerable",
+        phases: {
+            dive: { animation: "roll", frames: 6, impulse: vec(3200, 0), effect: "roll", effect_frames: 6 },
+            recover: { frames: 3, cancel: 1 }
+        }
+    },
+
+    /* Blocking and getting hit */
+
+    block: {
+        input: "RightBumper",
+        trigger: "held",
+        priority: 40,
+        stances: "standing | crouching",
+        cancellable: true,
+        steering: false,
+        stance_reroutes: {
+            crouching: "crouch_block"
+        },
+        phases: {
+            raise: { animation: "block_start", cancel: 0, commit: 2, status: "blocking", status_frame: 1 },
+            hold: { animation: "block_loop", loop_while: "held", commit: 0 }
+        }
+    },
+
+    crouch_block: {
+        input: "RightBumper",
+        trigger: "held",
+        priority: 41,
+        stances: "crouching",
+        cancellable: true,
+        steering: false,
+        stance: "crouching",
+        status: "blocking",
+        finish_reroutes: {
+            crouching: "crouch_hold"
+        },
+        phases: {
+            hold: { animation: "crouch_block", loop_while: "held", commit: 0 }
+        }
+    },
+
+    hit_stun: {
+        stances: "standing | crouching | jumping | falling",
+        cancellable: false,
+        steering: false,
+        finish_reroutes: {
+            jumping: "fall",
+            falling: "fall"
+        },
+        phases: {
+            reel: { animation: "hit", loop_while: "hitstun", effect: "haze", effect_frames: 0 }
+        }
+    },
+
+    knocked_down: {
+        stances: "standing | crouching | jumping | falling",
+        cancellable: false,
+        steering: false,
+        finish_reroutes: {
+            standing: "get_up",
+            crouching: "get_up"
+        },
+        phases: {
+            drop: { animation: "knocked_down" },
+            floor: { frames: 1, loop_while: "hitstun" }
+        }
+    },
+
+    get_up: {
+        stances: "standing | crouching",
+        cancellable: false,
+        steering: false,
+        status: "invulnerable",
+        phases: {
+            rise: { animation: "get_up" }
+        }
+    },
+
+    knocked_out: {
+        stances: "standing | crouching | jumping | falling",
+        cancellable: false,
+        steering: false,
+        phases: {
+            drop: { animation: "knocked_out" },
+            down: { frames: 1, loop_while: "always" }
+        }
+    },
+
+    victory: {
+        stances: "standing | crouching",
+        cancellable: false,
+        steering: false,
+        phases: {
+            cheer: { animation: "victory" }
+        }
+    },
+
+    /* Punches */
+
+    punch_left: {
+        input: "X",
+        trigger: "pressed",
+        priority: 24,
+        stances: "standing | crouching | jumping | falling",
+        damage: 4,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: {
+            crouching: "crouch_jab",
+            jumping: "jump_punch",
+            falling: "jump_punch"
+        },
+        phases: {
+            swing: { animation: "jab", hit: 1 }
+        }
+    },
+
+    punch_right: {
+        input: "Y",
+        trigger: "pressed",
+        priority: 34,
+        stances: "standing | crouching | jumping | falling",
+        damage: 9,
+        knockback: vec(450, 0),
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: {
+            crouching: "crouch_uppercut",
+            jumping: "jump_punch",
+            falling: "jump_punch"
+        },
+        phases: {
+            swing: { animation: "straight", hit: 2 }
+        }
+    },
+
+    hook: {
+        input: "LeftBumper",
+        trigger: "pressed",
+        priority: 36,
+        stances: "standing",
+        damage: 8,
+        knockback: vec(350, 0),
+        level: "overhead",
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        phases: {
+            swing: { animation: "hook", hit: 3 }
+        }
+    },
+
+    shove: {
+        input: "LeftTrigger",
+        trigger: "pressed",
+        priority: 38,
+        stances: "standing",
+        damage: 2,
+        knockback: vec(1400, 250),
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        phases: {
+            push: { animation: "shove", hit: 2, impulse: vec(500, 0) }
+        }
+    },
+
+    uppercut: {
+        input: "RightTrigger",
+        trigger: "pressed",
+        priority: 37,
+        stances: "standing | crouching",
+        damage: 9,
+        knockback: vec(250, 2000),
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: {
+            crouching: "crouch_uppercut"
+        },
+        phases: {
+            swing: { animation: "uppercut", hit: 3 }
+        }
+    },
+
+    crouch_jab: {
+        stances: "crouching",
+        damage: 3,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance: "crouching",
+        finish_reroutes: {
+            crouching: "crouch_hold"
+        },
+        phases: {
+            swing: { animation: "crouch_jab", hit: 1 }
+        }
+    },
+
+    crouch_uppercut: {
+        stances: "crouching",
+        damage: 7,
+        knockback: vec(200, 1500),
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance: "crouching",
+        finish_reroutes: {
+            crouching: "crouch_hold"
+        },
+        phases: {
+            swing: { animation: "crouch_uppercut", hit: 2 }
+        }
+    },
+
+    jump_punch: {
+        stances: "jumping | falling",
+        damage: 5,
+        knockback: vec(300, 0),
+        level: "overhead",
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        finish_reroutes: {
+            standing: "idle",
+            falling: "fall"
+        },
+        phases: {
+            swing: { animation: "jump_punch", hit: 1 }
+        }
+    },
+
+    /* Kicks */
+
+    kick_left: {
+        input: "A",
+        trigger: "pressed",
+        priority: 20,
+        stances: "standing | crouching | jumping | falling",
+        damage: 6,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: {
+            crouching: "low_kick",
+            jumping: "jump_kick",
+            falling: "jump_kick"
+        },
+        phases: {
+            swing: { animation: "high_kick", hit: 2 }
+        }
+    },
+
+    kick_right: {
+        input: "B",
+        trigger: "pressed",
+        priority: 30,
+        stances: "standing | crouching | jumping | falling",
+        damage: 11,
+        knockback: vec(600, 300),
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: {
+            crouching: "sweep",
+            jumping: "jump_kick",
+            falling: "jump_kick"
+        },
+        phases: {
+            swing: { animation: "roundhouse", hit: 3 }
+        }
+    },
+
+    low_kick: {
+        stances: "crouching",
+        damage: 5,
+        level: "low",
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance: "crouching",
+        finish_reroutes: {
+            crouching: "crouch_hold"
+        },
+        phases: {
+            swing: { animation: "low_kick", hit: 1 }
+        }
+    },
+
+    sweep: {
+        stances: "crouching",
+        damage: 8,
+        knockback: vec(300, 1100),
+        level: "low",
+        knockdown: true,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance: "crouching",
+        finish_reroutes: {
+            crouching: "crouch_hold"
+        },
+        phases: {
+            swing: { animation: "sweep", hit: 3 }
+        }
+    },
+
+    jump_kick: {
+        stances: "jumping | falling",
+        damage: 8,
+        knockback: vec(600, 1300),
+        level: "overhead",
+        knockdown: true,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        finish_reroutes: {
+            standing: "idle",
+            falling: "fall"
+        },
+        phases: {
+            swing: { animation: "jump_kick", hit: 1 }
+        }
+    },
+
+    /* The ones that cost meter */
+
+    spin_kick: {
+        input: "A + B",
+        trigger: "pressed",
+        priority: 5,
+        stances: "standing | crouching | jumping | falling",
+        damage: 14,
+        knockback: vec(800, 1500),
+        knockdown: true,
+        meter_cost: 25,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: {
+            jumping: "dive_kick",
+            falling: "dive_kick"
+        },
+        phases: {
+            wheel: { animation: "spin_kick", hit: 3, impulse: vec(900, 0) }
+        }
+    },
+
+    // Three phases with a hit each, every hit scaled like the next hit of a combo
+    flurry: {
+        input: "X + Y",
+        trigger: "pressed",
+        priority: 6,
+        stances: "standing | crouching",
+        damage: 6,
+        knockback: vec(280, 0),
+        meter_cost: 25,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        phases: {
+            jab: { animation: "jab", frames: 3, hit: 1, impulse: vec(500, 0) },
+            hook: { animation: "hook", start: 1, frames: 4, hit: 2, impulse: vec(500, 0) },
+            straight: { animation: "straight", hit: 2, impulse: vec(700, 0) }
+        }
+    },
+
+    // Up off the ground, invulnerable from the crouch to the top. Launches whoever is in the way
+    dragon_punch: {
+        input: "Y + B",
+        trigger: "pressed",
+        priority: 4,
+        stances: "standing | crouching",
+        damage: 16,
+        knockback: vec(500, 2200),
+        knockdown: true,
+        meter_cost: 50,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        finish_reroutes: {
+            falling: "fall"
+        },
+        phases: {
+            rise: { animation: "dragon_punch", frames: 5, hit: 2, impulse: vec(400, 2800), status: "invulnerable", effect: "jump" },
+            land: { animation: "dragon_punch", start: 5 }
+        }
+    },
+
+    // Spin kick asked for in the air, straight down and forward
+    dive_kick: {
+        stances: "jumping | falling",
+        damage: 10,
+        knockback: vec(500, 900),
+        level: "overhead",
+        knockdown: true,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        finish_reroutes: {
+            standing: "idle",
+            falling: "fall"
+        },
+        phases: {
+            dive: { animation: "dive_kick", hit: 1, impulse: vec(1200, -2500) }
+        }
+    }
+}

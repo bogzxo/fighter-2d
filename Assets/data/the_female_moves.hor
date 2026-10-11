@@ -12,6 +12,7 @@ let moves = {
         stances: "standing | crouching",
         damage: 4,
         cancellable: false,
+        steering: false,
         status: "attacking",
         stance_reroutes: {
             crouching: "body_blow"

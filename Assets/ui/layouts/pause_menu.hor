@@ -1,52 +1,79 @@
 // The menu that comes up when somebody presses start in the middle of a fight (PauseMenu.cs).
 // The fight behind it is blurred by the game while this is up, so there is nothing here to darken it.
-// The host tools at the bottom read everything from disk again (moves, characters, maps and art) without leaving the fight.
-// It is three layers. "menu" is what whoever paused gets, "waiting" is what the other machine of an online fight shows until they carry on,
-// and "countdown" is the 3, 2, 1 everybody gets before the fight is back on.
+// Two panels side by side. On the left what a pause is for, carry on, start over or leave. On the right what is only
+// there some of the time, the tools of the host (reading everything from disk again without leaving the fight, the
+// hitboxes) and the training options of a practice fight. The game hides the right one when it would be empty.
+// It is four layers. "menu" is what whoever paused gets, "training" the lab's options on top of that, "waiting" is
+// what the other machine of an online fight shows until they carry on, and "countdown" is the 3, 2, 1 everybody gets
+// before the fight is back on.
 
 // Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
 compositor.design({ size: vec(1600, 900), fit: "contain" });
 
+let columns = compositor.stack({ layer: "menu", pos: vec(0, 14), direction: "horizontal", spacing: 22 });
+
 let menu = compositor.stack({
+    parent: columns,
     layer: "menu",
+    anchor: "top",
     background: "panel",
-    padding: vec(44, 36),
-    spacing: 16,
+    padding: vec(44, 34),
+    spacing: 14,
     intro: "pop",
     intro_time: 0.25
 });
 
 let title = compositor.label({ parent: menu, text: "PAUSED", text_scale: 0.8 });
+let subtitle = compositor.label({ parent: menu, text: "the fight is on hold", text_scale: 0.24, color: vec(0.58, 0.6, 0.66, 1) });
+let menu_rule = compositor.divider({ parent: menu, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
 
 let btn_resume = compositor.button({ parent: menu, label: "Carry on", size: vec(360, 0) });
 let btn_rematch = compositor.button({ parent: menu, label: "Start over", size: vec(360, 0) });
-let btn_quit = compositor.button({ parent: menu, label: "Main menu", size: vec(360, 0) });
+let btn_quit = compositor.button({ parent: menu, label: "Main menu", style: "button_flat", size: vec(360, 0) });
 
-// Only the host gets these (and whoever plays on one machine, who is their own host). The game takes them off the menu for everybody else
-let tools_rule = compositor.divider({ parent: menu, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
-let tools_title = compositor.label({ parent: menu, text: "HOST TOOLS", text_scale: 0.26, color: vec(0.58, 0.6, 0.66, 1) });
-let btn_reload = compositor.button({ parent: menu, label: "Reload data", size: vec(360, 0) });
-let btn_hitboxes = compositor.button({ parent: menu, label: "Hitboxes: off", size: vec(360, 0) });
+// What is only there some of the time. The game takes the tools off for whoever isn't the host and hides the lot when nothing is left in it
+let side = compositor.stack({
+    parent: columns,
+    layer: "menu",
+    anchor: "top",
+    background: "panel",
+    padding: vec(36, 30),
+    spacing: 12,
+    intro: "pop",
+    intro_time: 0.25,
+    intro_delay: 0.06
+});
+
+// Only the host gets these (and whoever plays on one machine, who is their own host)
+let tools_title = compositor.label({ parent: side, text: "HOST TOOLS", text_scale: 0.26, color: vec(0.58, 0.6, 0.66, 1) });
+let btn_reload = compositor.button({ parent: side, label: "Reload data", style: "button_flat", size: vec(400, 0), lbl_scale: 0.3 });
+let btn_hitboxes = compositor.button({ parent: side, label: "Hitboxes: off", style: "button_flat", size: vec(400, 0), lbl_scale: 0.3 });
 
 // The lab, only in a practice fight (its layer is hidden everywhere else, see PauseMenu.cs). What the dummy does with itself,
-// whether health comes back after a combo, and a reset of the positions. Left and right step the selectors
-let training_rule = compositor.divider({ parent: menu, layer: "training", fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
-let training_title = compositor.label({ parent: menu, layer: "training", text: "TRAINING", text_scale: 0.26, color: vec(0.58, 0.6, 0.66, 1) });
-let dummy_row = compositor.stack({ parent: menu, layer: "training", direction: "horizontal", spacing: 16 });
-let dummy_title = compositor.label({ parent: dummy_row, size: vec(120, 0), text: "Dummy", text_scale: 0.28, align: "left" });
-let dummy = compositor.selector({ parent: dummy_row, size: vec(224, 44), text_scale: 0.26 });
-let refill_row = compositor.stack({ parent: menu, layer: "training", direction: "horizontal", spacing: 16 });
-let refill_title = compositor.label({ parent: refill_row, size: vec(120, 0), text: "Refill", text_scale: 0.28, align: "left" });
-let refill = compositor.selector({ parent: refill_row, size: vec(224, 44), text_scale: 0.26 });
-let btn_reset = compositor.button({ parent: menu, layer: "training", label: "Reset positions", size: vec(360, 0) });
+// which character it is (picking another one builds the fight again around it), whether health comes back after a combo,
+// and a reset of the positions. Left and right step the selectors
+let training_rule = compositor.divider({ parent: side, layer: "training", fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
+let training_title = compositor.label({ parent: side, layer: "training", text: "TRAINING", text_scale: 0.26, color: vec(0.58, 0.6, 0.66, 1) });
+let dummy_row = compositor.stack({ parent: side, layer: "training", direction: "horizontal", spacing: 16 });
+let dummy_title = compositor.label({ parent: dummy_row, size: vec(130, 0), text: "Dummy", text_scale: 0.28, align: "left" });
+let dummy = compositor.selector({ parent: dummy_row, size: vec(254, 44), text_scale: 0.26 });
+let opponent_row = compositor.stack({ parent: side, layer: "training", direction: "horizontal", spacing: 16 });
+let opponent_title = compositor.label({ parent: opponent_row, size: vec(130, 0), text: "Opponent", text_scale: 0.28, align: "left" });
+let opponent = compositor.selector({ parent: opponent_row, size: vec(254, 44), text_scale: 0.26 });
+let refill_row = compositor.stack({ parent: side, layer: "training", direction: "horizontal", spacing: 16 });
+let refill_title = compositor.label({ parent: refill_row, size: vec(130, 0), text: "Refill", text_scale: 0.28, align: "left" });
+let refill = compositor.selector({ parent: refill_row, size: vec(254, 44), text_scale: 0.26 });
+let btn_reset = compositor.button({ parent: side, layer: "training", label: "Reset positions", style: "button_flat", size: vec(400, 0), lbl_scale: 0.3 });
 
-let hint_rule = compositor.divider({ parent: menu, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
+// What to press, along the bottom of the screen where every menu has it
 let hint = compositor.label({
-    parent: menu,
-    size: vec(0, 30),
+    layer: "menu",
+    anchor: "bottom",
+    pos: vec(0, 22),
+    size: vec(1500, 30),
     text: "[icon:dpad] choose    [icon:pad_a] pick    [icon:pad_b] carry on",
     text_scale: 0.25,
-    color: vec(0.58, 0.6, 0.66, 1)
+    color: vec(0.86, 0.88, 0.92, 1)
 });
 
 let count = compositor.label({ layer: "countdown", pos: vec(0, 110), text: "3", text_scale: 2.4 });

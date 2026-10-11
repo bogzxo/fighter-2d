@@ -8,7 +8,7 @@ namespace Fighter2D.Scenes;
 
 /// <summary>
 /// Scene where the address of a server is typed in, with an on-screen keyboard that any gamepad can drive (or a real one).
-/// Once the server answers we move on to its lobby, see <see cref="GamepadSelectorScene"/>.
+/// Once the server answers we move on to its lobby, see <see cref="FightSetupScene"/>.
 /// </summary>
 internal class JoinServerScene : MenuScene
 {
@@ -27,6 +27,9 @@ internal class JoinServerScene : MenuScene
 
     // The connection we are waiting on, null while the address is still being typed
     private NetSession? _session;
+
+    // The gamepad that did the connecting, which makes it player one's in the lobby. Null when it was the keyboard
+    private int? _connectedBy;
 
     protected override void BuildUi(UILayout layout)
     {
@@ -72,12 +75,27 @@ internal class JoinServerScene : MenuScene
         {
             if (!gamepad.IsConnected) continue;
 
+            // A real keyboard types straight into the box, which has enter to connect and backspace to delete by itself.
+            // All it needs from here is a way out, escape, which on a gamepad is the button that deletes
+            if (gamepad.Kind == GamepadKind.Keyboard)
+            {
+                if (gamepad.WasPressed(GamepadInput.B))
+                {
+                    Back();
+                    return;
+                }
+
+                continue;
+            }
+
             int right = MenuInput.Horizontal(gamepad), down = MenuInput.Vertical(gamepad);
             if (right != 0 || down != 0) _keyboard.Navigate(right, down);
 
+            _connectedBy = gamepad.Slot;
             if (gamepad.WasPressed(GamepadInput.A)) _keyboard.Press();
             else if (gamepad.WasPressed(GamepadInput.B)) _addressBox.Backspace();
             else if (gamepad.WasPressed(GamepadInput.Y)) Connect();
+            if (_session is null) _connectedBy = null;
 
             // A key can have started connecting or taken us somewhere else
             if (_session is not null) return;
@@ -93,7 +111,10 @@ internal class JoinServerScene : MenuScene
         {
             // We are in, the rest happens in the lobby
             _session = null;
-            GoTo(new GamepadSelectorScene(MatchSetup.Online(session)));
+
+            var setup = MatchSetup.Online(session);
+            if (_connectedBy is { } slot) setup.Slots.Add(slot);
+            GoTo(new FightSetupScene(setup));
         }
         else if (session.HasFailed)
         {

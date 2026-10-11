@@ -5,21 +5,31 @@
 compositor.design({ size: vec(1600, 900), fit: "contain" });
 
 let panel = compositor.stack({
+    pos: vec(0, 14),
     background: "panel",
-    padding: vec(40, 34),
+    padding: vec(48, 32),
     spacing: 16,
     intro: "pop",
-    intro_time: 0.4
+    intro_time: 0.3
 });
 
-let title = compositor.label({ parent: panel, text: "Join Multiplayer", text_scale: 0.6 });
+let title = compositor.label({ parent: panel, text: "Join a fight", text_scale: 0.6 });
+let subtitle = compositor.label({
+    parent: panel,
+    text: "the address of whoever is hosting it",
+    text_scale: 0.26,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
 let rule = compositor.divider({ parent: panel, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
-let subtitle = compositor.label({ parent: panel, text: "Address of the server", text_scale: 0.3 });
-let address = compositor.textbox({ parent: panel, size: vec(420, 56), text: "127.0.0.1", max_length: 15 });
+let address = compositor.textbox({ parent: panel, size: vec(460, 60), text: "127.0.0.1", max_length: 15 });
 let status = compositor.label({ parent: panel, size: vec(0, 22), text_scale: 0.25, color: vec(1, 0.45, 0.4, 1) });
 let keyboard_slot = compositor.stack({ parent: panel });
+
+// What to press, along the bottom of the screen where every menu has it
 let hint = compositor.label({
-    parent: panel,
+    anchor: "bottom",
+    pos: vec(0, 22),
+    size: vec(1500, 30),
     text: "[icon:dpad] move    [icon:pad_a] press    [icon:pad_b] delete    [icon:pad_y] connect",
     text_scale: 0.25,
     color: vec(0.58, 0.6, 0.66, 1)

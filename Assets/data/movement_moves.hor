@@ -25,6 +25,22 @@ let moves = {
         }
     },
 
+    // Crouching without ducking first, for somebody who is down there already. A crouching attack ends in this,
+    // ending in crouch would play the duck all over again with down still held
+    crouch_hold: {
+        input: "DPadDown",
+        trigger: "held",
+        priority: 61,
+        stances: "crouching",
+        cancellable: true,
+        steering: false,
+        stance: "crouching",
+        stance_after: "standing",
+        phases: {
+            stay: { animation: "crouch_loop", loop_while: "held", cancel: 0 }
+        }
+    },
+
     fall: {
         stances: "falling",
         cancellable: true,

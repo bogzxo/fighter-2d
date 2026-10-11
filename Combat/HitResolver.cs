@@ -11,24 +11,30 @@ namespace Fighter2D.Combat;
 internal static class HitResolver
 {
     /// <summary>
-    /// Called by a move on its hit frame. Tests the attacker's hitbox against the opponent's hurtbox and resolves the hit if they touch.
+    /// Called by a move on every one of its active frames (from its hit frame on, for as many as it has, see
+    /// <see cref="FightingMove.ActiveFrames"/>) until it lands. Tests the attacker's hitbox against the opponent's
+    /// hurtbox and resolves the hit if they touch.
     /// </summary>
-    /// <param name="frame">The frame of the animation the hit comes out on, which is what the hitbox is read from.</param>
-    public static void TryLand(PlayerController attacker, uint frame)
+    /// <param name="frame">The frame of the animation that is showing, which is what the hitbox is read from.</param>
+    /// <param name="lastChance">Whether this is the last active frame, a miss on it is a whiff. One before it is nothing yet.</param>
+    /// <returns>Whether it touched, the move's hit is spent.</returns>
+    public static bool TryLand(PlayerController attacker, uint frame, bool lastChance = true)
     {
         // A network player doesn't get to decide anything here, their hits and whiffs arrive as messages (see FightNetwork)
-        if (attacker.IsRemote) return;
+        if (attacker.IsRemote) return true;
 
         Player player = attacker.Player, opponent = attacker.Opponent;
         FightingMove move = attacker.CurrentMove;
 
         if (!TryConnect(player, opponent, frame, out Box hitbox))
         {
+            if (!lastChance) return false;
+
             // Swung at nothing. The other machine can't see that for itself, so it gets told
             player.GainMeter(CombatRules.METER_ON_WHIFF);
             Fight.CombatLog.Report(new AttackReport(player, move, HitResult.Whiff));
             if (opponent.Controller.IsRemote) Fight.Network?.SendWhiff(move.Id);
-            return;
+            return false;
         }
 
         // Where the two boxes meet is where it landed
@@ -40,6 +46,7 @@ internal static class HitResolver
         if (predicted) Fight.Network?.SendHit(move.Id, direction, impact);
 
         Resolve(attacker, opponent.Controller, move, direction, impact, predicted);
+        return true;
     }
 
     /// <summary>
@@ -62,7 +69,9 @@ internal static class HitResolver
                 break;
 
             default:
-                lethal = Land(attacker, victim, move, result, direction, predicted);
+                lethal = victim.State.IsDowned
+                    ? LandOnDowned(attacker, victim, move, predicted)
+                    : Land(attacker, victim, move, result, direction, predicted);
                 break;
         }
 
@@ -99,6 +108,24 @@ internal static class HitResolver
         // A knockdown that doesn't lift them off the ground puts them down right here, the others wait for the landing
         if (move.Knockdown && !move.HasKnockback && victim.State.IsGrounded) victim.KnockDown();
 
+        return lethal;
+    }
+
+    /// <summary>
+    /// Helper method for a low that caught somebody lying on the floor. It hurts (scaled like the rest of the combo it
+    /// carries on) and earns meter, but they stay where they are, no shove, no new hitstun and their time on the floor
+    /// isn't made any longer, so it can't be done forever. A knockdown is still a knockdown.
+    /// </summary>
+    private static bool LandOnDowned(PlayerController attacker, PlayerController victim, FightingMove move, bool predicted)
+    {
+        int damage = DamageOf(move, false, victim.State.ComboCount);
+        bool lethal = damage >= victim.Player.Health;
+
+        if (!predicted) victim.Player.Health = (byte)Math.Max(0, victim.Player.Health - damage);
+
+        attacker.Player.GainMeter((int)MathF.Round(damage * CombatRules.METER_PER_DAMAGE_DEALT));
+        victim.Player.GainMeter((int)MathF.Round(damage * CombatRules.METER_PER_DAMAGE_TAKEN));
+        victim.State.TakeDownHit(damage);
         return lethal;
     }
 
@@ -140,8 +167,12 @@ internal static class HitResolver
     {
         var state = victim.State;
 
-        // Dodge rolls go straight through hits, and nobody kicks somebody who is lying on the floor
-        if (state.CurrentStatus == FighterStatus.Invulnerable || state.IsDowned) return HitResult.Whiff;
+        // Dodge rolls go straight through hits
+        if (state.CurrentStatus == FighterStatus.Invulnerable) return HitResult.Whiff;
+
+        // Somebody lying on the floor is only reached down there, by a low. Nothing standing up goes over their head and
+        // hits them, a sweep or a crouching kick does, and it can't be blocked from down there either
+        if (state.IsDowned) return move.Level == HitLevel.Low ? HitResult.Hit : HitResult.Whiff;
 
         // Blocking only covers the front (a hit from behind travels the same way the victim is facing), and only the
         // level the block is held at: crouched for a low, standing for an overhead, either for a mid

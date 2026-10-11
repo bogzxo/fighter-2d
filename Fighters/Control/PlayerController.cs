@@ -64,6 +64,15 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// </summary>
     public bool HitThrown { get; private set; }
 
+    // How many more active frames the hit of the move we are in has to land on, 0 once it landed or ran out
+    private int _activeLeft;
+
+    /// <summary>
+    /// Which active frame of its move the hitbox is on, 0 on the hit frame, -1 when there's no hitbox out. It stays out
+    /// for all of the active frames even after it landed, it just doesn't land twice, which is what the hitbox view shows.
+    /// </summary>
+    public int ActiveFrame { get; private set; } = -1;
+
     public bool IsBlocking => State.CurrentStatus == FighterStatus.Blocking;
 
     /// <summary>
@@ -282,6 +291,8 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
 
         CanCancel = false;
         HitThrown = false;
+        _activeLeft = 0;
+        ActiveFrame = -1;
 
         // The statuses set by a move end with it, even when it was cancelled (rolling -> kick)
         if (IsInControl) State.CurrentStatus = FighterStatus.Normal;
@@ -307,6 +318,13 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         if (move.Trigger != InputTrigger.Held)
         {
             Inputs.Buffer.Consume(signature);
+        }
+        else if (CurrentMove.Trigger == InputTrigger.Held && CurrentMove.Id != move.Id && Array.IndexOf(CurrentMove.InputSignatures, signature) >= 0)
+        {
+            // The input that is held is the one keeping the move we are in going, so it doesn't get to start a different one. Down held
+            // after a crouching attack has us in crouch_hold, and without this the crouch move (matched first, it comes before it in
+            // the list) would start over and duck all over again
+            return;
         }
 
         // The meter is spent the moment the move is asked for, a reroute doesn't change what it cost
@@ -366,7 +384,22 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     public void ThrowHit(uint frame)
     {
         HitThrown = true;
-        HitResolver.TryLand(this, ClampFrame(frame));
+        int active = Math.Max(1, CurrentMove.ActiveFrames);
+        ActiveFrame = 0;
+        _activeLeft = HitResolver.TryLand(this, ClampFrame(frame), active <= 1) ? 0 : active - 1;
+    }
+
+    /// <summary>
+    /// Called by the move on every frame after its hit frame. The hitbox is still out on its active frames and gets
+    /// another go at landing on every one of them, a whiff is only a whiff on the last.
+    /// </summary>
+    public void KeepHitting(uint frame)
+    {
+        if (ActiveFrame >= 0) ActiveFrame = ActiveFrame + 1 < Math.Max(1, CurrentMove.ActiveFrames) ? ActiveFrame + 1 : -1;
+        if (_activeLeft <= 0) return;
+
+        _activeLeft--;
+        if (HitResolver.TryLand(this, ClampFrame(frame), _activeLeft == 0)) _activeLeft = 0;
     }
 
     /// <summary>

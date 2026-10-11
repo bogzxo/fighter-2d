@@ -12,11 +12,13 @@ namespace Fighter2D.Scenes;
 /// Scene where the player sets the game up the way they like it. The window, the look of the game and what a fight shows on top of itself.
 /// The options come in three tabs the bumpers flip between, so nobody has to scroll through the lot to get to the one they want.
 /// Every option is a row of its tab and takes hold the moment it is changed, there is nothing to confirm. They are all kept in <see cref="GameOptions"/>.
+/// What the row the gamepad is on is and does is written in a box next to the rows. Y on a gamepad opens its bindings (<see cref="BindingsScene"/>),
+/// which is the way to them without setting a fight up first.
 /// </summary>
 /// <param name="tab">The tab that is open to begin with, and the row the gamepad starts on in it: for when the screen had to be made again half way through (see <see cref="Reload"/>).</param>
 internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
 {
-    private const string HINT = "[icon:dpad] choose and change    [icon:pad_lb] [icon:pad_rb] tabs    [icon:pad_b] back";
+    private const string HINT = "[icon:dpad] choose and change    [icon:pad_lb] [icon:pad_rb] tabs    [icon:pad_y] bindings    [icon:pad_b] back";
 
     protected override string LayoutFile => MenuLayouts.OPTIONS;
     protected override float InputDelay => 0.2f;
@@ -26,7 +28,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
     private SettingList _settings = null!;
     private TabPanel _tabs = null!;
 
-    private Label _hint = null!, _description = null!;
+    private Label _hint = null!, _description = null!, _aboutTitle = null!;
     private UICompositor _ui = null!;
 
     protected override void BuildUi(UILayout layout)
@@ -36,6 +38,16 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
         _ui = layout.Module.Compositor;
         _hint = layout.Get<Label>("hint");
         _description = layout.Get<Label>("description");
+        _aboutTitle = layout.Get<Label>("about_title");
+
+        // For the mouse, which has no Y and no B. The bindings are those of whichever gamepad was touched last
+        layout.Get<Horizon.UI.Components.Button>("btn_back").OnPressed = () => GoTo(new MainMenuScene());
+        layout.Get<Horizon.UI.Components.Button>("btn_bindings").OnPressed = () =>
+        {
+            Gamepad? gamepad = GameInput.Manager.LastUsed ?? GameInput.Manager.Gamepads.FirstOrDefault(each => each.IsConnected);
+            if (gamepad is not null) OpenBindings(gamepad);
+            else _hint.Shake(6.0f);
+        };
 
         _settings = _pages[0];
         AddWindowOptions(layout);
@@ -226,11 +238,23 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
         GoTo(new OptionsScene(_tabs.Selected, _settings.Selected), transition);
     }
 
+    /// <summary>
+    /// Off to the bindings of a gamepad, and back to the row we were on when they are done.
+    /// </summary>
+    private void OpenBindings(Gamepad gamepad)
+    {
+        int page = _tabs.Selected, row = _settings.Selected;
+        GoTo(new BindingsScene(gamepad.Slot, "Gamepad bindings", () => new OptionsScene(page, row)));
+    }
+
     protected override void UpdateMenu(float dt)
     {
         // Nobody has picked a gamepad yet, so the screen listens to all of them
         _hint.Text = ButtonGlyphs.Localize(HINT, GameInput.Manager.LastUsed);
-        _description.Text = _settings.Hint;
+
+        // The lines about the options were broken by hand for a wider screen than the box they are in now, which wraps by itself
+        _aboutTitle.Text = _settings.Title;
+        _description.Text = _settings.Hint.Replace('\n', ' ');
 
         if (!InputReady) return;
 
@@ -241,6 +265,12 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
             if (gamepad.WasPressed(GamepadInput.B))
             {
                 GoTo(new MainMenuScene());
+                return;
+            }
+
+            if (gamepad.WasPressed(GamepadInput.Y))
+            {
+                OpenBindings(gamepad);
                 return;
             }
 

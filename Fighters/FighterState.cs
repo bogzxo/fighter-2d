@@ -109,6 +109,16 @@ internal class FighterState(Player player)
     }
 
     /// <summary>
+    /// A low that caught us lying on the floor. It counts towards the combo we are eating, and that's all, we stay down
+    /// for as long as we were going to.
+    /// </summary>
+    public void TakeDownHit(int damage)
+    {
+        ComboCount++;
+        ComboDamage += damage;
+    }
+
+    /// <summary>
     /// Keeps us in our block for a number of ticks, the longer of this and what is left.
     /// </summary>
     public void ApplyBlockstun(int ticks) => BlockstunTicks = Math.Max(BlockstunTicks, ticks);

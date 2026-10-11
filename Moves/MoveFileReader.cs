@@ -55,6 +55,12 @@ internal static class MoveFileReader
         }
     }
 
+    /// <summary>
+    /// Helper method to read one move out of what its object in a file holds, for the editor, which keeps the moves it
+    /// works on as values and not as text. Throws saying what is wrong, the same as a file would.
+    /// </summary>
+    public static FightingMove ReadOne(string id, Dictionary<string, IRuntimeValue> move) => ReadMove(id, move);
+
     private static FightingMove ReadMove(string id, Dictionary<string, IRuntimeValue> move)
     {
         HorReader.RejectUnknownKeys(move, MoveKeys, "a move", RenamedKeys);
@@ -135,7 +141,7 @@ internal static class MoveFileReader
 
             try
             {
-                read.Add(ReadPhase(phase));
+                read.Add(ReadPhase(phase, name));
             }
             catch (Exception e)
             {
@@ -146,7 +152,7 @@ internal static class MoveFileReader
         return [.. read];
     }
 
-    private static MovePhase ReadPhase(Dictionary<string, IRuntimeValue> phase)
+    private static MovePhase ReadPhase(Dictionary<string, IRuntimeValue> phase, string name)
     {
         HorReader.RejectUnknownKeys(phase, PhaseKeys, "a phase", RenamedKeys);
 
@@ -155,6 +161,7 @@ internal static class MoveFileReader
 
         return new MovePhase
         {
+            Name = name,
             Animation = phase.TryGetValue("animation", out var animation) ? HorReader.Text(animation, "animation") : null,
             Start = (uint)Math.Max(0, HorReader.Number(phase, "start", 0)),
             Hold = (uint)Math.Max(0, HorReader.Number(phase, "hold", 0)),

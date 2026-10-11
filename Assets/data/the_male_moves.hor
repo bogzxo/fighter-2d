@@ -73,5 +73,20 @@ let moves = {
         phases: {
             push: { animation: "push", start: 10, frames: 30, hit: 12, impulse: vec(600, 0) }
         }
+    },
+
+    punch_left: {
+        input: "X",
+        trigger: "pressed",
+        priority: 24,
+        stances: "standing | crouching",
+        damage: 4,
+        cancellable: false,
+        steering: false,
+        status: "attacking",
+        stance_reroutes: { crouching: "body_blow" },
+        phases: {
+            swing: { animation: "punch_1", start: 7, frames: 15, hit: 6 }
+        }
     }
 }

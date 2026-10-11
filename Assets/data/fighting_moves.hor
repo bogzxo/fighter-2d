@@ -147,6 +147,7 @@ let moves = {
         stances: "standing | falling | jumping | crouching",
         damage: 5,
         cancellable: false,
+        steering: false,
         status: "attacking",
         stance_reroutes: {
             jumping: "jump_kick",
@@ -164,6 +165,7 @@ let moves = {
         stances: "standing | falling | jumping | crouching",
         damage: 5,
         cancellable: false,
+        steering: false,
         status: "attacking",
         stance_reroutes: {
             jumping: "jump_kick",
@@ -181,6 +183,7 @@ let moves = {
         stances: "standing | crouching",
         damage: 3,
         cancellable: false,
+        steering: false,
         status: "attacking",
         phases: {
             swing: { animation: "punch", hit: 2 }
@@ -194,6 +197,7 @@ let moves = {
         stances: "standing | crouching",
         damage: 3,
         cancellable: false,
+        steering: false,
         status: "attacking",
         phases: {
             swing: { animation: "punch", hit: 2 }
@@ -208,6 +212,7 @@ let moves = {
         level: "overhead",
         knockdown: true,
         cancellable: false,
+        steering: false,
         status: "attacking",
         finish_reroutes: {
             standing: "idle",

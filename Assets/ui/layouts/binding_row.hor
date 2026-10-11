@@ -2,18 +2,18 @@
 
 let row = compositor.stack({
     direction: "horizontal",
-    spacing: 14,
+    spacing: 16,
     intro: "slide",
-    intro_time: 0.3,
-    intro_delay: 0.15,
-    intro_offset: vec(-140, 0)
+    intro_time: 0.25,
+    intro_delay: 0.1,
+    intro_offset: vec(-100, 0)
 });
 
-let action = compositor.label({ parent: row, size: vec(190, 0), text: "Action", text_scale: 0.28, align: "left" });
+let action = compositor.label({ parent: row, size: vec(210, 0), text: "Action", text_scale: 0.3, align: "left" });
 let binding = compositor.button({
     parent: row,
     label: "[icon:pad_a]",
     style: "button_flat",
-    size: vec(400, 0),
+    size: vec(360, 46),
     lbl_scale: 0.28
 });

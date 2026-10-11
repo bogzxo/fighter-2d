@@ -1,0 +1,43 @@
+// The Man's own moves, on top of movement_moves.hor and fighting_moves.hor. See fighting_moves.hor for what all of this means.
+//
+// He has no animation of his own for lying on the floor or getting up off it. The shared moves played his knocked_out tag
+// for both, which is three frames out of the middle of his roll (tucked into a ball, legs in the air, lying on his side),
+// and got him up with hard_landing, the crouch a jump lands in, so he lay there curled up in a ball and popped up into a
+// crouch. The roll has it all in the right order though. He goes down through its last two of those (legs over, then
+// lying), stays on the last, and gets up with the three the roll ends on (kneeling, rising, standing).
+
+let moves = {
+    knocked_out: {
+        stances: "standing | crouching | jumping | falling",
+        cancellable: false,
+        steering: false,
+        phases: {
+            drop: { animation: "knocked_out", start: 1, hold: 2 },
+            down: { frames: 1, loop_while: "always" }
+        }
+    },
+
+    knocked_down: {
+        stances: "standing | crouching | jumping | falling",
+        cancellable: false,
+        steering: false,
+        finish_reroutes: {
+            standing: "get_up",
+            crouching: "get_up"
+        },
+        phases: {
+            drop: { animation: "knocked_out", start: 1, hold: 2 },
+            floor: { frames: 1, loop_while: "hitstun" }
+        }
+    },
+
+    get_up: {
+        stances: "standing | crouching",
+        cancellable: false,
+        steering: false,
+        status: "invulnerable",
+        phases: {
+            rise: { animation: "roll", start: 6, hold: 2 }
+        }
+    }
+}

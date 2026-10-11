@@ -1,4 +1,4 @@
-// The characters of the game, in the order the character select screen shows them.
+// The characters of the game, in the order the roster of the fight setup screen shows them.
 // Each one has a folder in Assets/sprites/characters with its .ase file in it, which Aseprite opens and the game reads as it is.
 // Every tag of the file is an animation by the name of the tag, see Art/tools/build_ase.py for how the files were first put together.
 // What the files were made from is in Art/characters, which the game doesn't load and doesn't send to whoever joins.
@@ -10,7 +10,7 @@
 //   walk_speed    the speed it walks up to
 //   frame_rate    how many frames of animation a second its moves play at
 //   scale         how big the character is against the others, 1 if left out. Everything scales with it, the sprite, the body and the hitboxes
-//   stats         the bars on the character select screen, each from 0 to 100. They are only for show,
+//   stats         the bars on the fight setup screen, each from 0 to 100. They are only for show,
 //                 how a character really plays is up to its moves and the numbers above
 
 let characters = {
@@ -68,6 +68,25 @@ let characters = {
         }
     },
 
+    // The blocky test fighter, rendered off a 3D mannequin by New Art 3D/tools/build_blocky.bat. He has a move in every
+    // slot the game knows about with art of its own, see blocky_moves.hor. Change a pose in New Art 3D/tools/make_mannequin.py,
+    // run the bat, and he is different
+    blocky: {
+        pretty_name: "Blocky",
+        sprites: "Assets/sprites/characters/blocky/blocky.ase",
+        moves: {
+            all: "Assets/data/blocky_moves.hor"
+        },
+        walk_speed: 2000,
+        frame_rate: 12,
+        stats: {
+            speed: 55,
+            health: 50,
+            bulk: 50,
+            complexity: 60
+        }
+    },
+
     // The one the game started out with. He has the plain move list every other one was built on top of: a kick and a punch
     // on two buttons each, a jump kick, a block and a roll, and nothing that costs meter
     the_man: {
@@ -75,7 +94,8 @@ let characters = {
         sprites: "Assets/sprites/characters/the_man/the_man.ase",
         moves: {
             movement: "Assets/data/movement_moves.hor",
-            fighting: "Assets/data/fighting_moves.hor"
+            fighting: "Assets/data/fighting_moves.hor",
+            own: "Assets/data/the_man_moves.hor"
         },
         walk_speed: 2000,
         frame_rate: 24,

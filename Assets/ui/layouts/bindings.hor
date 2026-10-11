@@ -1,27 +1,29 @@
-// Where the bindings of a gamepad are changed (BindingsScene.cs). The game shares the actions out over the
-// columns there are here (column_1, column_2 and so on, add another for a third) with a row out of binding_row.hor each.
+// Where the bindings of a gamepad are changed (BindingsScene.cs), got to from the fight setup screen and from the
+// options. The game shares the actions out over the columns there are here (column_1, column_2 and so on, add
+// another for a third) with a row out of binding_row.hor each, and writes whose gamepad it is under the title.
 
 // Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
 compositor.design({ size: vec(1600, 900), fit: "contain" });
 
 let panel = compositor.stack({
+    pos: vec(0, 14),
     background: "panel",
-    padding: vec(40, 34),
-    spacing: 20,
+    padding: vec(44, 30),
+    spacing: 16,
     intro: "pop",
-    intro_time: 0.4
+    intro_time: 0.3
 });
 
 let title = compositor.label({ parent: panel, text: "Bindings of player 1", text_scale: 0.6 });
-let gamepad_name = compositor.label({ parent: panel, text: "Gamepad", text_scale: 0.25, color: vec(0.58, 0.6, 0.66, 1) });
+let gamepad_name = compositor.label({ parent: panel, text: "Gamepad", text_scale: 0.26, color: vec(0, 0.86, 1, 1) });
 let rule = compositor.divider({ parent: panel, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
 
-let columns = compositor.stack({ parent: panel, direction: "horizontal", spacing: 36 });
+let columns = compositor.stack({ parent: panel, direction: "horizontal", spacing: 44 });
 let column_1 = compositor.stack({
     parent: columns,
     anchor: "top",
     spacing: 6,
-    stagger: 0.04,
+    stagger: 0.03,
     template: "binding_row.hor",
     preview_count: 8
 });
@@ -29,17 +31,22 @@ let column_2 = compositor.stack({
     parent: columns,
     anchor: "top",
     spacing: 6,
-    stagger: 0.04,
+    stagger: 0.03,
     template: "binding_row.hor",
     preview_count: 8
 });
 
-let actions = compositor.stack({ parent: panel, direction: "horizontal", spacing: 16 });
-let btn_defaults = compositor.button({ parent: actions, label: "Defaults", size: vec(240, 0) });
-let btn_done = compositor.button({ parent: actions, label: "Done", size: vec(180, 0) });
+let rule_2 = compositor.divider({ parent: panel, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
 
+let actions = compositor.stack({ parent: panel, direction: "horizontal", spacing: 16 });
+let btn_defaults = compositor.button({ parent: actions, label: "Back to the defaults", style: "button_flat", size: vec(330, 0), lbl_scale: 0.3 });
+let btn_done = compositor.button({ parent: actions, label: "Done", size: vec(220, 0), lbl_scale: 0.3 });
+
+// What to press, along the bottom of the screen where every menu has it
 let hint = compositor.label({
-    parent: panel,
+    anchor: "bottom",
+    pos: vec(0, 22),
+    size: vec(1500, 30),
     text: "[icon:dpad] choose    [icon:pad_a] change    [icon:pad_b] done",
     text_scale: 0.25,
     color: vec(0.58, 0.6, 0.66, 1)

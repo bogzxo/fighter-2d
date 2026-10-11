@@ -15,11 +15,11 @@ internal enum WeatherSetting
 
 /// <summary>
 /// The rules a match is played by, which is how many rounds, how long each one lasts and what the weather is doing.
-/// The players pick these on the screen after the map (MatchRulesScene), a fight that never saw that screen plays by the defaults.
+/// The players pick these on the fight setup screen (FightSetupScene), a fight that never saw that screen plays by the defaults.
 /// </summary>
 internal sealed class MatchRules
 {
-    // What there is to choose from on the rules screen, in the order it is stepped through
+    // What there is to choose from on the fight setup screen, in the order it is stepped through
     public static readonly int[] RoundChoices = [1, 2, 3, 4, 5];
     public static readonly int[] TimeChoices = [60, 99, 180, 0];
     public static readonly WeatherSetting[] WeatherChoices = [WeatherSetting.Map, WeatherSetting.Clear, WeatherSetting.Storm];

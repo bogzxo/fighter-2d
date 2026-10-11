@@ -14,10 +14,7 @@ namespace Fighter2D.Scenes.Menus;
 internal static class MenuLayouts
 {
     public const string MAIN_MENU = "main_menu.hor";
-    public const string GAMEPAD_SELECT = "gamepad_select.hor";
-    public const string CHARACTER_SELECT = "character_select.hor";
-    public const string MAP_SELECT = "map_select.hor";
-    public const string MATCH_RULES = "match_rules.hor";
+    public const string FIGHT_SETUP = "fight_setup.hor";
     public const string BINDINGS = "bindings.hor";
     public const string JOIN_SERVER = "join_server.hor";
     public const string OPTIONS = "options.hor";
@@ -38,7 +35,7 @@ internal static class MenuLayouts
     {
         var compositor = scene.AddComponent(CreateCompositor(camera));
 
-        return compositor.CreateModule().LoadLayout(Path.Combine(DIRECTORY, file));
+        return CreateModule(compositor).LoadLayout(Path.Combine(DIRECTORY, file));
     }
 
     /// <summary>
@@ -49,7 +46,19 @@ internal static class MenuLayouts
     {
         var compositor = Configure(UICompositor.ForScreen(Constants.UI_THEME));
 
-        return (compositor.CreateModule().LoadLayout(Path.Combine(DIRECTORY, file)), compositor);
+        return (CreateModule(compositor).LoadLayout(Path.Combine(DIRECTORY, file)), compositor);
+    }
+
+    /// <summary>
+    /// Helper method to make the module a layout goes in. The engine's navigator would walk it off the arrow keys, enter
+    /// and space by itself, which is switched off. The keyboard is a gamepad in this game (see GameInput.Attach) and
+    /// gets to the menus through the same code a gamepad does, twice over every press was done twice.
+    /// </summary>
+    private static UIModule CreateModule(UICompositor compositor)
+    {
+        UIModule module = compositor.CreateModule();
+        module.Navigation.Keys = false;
+        return module;
     }
 
     private static UICompositor CreateCompositor(Camera2D camera) => Configure(new UICompositor(camera, Constants.UI_THEME));

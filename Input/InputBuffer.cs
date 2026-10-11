@@ -8,6 +8,9 @@ namespace Fighter2D.Input;
 /// </summary>
 public class InputBuffer
 {
+    // The four ways of the d-pad, any of which going down between the two taps of a double tap breaks it
+    private const InputFlags Directions = InputFlags.DPadUp | InputFlags.DPadDown | InputFlags.DPadLeft | InputFlags.DPadRight;
+
     private readonly (InputFlags Held, InputFlags Pressed)[] _ticks;
     private readonly int _bufferTicks, _doubleTapTicks;
     private int _newest = -1;
@@ -55,11 +58,16 @@ public class InputBuffer
 
     /// <summary>
     /// Tests if the signature was pressed twice in a row, with the second press recent enough to still count.
+    /// In a row means no other direction went down in between. Left right left is somebody jittering about on the
+    /// spot, which a fighting game lets you do, not a double tap of left with a right that doesn't count.
     /// </summary>
     public bool WasDoubleTapped(InputFlags signature)
     {
         int secondTap = FindPress(signature, 0, _bufferTicks);
-        return secondTap >= 0 && FindPress(signature, secondTap + 1, _doubleTapTicks) >= 0;
+        if (secondTap < 0) return false;
+
+        int firstTap = FindPress(signature, secondTap + 1, _doubleTapTicks);
+        return firstTap >= 0 && !PressedBetween(Directions & ~signature, secondTap + 1, firstTap);
     }
 
     /// <summary>
@@ -118,5 +126,19 @@ public class InputBuffer
         }
 
         return -1;
+    }
+
+    /// <summary>
+    /// Helper method to test if any of the buttons went down from one tick to before another, counted back from now.
+    /// </summary>
+    private bool PressedBetween(InputFlags buttons, int fromTicksAgo, int toTicksAgo)
+    {
+        for (int ticksAgo = fromTicksAgo; ticksAgo < toTicksAgo && ticksAgo < _count; ticksAgo++)
+        {
+            if ((_ticks[(_newest - ticksAgo + _ticks.Length) % _ticks.Length].Pressed & buttons) != InputFlags.None)
+                return true;
+        }
+
+        return false;
     }
 }

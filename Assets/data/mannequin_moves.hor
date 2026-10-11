@@ -235,6 +235,7 @@ let moves = {
         stances: "standing | crouching",
         damage: 4,
         cancellable: false,
+        steering: false,
         status: "attacking",
         stance_reroutes: {
             crouching: "body_blow"
@@ -269,6 +270,7 @@ let moves = {
         stances: "standing",
         damage: 6,
         cancellable: false,
+        steering: false,
         status: "attacking",
         phases: {
             swing: { animation: "punch_2", start: 6, frames: 20, hit: 8 }
@@ -389,6 +391,7 @@ let moves = {
         level: "overhead",
         knockdown: true,
         cancellable: false,
+        steering: false,
         status: "attacking",
         finish_reroutes: {
             standing: "idle",

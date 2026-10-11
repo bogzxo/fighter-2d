@@ -1,0 +1,18 @@
+// The hand drawn hitboxes of cammy, written by the hitbox editor (HitboxEditor/). A move that isn't here hits
+// with whatever limb its art has sticking out. min and max are a share of the frame from its middle, x the way the
+// character faces and y up, active is how many frames of the move the box stays out for from the hit frame. A move whose
+// box changes from one active frame to the next has frames, a box for every one of them from the hit frame on.
+
+let hitboxes = {
+    crouch_heavy_punch: { min: vec(0.225, -0.125), max: vec(0.325, 0), active: 1 },
+    crouch_kick: { min: vec(0.1, -0.5062), max: vec(0.2938, -0.4188), active: 1 },
+    crouch_punch: { min: vec(0.1375, -0.3188), max: vec(0.2875, -0.2562), active: 1 },
+    jump_kick: { frames: [
+        { min: vec(0.075, -0.4188), max: vec(0.2875, -0.3312) },
+        { min: vec(0.0312, -0.4188), max: vec(0.2438, -0.3312) }
+    ] },
+    jump_light_kick: { min: vec(0.1125, -0.275), max: vec(0.3125, -0.15), active: 1 },
+    jump_light_punch: { min: vec(0.0688, -0.4375), max: vec(0.2312, -0.3125), active: 1 },
+    jump_punch: { min: vec(0.1188, -0.4312), max: vec(0.2875, -0.2375), active: 1 },
+    sweep: { min: vec(-0.025, -0.4438), max: vec(0.2062, -0.3562), active: 1 }
+};

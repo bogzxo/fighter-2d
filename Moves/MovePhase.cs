@@ -9,6 +9,9 @@ namespace Fighter2D.Moves;
 /// </summary>
 public class MovePhase
 {
+    // What the move file calls the phase (windup, swing, recovery), for whoever shows the move to somebody
+    public string Name { get; init; } = string.Empty;
+
     // The animation that plays, null carries on with the animation of the phase before
     public string? Animation { get; init; }
 

@@ -19,11 +19,19 @@ namespace Fighter2D.HUD;
 /// Nobody is dropped straight back into the fight either. Once the pause is over (or the data has been reloaded) it counts
 /// down from three first, and the fight stays held until it gets to the end of that.
 /// The gamepad walks the menu through the engine's navigator, which is what lets it step the selectors as well as press the buttons.
+/// It comes up on whatever it was left on the last time, so going back and forth between the fight and one of the
+/// training options isn't a walk down the menu every time (see <see cref="lastSelected"/>).
 /// </summary>
 internal sealed class PauseMenu : GameComponent
 {
     private const string HINT = "[icon:dpad] choose    [icon:pad_a] pick    [icon:pad_b] carry on";
     private const string TRAINING_HINT = "[icon:dpad] choose and change    [icon:pad_a] pick    [icon:pad_b] carry on";
+
+    // What the menu was left on the last time it was up, by the name it has in the layout, null for the top of it. It
+    // outlives the menu on purpose. A fight that is built again (another dummy, the data read again) has a
+    // new menu, and that one comes up where the old one was. Leaving a fight forgets it, nobody wants the next fight's
+    // pause to come up with the thumb already on Start over
+    private static string? lastSelected;
 
     // The layout is four layers. The menu of whoever paused, the training options under it (practice only), what the other
     // machine shows while it waits for them, and the countdown both of them get before the fight is back on
@@ -135,6 +143,7 @@ internal sealed class PauseMenu : GameComponent
 
         // The gamepad walks whatever is on the menu layer, the hidden layers are skipped by themselves
         _nav = _layout.Module.Navigation;
+        _nav.Changed = Remember;
 
         // None of it is up until somebody pauses
         _layout.Module.SetLayerVisible(MENU_LAYER, false);
@@ -155,6 +164,10 @@ internal sealed class PauseMenu : GameComponent
         {
             _layout.Get<Label>("tools_title").Visible = false;
             reload.Visible = hitboxes.Visible = false;
+
+            // Without the tools the panel they are in only has the training options, and without those nothing at all
+            if (Training is null) _layout.Get<StackPanel>("side").Visible = false;
+            else _layout.Get<Divider>("training_rule").Visible = false;
             return;
         }
 
@@ -176,6 +189,19 @@ internal sealed class PauseMenu : GameComponent
         dummy.Options = training.DummyChoices;
         dummy.Index = training.DummyChoice;
         dummy.OnChanged = _ => training.DummyChoice = dummy.Index;
+
+        // Which character the dummy is. Picking another one builds the fight again around it, so the menu goes with the fight
+        var opponent = _layout.Get<Selector>("opponent");
+        if (training.CanChangeOpponent)
+        {
+            opponent.Options = training.OpponentChoices;
+            opponent.Index = training.OpponentChoice;
+            opponent.OnChanged = _ => training.OpponentChoice = opponent.Index;
+        }
+        else
+        {
+            _layout.Get<StackPanel>("opponent_row").Visible = false;
+        }
 
         var refill = _layout.Get<Selector>("refill");
         refill.Options = ["Off", "On"];
@@ -210,9 +236,11 @@ internal sealed class PauseMenu : GameComponent
     {
         IsOpen = true;
 
-        // The layers have to be up before the navigator will stand on anything in them
+        // The layers have to be up before the navigator will stand on anything in them. Back onto whatever it was left
+        // on, if that is still there to stand on, and onto carrying on if it isn't
         ShowLayers();
-        _nav.Select(_resume);
+        string? remembered = lastSelected;
+        if (remembered is null || !_layout.TryGet(remembered, out UIComponent? last) || !_nav.Select(last)) _nav.Select(_resume);
         _layout.PlayIntros();
 
         Opened?.Invoke();
@@ -235,7 +263,25 @@ internal sealed class PauseMenu : GameComponent
         if (_leaving) return;
 
         _leaving = true;
+        lastSelected = null;
         how();
+    }
+
+    /// <summary>
+    /// Called by the navigator whenever it stands on something else. What it is on is kept by its name in the layout,
+    /// the buttons of a question (which have none) and the menu being put away (which is nothing) aren't.
+    /// </summary>
+    private void Remember(UIComponent? selected)
+    {
+        if (!IsOpen || selected is null) return;
+
+        foreach (var (name, part) in _layout.Parts)
+        {
+            if (!ReferenceEquals(part, selected)) continue;
+
+            lastSelected = name;
+            return;
+        }
     }
 
     private void ShowLayers()
@@ -294,9 +340,9 @@ internal sealed class PauseMenu : GameComponent
 
             _nav.Move(0, MenuInput.Vertical(gamepad));
 
-            // Left and right step whatever is selected (the selectors of the training options), buttons have no use for them
+            // Left and right step a selector (the training options), and anywhere else go across to the other panel
             int horizontal = MenuInput.Horizontal(gamepad);
-            if (horizontal != 0) _nav.Adjust(horizontal);
+            if (horizontal != 0 && !_nav.Adjust(horizontal)) _nav.Move(horizontal, 0);
 
             if (gamepad.WasPressed(GamepadInput.A))
             {

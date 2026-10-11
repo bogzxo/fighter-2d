@@ -20,5 +20,20 @@ internal sealed class CombatLog
     /// </summary>
     public event Action<AttackReport>? Reported;
 
-    public void Report(in AttackReport report) => Reported?.Invoke(report);
+    public void Report(in AttackReport report)
+    {
+        // FIGHTER2D_LOG_HITS=1 writes every attack into the log, for checking what a scripted fight came to
+        if (LogHits)
+        {
+            Player attacker = report.Attacker, victim = Fight.OpponentOf(attacker);
+            Fighters.Box hit = attacker.Boxes.Hitbox((uint)attacker.Frame), hurt = victim.Boxes.Hurtbox;
+            Horizon.Logging.Log.Info($"[Hits] {attacker.Character.Id} {report.Move.Id} {report.Result} (combo {report.ComboCount}, {report.ComboDamage} damage), " +
+                $"attacker at {attacker.Transform.Position.X:0} facing {attacker.Facing}, hitbox {hit.Min.X:0},{hit.Min.Y:0} to {hit.Max.X:0},{hit.Max.Y:0}, " +
+                $"{victim.Character.Id} at {victim.Transform.Position.X:0} {(victim.Controller.State.IsDowned ? "down" : "up")}, hurtbox {hurt.Min.X:0},{hurt.Min.Y:0} to {hurt.Max.X:0},{hurt.Max.Y:0}");
+        }
+
+        Reported?.Invoke(report);
+    }
+
+    private static readonly bool LogHits = Environment.GetEnvironmentVariable("FIGHTER2D_LOG_HITS") == "1";
 }

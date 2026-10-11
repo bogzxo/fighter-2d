@@ -33,6 +33,12 @@ internal class Player() : Sprite(SIZE)
     public Vector2 SpawnPosition { get; set; }
 
     /// <summary>
+    /// Which way the player faces at the start of every round, -1 left and 1 right, null for however the art was drawn.
+    /// Set by a fight that puts its players in exact places for a test (see FightScene.TestPositions).
+    /// </summary>
+    public float? StartFacing { get; set; }
+
+    /// <summary>
     /// This is the player health out of 100, 0 being dead.
     /// </summary>
     public byte Health = MAX_HEALTH;
@@ -137,6 +143,8 @@ internal class Player() : Sprite(SIZE)
             Transform.Snap();
         }
 
+        if (StartFacing is { } facing) Flipped = facing < 0.0f;
+
         Controller?.Reset();
     }
 
@@ -157,6 +165,9 @@ internal class Player() : Sprite(SIZE)
         // Everything a character is comes out of the content, which online can be the content of whoever hosts the fight
         Character = CharacterDefinition.Load(CharacterId);
         MoveList = Character.LoadMoves();
+
+        // The hitboxes drawn by hand in the hitbox editor, if the character has any, in before the frame data is worked out
+        CustomHitboxes.Apply(MoveList, Character.Id);
 
         CharacterBoxes? boxes = LoadSprites();
         CreateBody();

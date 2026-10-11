@@ -78,6 +78,16 @@
     <AddToPath Directory="$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer" />
   </Target>
 
+  <!-- The hitbox editor is a program of its own in here (HitboxEditor/), built out of the game's own code, so the game
+       leaves its files alone and lets it see what isn't public -->
+  <ItemGroup>
+    <Compile Remove="HitboxEditor\**" />
+    <None Remove="HitboxEditor\**" />
+    <Content Remove="HitboxEditor\**" />
+    <EmbeddedResource Remove="HitboxEditor\**" />
+    <InternalsVisibleTo Include="HitboxEditor" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- Everything under Assets ships next to the exe as it is, Art is the source material and stays home -->
     <None Update="Assets\**" CopyToOutputDirectory="PreserveNewest" />
