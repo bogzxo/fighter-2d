@@ -78,6 +78,9 @@ internal static class GameOptions
     // Whether the game is drawn like it is on a crusty old CRT
     public static bool Crt = true;
 
+    // Whether the lanterns and whatever else shines in a fight get a glow round them, see Screen.AddBloom
+    public static bool Bloom = true;
+
     // Whether the lighting is path traced, light bouncing off the arena and spilling round corners, instead of the
     // cheap kind. Off until somebody with a GPU asks for it, it is a good few passes a frame
     public static bool RenderPathtraced = false;
@@ -139,6 +142,7 @@ internal static class GameOptions
 
             Transitions = HorReader.Named(options, "transitions", Transitions);
             Crt = HorReader.Bool(options, "crt", Crt);
+            Bloom = HorReader.Bool(options, "bloom", Bloom);
             RenderPathtraced = HorReader.Bool(options, "fancy", RenderPathtraced);
             LightQuality = HorReader.Named(options, "light_quality", LightQuality);
             GuiScale = Closest(GuiScales, (float)HorReader.Number(options, "gui_scale", GuiScale));
@@ -182,6 +186,7 @@ internal static class GameOptions
         text.AppendLine($"    frame_limit: {FrameLimit},");
         text.AppendLine($"    transitions: \"{Transitions.ToString().ToLowerInvariant()}\",");
         text.AppendLine($"    crt: {Write(Crt)},");
+        text.AppendLine($"    bloom: {Write(Bloom)},");
         text.AppendLine($"    fancy: {Write(RenderPathtraced)},");
         text.AppendLine($"    light_quality: \"{LightQuality.ToString().ToLowerInvariant()}\",");
         text.AppendLine($"    gui_scale: {GuiScale.ToString(System.Globalization.CultureInfo.InvariantCulture)},");

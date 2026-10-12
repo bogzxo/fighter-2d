@@ -91,6 +91,21 @@ internal static class Screen
     }
 
     /// <summary>
+    /// Helper method to put the bloom on a renderer of the world, a glow round the lanterns and whatever else the
+    /// light drives past white. Before the CRT, the glow goes through the tube with the rest of the picture. The
+    /// numbers are <see cref="DeferedStyle"/>'s, whether it is on is the player's.
+    /// </summary>
+    public static void AddBloom(Renderer2D renderer)
+    {
+        renderer.PostProcessing.Add(new BloomEffect
+        {
+            Enabled = GameOptions.Bloom,
+            Threshold = DeferedStyle.BLOOM_THRESHOLD,
+            Intensity = DeferedStyle.BLOOM_INTENSITY
+        });
+    }
+
+    /// <summary>
     /// How the world of a fight is lit, by what the options say. The fancy one path traces.
     /// </summary>
     public static LightingMode WorldLighting => GameOptions.RenderPathtraced ? LightingMode.PathTraced : LightingMode.Direct;
@@ -114,6 +129,7 @@ internal static class Screen
     public static void ApplyOptions(Renderer2D renderer, UICompositor? ui)
     {
         if (renderer.PostProcessing.Get<CrtEffect>() is { } crt) crt.Enabled = GameOptions.Crt;
+        if (renderer.PostProcessing.Get<BloomEffect>() is { } bloom) bloom.Enabled = GameOptions.Bloom;
         if (renderer is DeferredRenderer2D lit)
         {
             lit.Lighting = WorldLighting;

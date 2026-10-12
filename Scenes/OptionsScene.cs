@@ -150,6 +150,14 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
             },
             "Draws the game like it is on a crusty old picture tube.");
 
+        _settings.AddSwitch(layout, "bloom", GameOptions.Bloom,
+            on =>
+            {
+                GameOptions.Bloom = on;
+                Screen.ApplyOptions(Canvas, _ui);
+            },
+            "A glow round the lanterns and whatever else shines in a fight.");
+
         _settings.AddSwitch(layout, "pathtraced", GameOptions.RenderPathtraced,
             on =>
             {

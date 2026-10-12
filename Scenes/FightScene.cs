@@ -195,8 +195,9 @@ internal class FightScene : Scene
         // How it shades, the highlights, the shadows, how dark the corners go, is all in DeferedStyle
         DeferedStyle.Apply(_renderer);
 
-        // The CRT last, on top of everything the others did to the picture.
+        // The glow round the lanterns first, then the CRT last, on top of everything the others did to the picture.
         // The fight starts out behind the versus screen, so the arena starts out as a smear
+        Screen.AddBloom(_renderer);
         _backdropBlur = _renderer.PostProcessing.Add(new BlurEffect { Radius = VERSUS_BLUR });
         Screen.AddCrt(_renderer, FightCamera.Zoom);
     }

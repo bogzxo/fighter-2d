@@ -26,6 +26,13 @@ internal static class DeferedStyle
     // How soft the edge of a shadow is, as the size of the lamp throwing it in world units. 0 is a hard edge
     public const float SHADOW_SOFTNESS = 12.0f;
 
+    /* The bloom, what the bloom option turns on. A glow round whatever is driven past white, the lanterns, the
+       lava, a fighter flashed on a hit */
+
+    // What is darker than this (by its brightest channel, 0 to 1) doesn't glow, and how much of the glow is laid over
+    public const float BLOOM_THRESHOLD = 0.75f;
+    public const float BLOOM_INTENSITY = 0.3f;
+
     /* The path traced lighting, what the fancy option turns on */
 
     // How much of the bounced light is added to the picture

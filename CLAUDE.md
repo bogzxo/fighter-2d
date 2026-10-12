@@ -14,10 +14,11 @@ Anything the game wants of the GPU goes through the engine, there is no GL in he
 
 - `App/` the entry point (`Program.cs`, `--map <name>` drops straight into a fight, `--content <folder>` points at
   other content), `GameOptions.cs` (everything on the options screen, kept in `options.hor` next to the exe, with the
-  `Fancy` switch for the path traced lighting), `Screen.cs` (the effects every scene puts on, the CRT, which
-  lighting the world gets), `DeferedStyle.cs` (every number of how the world is shaded that is a matter of taste,
-  the highlights, the shadows, how much the corners darken out of the painted maps, the map's shape and the
-  fighters, tune the look there and nowhere else).
+  `Fancy` switch for the path traced lighting and `Bloom` for the glow round the lanterns), `Screen.cs` (the
+  effects every scene puts on, the CRT, the bloom, which lighting the world gets), `DeferedStyle.cs` (every number
+  of how the world is shaded that is a matter of taste, the highlights, the shadows, the bloom's threshold and
+  strength, how much the corners darken out of the painted maps, the map's shape and the fighters, tune the look
+  there and nowhere else).
 - `Scenes/` one class per screen, `Menus/` for the menu layouts, `Widgets/` for the bits they share (the character
   portrait draws out of a character's atlas). From the main menu a fight is one screen away, `FightSetupScene` has
   the gamepads, the fighters, the map and the rules on it (and is the lobby of an online fight, its `.Online.cs`),

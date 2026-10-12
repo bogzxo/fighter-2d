@@ -60,8 +60,9 @@ internal sealed class MapPreview : GameObject
             Lighting = Screen.WorldLighting
         });
 
-        // Shaded the way the fight is, or the preview is a lie
+        // Shaded the way the fight is, glow and all, or the preview is a lie
         DeferedStyle.Apply(_renderer);
+        Screen.AddBloom(_renderer);
 
         // Back and forth forever, slowly
         _tweens.Play(Tween.To(() => _drift, drift => _drift = drift, 1.0f, DRIFT_TIME / 2).SetEasing(Easing.InOutSine).SetLoops(-1, LoopMode.PingPong));
