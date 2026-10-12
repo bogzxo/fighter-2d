@@ -8,16 +8,13 @@ namespace Fighter2D.Combat;
 /// <summary>
 /// Keeps the two fighters from standing in (or on) each other. Their bodies don't collide, they are in the same collision group
 /// and pass straight through one another. What keeps them apart is this, a shove sideways for as long as their pushboxes overlap.
+/// The pushbox is the small box around the bulk of a fighter that stands on the map (<see cref="PlayerBody.Box"/>), it changes
+/// with the frame they show. The big one around everything drawn is the hurtbox, that is for getting hit and nothing else.
 /// So a jump kick that comes down on somebody slides off to the side of them instead of landing on their head and getting stuck there.
 /// Walking into somebody does move them, but it is hard work. The two of them drag along the floor together a lot slower than either walks alone.
 /// </summary>
 internal static class Pushboxes
 {
-    // The pushbox of a fighter, in pixels of their art (it grows with the scale of the character).
-    // As wide as the two of them are allowed to get into each other, and about as tall as they stand
-    private const float WIDTH = 30.0f;
-    private const float HEIGHT = 52.0f;
-
     // How hard they are shoved apart when one is right inside of the other, less the less they overlap.
     // Enough to win against somebody walking into it, not so much that anybody gets flung
     private const float PUSH = 20000.0f;
@@ -41,18 +38,24 @@ internal static class Pushboxes
         // Somebody who is down for good is furniture, nobody trips over them
         if (one.Health == 0 || two.Health == 0) return;
 
-        float width = WIDTH * (one.Scale + two.Scale) * 0.5f;
-        float height = HEIGHT * (one.Scale + two.Scale) * 0.5f;
+        // The box of the bulk of each of them, the same one that stands on the map, where it is in the world
+        PhysicsRectangle ours = one.Body.Box, theirs = two.Body.Box;
+        Vector2 ourMin = first.Position + ours.Position, ourMax = ourMin + ours.Size;
+        Vector2 theirMin = second.Position + theirs.Position, theirMax = theirMin + theirs.Size;
 
-        Vector2 apart = second.Position - first.Position;
-        if (MathF.Abs(apart.Y) >= height) return;
+        // One over the other's head isn't in their way
+        if (ourMax.Y <= theirMin.Y || theirMax.Y <= ourMin.Y) return;
 
-        float overlap = width - MathF.Abs(apart.X);
+        float overlap = MathF.Min(ourMax.X, theirMax.X) - MathF.Max(ourMin.X, theirMin.X);
         if (overlap <= 0.0f) return;
 
         // Right on top of each other there is no way that is away, so player one goes left by decree
-        float direction = apart.X != 0.0f ? MathF.Sign(apart.X) : 1.0f;
-        float shove = PUSH * (overlap / width) * dt;
+        float apart = (theirMin.X + theirMax.X) - (ourMin.X + ourMax.X);
+        float direction = apart != 0.0f ? MathF.Sign(apart) : 1.0f;
+
+        // As hard as it gets once the narrower of the two is all the way inside the other
+        float width = MathF.Max(1.0f, MathF.Min(ours.Size.X, theirs.Size.X));
+        float shove = PUSH * MathF.Min(1.0f, overlap / width) * dt;
 
         first.ApplyImpulse(new Vector2(-direction * shove, 0.0f));
         second.ApplyImpulse(new Vector2(direction * shove, 0.0f));

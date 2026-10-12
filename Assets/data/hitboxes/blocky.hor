@@ -1,0 +1,8 @@
+// The hand drawn hitboxes of blocky, written by the hitbox editor (HitboxEditor/). A move that isn't here hits
+// with whatever limb its art has sticking out. min and max are a share of the frame from its middle, x the way the
+// character faces and y up, active is how many frames of the move the box stays out for from the hit frame. A move whose
+// box changes from one active frame to the next has frames, a box for every one of them from the hit frame on.
+
+let hitboxes = {
+    spin_kick: { min: vec(0.0703, -0.0547), max: vec(0.1953, 0.0391), active: 1 }
+};

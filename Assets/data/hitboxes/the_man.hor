@@ -1,0 +1,12 @@
+// The hand drawn hitboxes of the_man, written by the hitbox editor (HitboxEditor/). A move that isn't here hits
+// with whatever limb its art has sticking out. min and max are a share of the frame from its middle, x the way the
+// character faces and y up, active is how many frames of the move the box stays out for from the hit frame. A move whose
+// box changes from one active frame to the next has frames, a box for every one of them from the hit frame on.
+
+let hitboxes = {
+    jump_kick: { min: vec(0.1953, -0.2812), max: vec(0.4297, -0.0391), active: 1 },
+    kick_left: { min: vec(0.0703, -0.2578), max: vec(0.3906, 0.0234), active: 1 },
+    kick_right: { min: vec(0.0781, -0.25), max: vec(0.4062, 0.0156), active: 1 },
+    punch_left: { min: vec(0.0391, -0.2656), max: vec(0.2109, 0.0078), active: 1 },
+    punch_right: { min: vec(0.0234, -0.2812), max: vec(0.2344, 0.0312), active: 1 }
+};

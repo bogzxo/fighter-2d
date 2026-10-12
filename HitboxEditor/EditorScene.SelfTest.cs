@@ -201,6 +201,11 @@ internal sealed partial class EditorScene
             int after = MoveTimeline.HitFrame(timeline);
             Check(after > before, $"moving the hit a frame moves the hit frame on the timeline ({before} to {after})");
 
+            // And back where it was, the way the right click on its cell does it
+            SetHitFrame(before);
+            yield return 2;
+            Check(MoveTimeline.HitFrame(timeline) == before && frame == before, "set as hit frame puts the hit on that cell");
+
             int phases = Draft!.Phases.Length;
             AddPhase();
             yield return 2;

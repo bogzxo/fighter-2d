@@ -91,7 +91,7 @@ let moves = {
         steering: false,
         status: "invulnerable",
         phases: {
-            dive: { animation: "roll", frames: 5, impulse: vec(3500, 0), effect: "roll", effect_frames: 5 },
+            dive: { animation: "roll", frames: 5, impulse: vec(3500, 0), effect: "roll", effect_frames: 5, cancel: 0 },
             recover: { frames: 4, cancel: 0 }
         }
     }

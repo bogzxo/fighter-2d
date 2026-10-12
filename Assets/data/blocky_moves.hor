@@ -136,8 +136,8 @@ let moves = {
     },
 
     dodge_roll: {
-        input: "DPadLeft | DPadRight",
-        trigger: "double_tap",
+        input: "left_trigger",
+        trigger: "presssed",
         priority: 10,
         stances: "standing | crouching",
         cancellable: true,

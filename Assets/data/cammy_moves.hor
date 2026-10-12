@@ -86,13 +86,9 @@ let moves = {
         damage: 6,
         cancellable: false,
         status: "attacking",
-        stance_reroutes: {
-            jumping: "jump_light_kick",
-            falling: "jump_light_kick",
-            crouching: "crouch_kick"
-        },
+        stance_reroutes: { jumping: "jump_light_kick", falling: "jump_light_kick", crouching: "crouch_kick" },
         phases: {
-            swing: { animation: "kick", hit: 0 }
+            swing: { animation: "kick", hit: 2 }
         }
     },
 

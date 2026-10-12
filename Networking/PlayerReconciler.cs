@@ -24,6 +24,8 @@ internal static class PlayerReconciler
         {
             // Dropped onto the very frame they are on over there. If their move holds that frame then so do we, no more looping animations
             controller.RestoreMove(move, snapshot.Phase, (uint)snapshot.Frame, snapshot.Animation, snapshot.Shown, snapshot.CanCancel, snapshot.HitThrown);
+
+            Horizon.Logging.Logger.Instance.Log(Horizon.Logging.LogLevel.Warning, "[PlayerReconciler] NetPlayer was out of sync!");
         }
 
         controller.Movement.CorrectPosition(snapshot.Position, snapshot.Velocity);

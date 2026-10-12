@@ -272,6 +272,16 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         if (CurrentMove.FinishReroutes != null &&
             CurrentMove.FinishReroutes.TryGetValue(State.CurrentStance, out var rerouteId))
         {
+            // A move that an input holds up (crouch_hold after a crouching attack) is only carried on with while that input
+            // is still held. Let go of during the attack they are stood up by the time it ends, and a press that was buffered
+            // is the standing move. It used to pass through crouch_hold for a tick, still crouching, and crouch kick all over again
+            if (MoveList.TryGetMove(rerouteId, out var next) && IsLetGoOf(next))
+            {
+                if (next.StanceAfter is { } after) State.CurrentStance = after;
+                ChangeToMove(MoveIds.IDLE, forceRestart: true);
+                return;
+            }
+
             ChangeToMove(rerouteId, forceRestart: true);
         }
         else
@@ -280,6 +290,14 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
             ChangeToMove(MoveIds.IDLE, forceRestart: true);
         }
     }
+
+    /// <summary>
+    /// Helper method to test if a move is one that a held input keeps going and that input isn't held.
+    /// </summary>
+    private bool IsLetGoOf(FightingMove move) =>
+        move.Trigger == InputTrigger.Held
+        && Array.Exists(move.InputSignatures, signature => signature != InputFlags.None)
+        && !Inputs.Buffer.TryMatch(move, out _);
 
     public void ChangeToMove(string newMoveId, bool forceRestart = false)
     {

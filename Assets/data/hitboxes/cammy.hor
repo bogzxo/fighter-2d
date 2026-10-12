@@ -14,5 +14,6 @@ let hitboxes = {
     jump_light_kick: { min: vec(0.1125, -0.275), max: vec(0.3125, -0.15), active: 1 },
     jump_light_punch: { min: vec(0.0688, -0.4375), max: vec(0.2312, -0.3125), active: 1 },
     jump_punch: { min: vec(0.1188, -0.4312), max: vec(0.2875, -0.2375), active: 1 },
+    kick_left: { min: vec(-0.025, -0.2812), max: vec(0.2125, -0.0125), active: 1 },
     sweep: { min: vec(-0.025, -0.4438), max: vec(0.2062, -0.3562), active: 1 }
 };

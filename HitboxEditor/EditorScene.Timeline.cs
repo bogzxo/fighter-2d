@@ -1,12 +1,13 @@
 using System.Numerics;
 
+using Horizon.HIDL.Runtime;
 using Horizon.Rendering;
 using Horizon.UI.Components;
 
 namespace Fighter2D.HitboxEditor;
 
 // The timeline along the bottom. A cell a frame of the move, coloured by what the frame is, the phases over the cells
-// and the hit frame under them. Clicking a cell shows its frame
+// and the hit frame under them. Clicking a cell shows its frame, a right click on one offers to put the hit there
 internal sealed partial class EditorScene
 {
     private const float TIMELINE_GAP = 2.0f;
@@ -69,6 +70,9 @@ internal sealed partial class EditorScene
             cells.Add(cell);
             cellNumbers.Add(number);
 
+            int index = each.Index;
+            cell.OnContextMenu = point => OfferHitFrame(index, point);
+
             // Under the hit frame, a mark saying so
             markRow.Add(new Label(each.IsHitFrame ? "HIT" : "") { Size = new Vector2(width, 16), TextScale = SMALL, Color = ActiveColor });
         }
@@ -98,6 +102,55 @@ internal sealed partial class EditorScene
             cells[i].Scale = new Vector2(1.0f, here ? 1.15f : 1.0f);
             cellNumbers[i].Color = here ? new Vector4(0.05f, 0.05f, 0.08f, 1.0f) : new Vector4(1, 1, 1, 0.85f);
         }
+    }
+
+    /// <summary>The menu a right click on a cell brings up. It steps onto the frame first, so what's on screen is what's meant.</summary>
+    private void OfferHitFrame(int index, Vector2 point)
+    {
+        if (index < 0 || index >= timeline.Length) return;
+
+        ShowFrame(index);
+
+        var menu = new Menu("frame");
+        menu.Add("Set as hit frame", () => SetHitFrame(index));
+        ContextMenu.Show(module, point, menu);
+    }
+
+    /// <summary>
+    /// The hit onto a frame of the timeline, which is the phase it's in and how far into it. The timeline has the one
+    /// hit frame, so the hit comes out of whichever phase had it. The red boxes are counted from the hit frame and
+    /// go along with it.
+    /// </summary>
+    private void SetHitFrame(int index)
+    {
+        if (Draft is not { } draft || index < 0 || index >= timeline.Length) return;
+
+        if (timeline[index].IsHitFrame)
+        {
+            Say($"frame {index + 1} is the hit frame already");
+            return;
+        }
+
+        int phase = timeline[index].Phase;
+        if (phase >= draft.Phases.Length) return;
+
+        int into = index - Array.FindIndex(timeline, f => f.Phase == phase);
+        string name = draft.Phases[phase].Name;
+
+        lastEdit = default;
+        bool done = Edit(d =>
+        {
+            PhaseDraft[] phases = [.. d.Phases];
+            for (int i = 0; i < phases.Length; i++)
+                phases[i] = phases[i] with { Fields = phases[i].Fields.With("hit", i == phase ? new NumberValue(into) : null) };
+
+            return d.WithPhases(phases);
+        }, "hit frame");
+
+        if (!done) return;
+
+        ShowFrame(index);
+        Say($"the hit is on frame {index + 1} now, frame {into + 1} of {name}");
     }
 
     /// <summary>Which cell of the timeline the pointer is over, -1 for none.</summary>

@@ -45,6 +45,12 @@ internal sealed class PlayerBody
     private readonly RectanglePhysicsFixture _box;
     private readonly RectanglePhysicsFixture _feet;
 
+    /// <summary>
+    /// The box around the bulk of the player, from where their body is. It's what bumps into the map, and into the
+    /// other fighter (see Pushboxes). Getting hit goes by the bigger one around everything drawn, PlayerBoxes has that.
+    /// </summary>
+    public PhysicsRectangle Box => _box.Bounds;
+
     public PlayerBody(Player player, PhysicsWorld world)
     {
         _player = player;
