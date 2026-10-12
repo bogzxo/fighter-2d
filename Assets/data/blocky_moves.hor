@@ -136,8 +136,8 @@ let moves = {
     },
 
     dodge_roll: {
-        input: "left_trigger",
-        trigger: "presssed",
+        input: "LeftBumper",
+        trigger: "pressed",
         priority: 10,
         stances: "standing | crouching",
         cancellable: true,
