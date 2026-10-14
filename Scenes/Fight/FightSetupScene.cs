@@ -32,7 +32,8 @@ namespace Fighter2D.Scenes;
 internal partial class FightSetupScene(MatchSetup setup) : MenuScene
 {
     private const int GRID_ROWS_MIN = 2;
-    private const int MAP_ROW = 0;
+    // The row the bumpers flick through the maps of, by its name, wherever the layout has it
+    private const string MAP_ROW = "map";
 
     private const string HINT_JOIN = "press any button on a gamepad to join    [icon:pad_b] back";
     private const string HINT_PICK = "[icon:dpad] choose    [icon:pad_a] lock in    [icon:pad_lb] [icon:pad_rb] map    [icon:pad_y] bindings    [icon:pad_b] back";
@@ -232,7 +233,7 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         // The map is one press away for whoever drives the menus, wherever they are on the screen
         if (player == 0 && CanChangeMatch && (gamepad.WasPressed(GamepadInput.LeftBumper) || gamepad.WasPressed(GamepadInput.RightBumper)))
         {
-            _match.Step(MAP_ROW, gamepad.WasPressed(GamepadInput.RightBumper) ? 1 : -1);
+            _match.Step(_match.IndexOf(MAP_ROW), gamepad.WasPressed(GamepadInput.RightBumper) ? 1 : -1);
             return true;
         }
 

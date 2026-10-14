@@ -57,6 +57,7 @@ let display_rows = compositor.stack({
 let display_row = compositor.stack({
     parent: display_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -80,6 +81,7 @@ let resolution_row = compositor.stack({
     parent: display_rows,
     padding: vec(14, 5, 14, 5),
     intro_delay: 0.1,
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -102,6 +104,7 @@ let resolution = compositor.selector({
 let vsync_row = compositor.stack({
     parent: display_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -124,6 +127,7 @@ let vsync = compositor.selector({
 let frame_limit_row = compositor.stack({
     parent: display_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -146,6 +150,7 @@ let frame_limit = compositor.selector({
 let performance_row = compositor.stack({
     parent: display_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -176,6 +181,7 @@ let look_rows = compositor.stack({
 let gui_scale_row = compositor.stack({
     parent: look_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -198,6 +204,7 @@ let gui_scale = compositor.selector({
 let pathtraced_row = compositor.stack({
     parent: look_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -220,6 +227,7 @@ let pathtraced = compositor.selector({
 let ui_skin_row = compositor.stack({
     parent: look_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -242,6 +250,7 @@ let ui_skin = compositor.selector({
 let ui_theme_row = compositor.stack({
     parent: look_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -264,6 +273,7 @@ let ui_theme = compositor.selector({
 let transitions_row = compositor.stack({
     parent: look_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -286,6 +296,7 @@ let transitions = compositor.selector({
 let crt_row = compositor.stack({
     parent: look_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -308,6 +319,7 @@ let crt = compositor.selector({
 let bloom_row = compositor.stack({
     parent: look_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -330,6 +342,7 @@ let bloom = compositor.selector({
 let light_quality_row = compositor.stack({
     parent: look_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -360,6 +373,7 @@ let fight_rows = compositor.stack({
 let camera_zoom_row = compositor.stack({
     parent: fight_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -382,6 +396,7 @@ let camera_zoom = compositor.selector({
 let input_display_row = compositor.stack({
     parent: fight_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -404,6 +419,7 @@ let input_display = compositor.selector({
 let hit_callouts_row = compositor.stack({
     parent: fight_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -426,6 +442,7 @@ let hit_callouts = compositor.selector({
 let frame_data_row = compositor.stack({
     parent: fight_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -448,6 +465,7 @@ let frame_data = compositor.selector({
 let hitboxes_row = compositor.stack({
     parent: fight_rows,
     padding: vec(14, 5, 14, 5),
+    hover: "nudge",
     radius: 6,
     spacing: 24,
     direction: "horizontal"
@@ -469,6 +487,7 @@ let hitboxes = compositor.selector({
 
 let about = compositor.stack({
     parent: body,
+    pos: vec(-1.5686035, 0),
     anchor: "top",
     pivot: "top",
     fill: "both",
@@ -485,8 +504,7 @@ let about_title = compositor.label({
     parent: about,
     size: vec(330, 34),
     text: "Display",
-    text_scale: 0.36,
-    align: "left"
+    text_scale: 0.36
 });
 
 let about_rule = compositor.divider({

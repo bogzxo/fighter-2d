@@ -11,11 +11,13 @@ namespace Fighter2D.Scenes.Menus;
 /// <summary>
 /// Rows of settings on a menu, each one a title with a selector next to it. Up and down picks a row, left and right changes what it is set to.
 /// The match rules and the options are both one of these.
+/// The rows go up and down in the order the layout has them in, not the order the code added them in, so moving a
+/// row in Hex is all it takes to move it for the gamepad as well.
 /// </summary>
 internal sealed class SettingList
 {
     /// <summary>One row. What it is called, what it is set to, what writes a choice back and what it has to say for itself.</summary>
-    private sealed record Setting(Label Title, Selector Selector, Action<int> Apply, string Hint);
+    private sealed record Setting(string Name, Label Title, Selector Selector, Action<int> Apply, string Hint);
 
     // What the row the gamepad is on is laid over, when the layout made its rows panels. Barely there, it only has to be findable
     private static readonly Vector4 RowHighlight = new(0.71f, 0.59f, 0.94f, 0.16f);
@@ -58,12 +60,59 @@ internal sealed class SettingList
         selector.Options = [.. choices.Select(describe)];
         selector.Index = Math.Max(0, Array.IndexOf(choices, current));
 
-        var setting = new Setting(layout.Get<Label>($"{name}_title"), selector, index => apply(choices[index]), hint);
+        var setting = new Setting(name, layout.Get<Label>($"{name}_title"), selector, index => apply(choices[index]), hint);
 
         // Clicking the selector steps through the choices by itself, all that is left to do is write the new one down
         selector.OnChanged = _ => Apply(setting);
 
-        _settings.Add(setting);
+        // In before the first row that comes after it in the layout, so the list is always in the layout's order
+        int at = _settings.Count;
+        while (at > 0 && ComesBefore(selector, _settings[at - 1].Selector)) at--;
+        _settings.Insert(at, setting);
+    }
+
+    /// <summary>
+    /// Which row a setting is, by the name it was added under. -1 for one that wasn't, for a shortcut to a row that
+    /// shouldn't care where in the list the layout put it.
+    /// </summary>
+    public int IndexOf(string name) => _settings.FindIndex(setting => setting.Name == name);
+
+    /// <summary>
+    /// Helper method to tell whether one component comes before another in the layout, going through it from the top
+    /// the way it is written. Where their branches part, whichever branch is the earlier child goes first.
+    /// </summary>
+    private static bool ComesBefore(UIComponent a, UIComponent b)
+    {
+        List<UIComponent> fromA = Branch(a), fromB = Branch(b);
+
+        // The two lists start at the root, the first place they differ is where the branches part
+        int shared = 0;
+        while (shared < fromA.Count && shared < fromB.Count && fromA[shared] == fromB[shared]) shared++;
+
+        // One inside the other, the outer one comes first
+        if (shared == fromA.Count) return true;
+        if (shared == fromB.Count || shared == 0) return false;
+
+        IReadOnlyList<UIComponent> siblings = fromA[shared - 1].Children;
+        return IndexIn(siblings, fromA[shared]) < IndexIn(siblings, fromB[shared]);
+    }
+
+    private static List<UIComponent> Branch(UIComponent component)
+    {
+        var branch = new List<UIComponent>();
+        for (UIComponent? at = component; at is not null; at = at.Parent) branch.Add(at);
+        branch.Reverse();
+        return branch;
+    }
+
+    private static int IndexIn(IReadOnlyList<UIComponent> siblings, UIComponent child)
+    {
+        for (int i = 0; i < siblings.Count; i++)
+        {
+            if (siblings[i] == child) return i;
+        }
+
+        return int.MaxValue;
     }
 
     /// <summary>
@@ -88,14 +137,19 @@ internal sealed class SettingList
     public void Dim() => Light(-1);
 
     /// <summary>
-    /// The row the gamepad is on is written in white with a wash of colour behind it, the others are dimmed.
+    /// The row the gamepad is on is written in white with a wash of colour behind it, the others are dimmed. It does
+    /// what the layout says it does under the pointer as well (the options rows nudge along), held on for as long
+    /// as the pad is on it.
     /// </summary>
     private void Light(int lit)
     {
         for (int i = 0; i < _settings.Count; i++)
         {
             _settings[i].Title.Color = i == lit ? Vector4.One : MenuColors.Hint;
-            if (_settings[i].Title.Parent is Panel row) row.Color = i == lit ? RowHighlight : null;
+            if (_settings[i].Title.Parent is not Panel row) continue;
+
+            row.Color = i == lit ? RowHighlight : null;
+            row.HoverHeld = i == lit;
         }
     }
 
