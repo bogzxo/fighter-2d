@@ -9,6 +9,9 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <Platforms>AnyCPU;x64</Platforms>
     <StartupObject>Fighter2D.App.Program</StartupObject>
+
+    <!-- Where the engine is, its submodule unless a workspace above this repo (Directory.Build.props) said otherwise -->
+    <HorizonRoot Condition="'$(HorizonRoot)' == ''">$(MSBuildThisFileDirectory)external\horizon\</HorizonRoot>
   </PropertyGroup>
 
   <!--
@@ -105,9 +108,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- bogzxo/horizon as a submodule (on its development), with the language a submodule inside of that -->
-    <ProjectReference Include="external\horizon\Horizon\Horizon.csproj" />
-    <ProjectReference Include="external\horizon\Horizon.HIDL\Horizon.HIDL.csproj" />
+    <!-- bogzxo/horizon as a submodule (on its development), with the language a submodule inside of that, or the
+         workspace's checkout of it, see HorizonRoot -->
+    <ProjectReference Include="$(HorizonRoot)Horizon\Horizon.csproj" />
+    <ProjectReference Include="$(HorizonRoot)Horizon.HIDL\Horizon.HIDL.csproj" />
   </ItemGroup>
 
   <ItemGroup>

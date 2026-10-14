@@ -12,12 +12,15 @@
     <Nullable>enable</Nullable>
     <Platforms>AnyCPU;x64</Platforms>
     <RootNamespace>Fighter2D.HitboxEditor</RootNamespace>
+
+    <!-- The same engine as the game's, see Fighter2D.csproj -->
+    <HorizonRoot Condition="'$(HorizonRoot)' == ''">$(MSBuildThisFileDirectory)..\external\horizon\</HorizonRoot>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Fighter2D.csproj" />
-    <ProjectReference Include="..\external\horizon\Horizon\Horizon.csproj" />
-    <ProjectReference Include="..\external\horizon\Horizon.HIDL\Horizon.HIDL.csproj" />
+    <ProjectReference Include="$(HorizonRoot)Horizon\Horizon.csproj" />
+    <ProjectReference Include="$(HorizonRoot)Horizon.HIDL\Horizon.HIDL.csproj" />
   </ItemGroup>
 
 </Project>
