@@ -533,6 +533,7 @@ let description = compositor.label({
     text_scale: 0.25,
     color: vec(0.86, 0.88, 0.92, 1),
     wrap: true,
+    markdown: true,
     align: "top_left"
 });
 

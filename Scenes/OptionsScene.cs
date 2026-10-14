@@ -337,9 +337,10 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
         // Nobody has picked a gamepad yet, so the screen listens to all of them
         _hint.Text = ButtonGlyphs.Localize(Hint, GameInput.Manager.LastUsed);
 
-        // The lines about the options were broken by hand for a wider screen than the box they are in now, which wraps by itself
+        // What a row is about, as it is written. The box wraps it by itself and reads it as markdown, so a line break in
+        // it is meant (a heading for every choice, say), the ones that were only there for a wider screen are gone
         _aboutTitle.Text = _settings.Title;
-        _description.Text = _settings.Hint.Replace('\n', ' ');
+        _description.Text = _settings.Hint;
 
         if (!InputReady) return;
 
