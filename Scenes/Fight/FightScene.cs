@@ -4,6 +4,7 @@ using System.Numerics;
 
 using Horizon.Core.Tweening;
 using Horizon.Engine;
+using Horizon.Engine.Components;
 using Horizon.Input;
 using Horizon.Physics;
 using Horizon.Rendering;
@@ -311,6 +312,8 @@ internal class FightScene : Scene
             Rematch = Rematch is null || Session is not null ? null : StartRematch,
             Quit = LeaveFight,
 
+            Options = OpenOptions,
+
             // The tools are the host's. On one machine that is whoever is playing
             ReloadData = IsHost && Reload is not null ? ReloadData : null,
             ToggleHitboxes = IsHost ? () => _world.RenderDebug = !_world.RenderDebug : null,
@@ -394,7 +397,7 @@ internal class FightScene : Scene
         _network?.Detach();
         _handedOver = true;
 
-        Engine.SetScene(Reload(resume), null);
+        Engine.SceneManager.ResetTo(Reload(resume), null);
     }
 
     /// <summary>
@@ -523,6 +526,9 @@ internal class FightScene : Scene
         // and the files that may be going across for a reload
         if (_pause is { HoldsFight: true })
         {
+            // Under the options the menu is still up and nobody is pressing anything on it
+            _pause.Quiet = IsSuspended || IsLeaving;
+
             _hud.UpdateState(dt);
             _pause.UpdateState(dt);
             _transfer?.UpdateState(dt);
@@ -556,11 +562,39 @@ internal class FightScene : Scene
     }
 
     /// <summary>
+    /// Opens the options menu in the game! The options go on top of the fight, which is kept underneath exactly as
+    /// it is and comes back when they are done with (see <see cref="Scene.Open"/>). It is paused already, the pause
+    /// menu is how anybody gets here, and it stays paused under there, for the other machine of an online fight as
+    /// well. It still gets its updates so that machine keeps hearing from us, see <see cref="OnResumed"/> for the way back.
+    /// </summary>
+    private void OpenOptions()
+    {
+        // Drawn as well as updated, the options have the fight for a background, blurred (see OptionsScene)
+        Open(new OptionsScene { OverScene = true }, Screen.BetweenMenus, SceneBelow.Running);
+    }
+
+    /// <summary>
+    /// Back on screen after the options (or whatever else was put on top of the fight). Whatever was changed in
+    /// the meantime is seen to here, the effects, the lighting, the hitboxes, and the size of the window, which the
+    /// renderer and the camera were made for. The pause menu is still up, carrying on is the player's to press.
+    /// </summary>
+    protected override void OnResumed()
+    {
+        Vector2 viewport = Engine.WindowManager.ViewportSize;
+        _renderer.Resize((uint)viewport.X, (uint)viewport.Y);
+        _sceneCamera.ViewSize = viewport / 2.0f;
+        _camera.Refit(viewport);
+
+        Screen.ApplyOptions(_renderer, null, FightCamera.Zoom);
+        _world.RenderDebug = GameOptions.Hitboxes;
+    }
+    /// <summary>
     /// Called by the rounds once the match is over and its result has been up for long enough, and by the pause menu for whoever has had enough.
     /// </summary>
     private void LeaveFight()
     {
-        Engine.SetScene(new MainMenuScene(), Screen.IntoFight);
+        // The lot, should the fight be under something (the options) when it ends, the other machine hanging up say
+        Engine.SceneManager.ResetTo(new MainMenuScene(), Screen.IntoFight);
     }
 
     /// <summary>
@@ -568,7 +602,7 @@ internal class FightScene : Scene
     /// </summary>
     private void StartRematch()
     {
-        if (Rematch is not null) Engine.SetScene(Rematch(), Screen.IntoFight);
+        if (Rematch is not null) Engine.SceneManager.ResetTo(Rematch(), Screen.IntoFight);
     }
 
     /// <summary>

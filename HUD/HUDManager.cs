@@ -5,6 +5,7 @@ using Horizon.Core;
 using Horizon.Core.Components;
 using Horizon.Engine;
 using Horizon.UI;
+using Horizon.UI.Components;
 
 namespace Fighter2D.HUD;
 
@@ -44,6 +45,10 @@ internal class HUDManager : GameComponent
         // What these would have written into stays empty without them, there is nothing to hide
         if (GameOptions.InputDisplay) _displays.Add(new InputDisplay(layout, round));
         if (GameOptions.HitCallouts) _displays.Add(new HitCalloutDisplay(layout, round, Fight.CombatLog));
+
+        // The frame bars are boxes with a track in them and not just text, so they are taken off when nobody wants them
+        if (GameOptions.FrameData) _displays.Add(new FrameBarDisplay(layout, round));
+        else layout.Get<UIComponent>(FrameBarDisplay.ROOT).Visible = false;
     }
 
     public override void UpdateState(float dt)

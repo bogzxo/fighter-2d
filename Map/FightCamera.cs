@@ -18,7 +18,7 @@ internal sealed class FightCamera
     public static float Zoom => GameOptions.CameraZoom;
 
     // One pixel of the screen in world units (the art is drawn at twice its size, and then zoomed in on)
-    private readonly float _pixel;
+    private float _pixel;
 
     // How little the camera has to move in a step to count as standing still
     private const float STILL = 0.02f;
@@ -32,7 +32,7 @@ internal sealed class FightCamera
 
     private readonly Camera2D _camera;
     private readonly FightingStage _stage;
-    private readonly Vector2 _viewportSize;
+    private Vector2 _viewportSize;
 
     // Where the camera is, before the shake. It is only rounded to the pixels of the screen once it is known where a
     // frame shows it (between two ticks), see Camera.PixelSnap: rounded here it would stand still and jump like a twat
@@ -51,6 +51,18 @@ internal sealed class FightCamera
         _viewportSize = viewportSize;
 
         LookAt(start);
+    }
+
+    /// <summary>
+    /// Has the camera go by another size of window and by the zoom the options say now, for a fight that comes back
+    /// from under the options screen. Where it is looking stays.
+    /// </summary>
+    public void Refit(Vector2 viewportSize)
+    {
+        _viewportSize = viewportSize;
+        _pixel = 0.5f * Zoom;
+        _camera.Zoom = Zoom;
+        _camera.PixelSnap = _pixel;
     }
 
     // Half of what the camera sees, in world units

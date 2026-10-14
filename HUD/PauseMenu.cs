@@ -47,7 +47,8 @@ internal sealed class PauseMenu : GameComponent
     private UILayout _layout = null!;
     private UINavigator _nav = null!;
     private Button _resume = null!;
-    private Label _hint = null!, _count = null!;
+    private Label _hint = null!;
+    private Readout _count = null!;
 
     // How much of the countdown is left in seconds, and the number of it that is on screen
     private float _countdown;
@@ -113,6 +114,17 @@ internal sealed class PauseMenu : GameComponent
     public required Action Quit { get; init; }
 
     /// <summary>
+    /// Whether the menu keeps its hands off the gamepads, for while something is on top of the fight (the options).
+    /// It stays up and the fight stays held, it just isn't the one being pressed.
+    /// </summary>
+    public bool Quiet { get; set; }
+    
+    /// <summary>
+    /// Allows the players to open their options screen, useful for now just to test graphics options, change resolution etc.
+    /// </summary>
+    public required Action Options { get; init; }
+
+    /// <summary>
     /// The tools of the host, a list of its own under the menu. Reading all the data again from disk and drawing the hitboxes.
     /// Null for whoever isn't the host (the machine that joined an online fight), who doesn't get the list at all.
     /// </summary>
@@ -135,11 +147,12 @@ internal sealed class PauseMenu : GameComponent
         else _layout.Get<Button>("btn_rematch").Visible = false;
 
         WireButton("btn_quit", AskToQuit);
+        WireButton("btn_options", OpenOptions);
         WireHostTools();
         WireTraining();
 
         _hint = _layout.Get<Label>("hint");
-        _count = _layout.Get<Label>("count");
+        _count = _layout.Get<Readout>("count");
 
         // The gamepad walks whatever is on the menu layer, the hidden layers are skipped by themselves
         _nav = _layout.Module.Navigation;
@@ -214,7 +227,13 @@ internal sealed class PauseMenu : GameComponent
             Close();
         });
     }
-
+    /// <summary>
+    /// Helper method to open the options menu up.
+    /// </summary>
+    private void OpenOptions()
+    {
+        Options();
+    }
     /// <summary>
     /// Helper method to ask before the fight is thrown away. The question comes up over the menu and takes the gamepad with it.
     /// </summary>
@@ -298,6 +317,16 @@ internal sealed class PauseMenu : GameComponent
 
         UpdateCountdown(dt);
 
+        // What the buttons do is no use to read while another screen has them, and it sat right under that one's own
+        _hint.Visible = !Quiet;
+
+        if (Quiet)
+        {
+            ShowLayers();
+            _compositor.UpdateState(dt);
+            return;
+        }
+
         // The press that opens the menu is done with, or it would shut it again on the way out of this update
         if (!IsOpen && StartPressed() && CanOpen?.Invoke() != false)
         {
@@ -372,7 +401,7 @@ internal sealed class PauseMenu : GameComponent
         if (count == _shownCount || count <= 0) return;
 
         _shownCount = count;
-        _count.Text = count.ToString();
+        _count.Set(count);
         _count.Punch(0.4f, 0.3f);
     }
 

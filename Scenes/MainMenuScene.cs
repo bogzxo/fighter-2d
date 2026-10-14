@@ -77,7 +77,7 @@ internal class MainMenuScene : MenuScene
         AddButton(layout, "btn_practice", () => Play(MatchMode.Practice), "The lab. You against the dummy, with health that comes back and frame data on screen.");
         AddButton(layout, "btn_host", HostServer, "Open a fight for somebody on another machine to join.");
         AddButton(layout, "btn_join", () => GoTo(new JoinServerScene()), "Join a fight somebody else is hosting, by their address.");
-        AddButton(layout, "btn_options", () => GoTo(new OptionsScene()), "The window, the look of the game and what a fight shows on top of itself.");
+        AddButton(layout, "btn_options", () => Open(new OptionsScene { OverScene = true }, Screen.BetweenMenus, Horizon.Engine.Components.SceneBelow.Running), "The window, the look of the game and what a fight shows on top of itself.");
         AddButton(layout, "btn_quit", AskToQuit, "Back to the desktop.");
 
         _hint = layout.Get<Label>("hint");

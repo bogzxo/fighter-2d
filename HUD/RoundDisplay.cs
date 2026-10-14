@@ -34,7 +34,9 @@ internal sealed class RoundDisplay : IHudDisplay
     private static readonly Vector4 LowTimeColor = new(1.0f, 0.38f, 0.32f, 1.0f);
 
     private readonly RoundDirector _round;
-    private readonly Label _timer, _roundLabel, _banner, _detail;
+    // The clock is a readout, a number that changes without a string being made of it every second
+    private readonly Readout _timer;
+    private readonly Label _roundLabel, _banner, _detail;
     private readonly Panel _stripe, _flash;
 
     private int _shownSeconds = -1;
@@ -44,7 +46,7 @@ internal sealed class RoundDisplay : IHudDisplay
     public RoundDisplay(UILayout layout, RoundDirector round)
     {
         _round = round;
-        _timer = layout.Get<Label>("timer_label");
+        _timer = layout.Get<Readout>("timer_label");
         _roundLabel = layout.Get<Label>("round_label");
         _banner = layout.Get<Label>("banner");
         _detail = layout.Get<Label>("banner_detail");
@@ -95,7 +97,7 @@ internal sealed class RoundDisplay : IHudDisplay
     {
         if (!_round.Rules.IsTimed)
         {
-            _timer.Text = NO_TIME_LIMIT;
+            _timer.Write(NO_TIME_LIMIT);
             return;
         }
 
@@ -104,7 +106,7 @@ internal sealed class RoundDisplay : IHudDisplay
         if (seconds == _shownSeconds) return;
 
         _shownSeconds = seconds;
-        _timer.Text = seconds.ToString();
+        _timer.Set(seconds);
 
         // The last ten seconds are counted down in red with a bit of a thump
         bool low = seconds <= COUNTDOWN_SECONDS && _round.Phase == RoundPhase.Fight;

@@ -64,6 +64,17 @@ internal static class Screen
     }
 
     /// <summary>
+    /// Helper method to put every UI of the game in the skin the options say, the menus and the HUD and whatever
+    /// else was made without a skin of its own. The engine's one setting for it (UISkins), every UI follows it the
+    /// moment it changes. A skin the options name that isn't there (a hand-edited file) leaves it as it was.
+    /// </summary>
+    public static void ApplySkin()
+    {
+        if (!Horizon.UI.Skinning.UISkins.Use(GameOptions.UiSkin, GameOptions.UiTheme.Length > 0 ? GameOptions.UiTheme : null))
+            Horizon.UI.Skinning.UISkins.Use(Constants.UI_SKIN, Constants.UI_THEME);
+    }
+
+    /// <summary>
     /// Helper method to give a scene a renderer with the CRT effect on it.
     /// </summary>
     public static Renderer2D CreateRenderer(Scene scene)
@@ -71,6 +82,10 @@ internal static class Screen
         Vector2 size = GameEngine.Instance.WindowManager.ViewportSize;
 
         var renderer = scene.AddEntity(new Renderer2D((uint)size.X, (uint)size.Y));
+
+        // Before the CRT like every effect. It does nothing until a menu ends up underneath another screen, which
+        // blurs it the way a fight is blurred behind its pause menu (see MenuScene.OnSuspended)
+        renderer.PostProcessing.Add(new BlurEffect { Radius = 0.0f, Enabled = false });
         AddCrt(renderer);
 
         return renderer;
@@ -126,9 +141,15 @@ internal static class Screen
     /// <summary>
     /// Helper method to flip the effects of a scene that is already up to what the options say, for the options screen itself.
     /// </summary>
-    public static void ApplyOptions(Renderer2D renderer, UICompositor? ui)
+    /// <param name="zoom">The zoom of the camera the renderer is seen through, see <see cref="AddCrt"/>.</param>
+    public static void ApplyOptions(Renderer2D renderer, UICompositor? ui, float zoom = 1.0f)
     {
-        if (renderer.PostProcessing.Get<CrtEffect>() is { } crt) crt.Enabled = GameOptions.Crt;
+        if (renderer.PostProcessing.Get<CrtEffect>() is { } crt)
+        {
+            crt.Enabled = GameOptions.Crt;
+            crt.PixelSize = CRT_PIXEL_SIZE / zoom;
+        }
+
         if (renderer.PostProcessing.Get<BloomEffect>() is { } bloom) bloom.Enabled = GameOptions.Bloom;
         if (renderer is DeferredRenderer2D lit)
         {

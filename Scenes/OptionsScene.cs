@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 
+using Horizon.Engine.Components;
 using Horizon.Input;
 using Horizon.UI;
 using Horizon.UI.Components;
@@ -41,7 +42,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
         _aboutTitle = layout.Get<Label>("about_title");
 
         // For the mouse, which has no Y and no B. The bindings are those of whichever gamepad was touched last
-        layout.Get<Horizon.UI.Components.Button>("btn_back").OnPressed = () => GoTo(new MainMenuScene());
+        layout.Get<Horizon.UI.Components.Button>("btn_back").OnPressed = Back;
         layout.Get<Horizon.UI.Components.Button>("btn_bindings").OnPressed = () =>
         {
             Gamepad? gamepad = GameInput.Manager.LastUsed ?? GameInput.Manager.Gamepads.FirstOrDefault(each => each.IsConnected);
@@ -130,6 +131,32 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 _ui.Scale = scale;
             },
             "How big the menus and the HUD are drawn,\non top of fitting the window.");
+
+        // The skin, and the themes of whichever skin it is. Another skin has other themes, so the screen is made
+        // again when it changes, which shows the new one off as well
+        var skins = Horizon.UI.Skinning.UISkins.Available.ToArray();
+        var skin = Horizon.UI.Skinning.UISkins.Current;
+        _settings.Add(layout, "ui_skin", skins, skin, choice => choice.Title,
+            choice =>
+            {
+                GameOptions.UiSkin = choice.Name;
+                GameOptions.UiTheme = choice.UsualTheme ?? string.Empty;
+                Screen.ApplySkin();
+                Reload(null);
+            },
+            "What the menus and the HUD are made of.\nEvery one of them is a folder under Assets/uix.");
+
+        string[] themes = skin.Themes.Count > 0 ? [.. skin.Themes] : ["one look"];
+        string theme = Horizon.UI.Skinning.UISkins.Theme ?? skin.UsualTheme ?? themes[0];
+        _settings.Add(layout, "ui_theme", themes, themes.Contains(theme) ? theme : themes[0], name => name,
+            name =>
+            {
+                if (skin.Themes.Count == 0) return;
+
+                GameOptions.UiTheme = name;
+                Screen.ApplySkin();
+            },
+            "The colour of it.");
 
         _settings.Add(layout, "transitions", Enum.GetValues<TransitionStyle>(), GameOptions.Transitions, DescribeTransitions,
             style =>
@@ -239,8 +266,50 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
     }
 
     /// <summary>
-    /// Helper method to swap this screen for a fresh one with the gamepad on the same row.
+    /// Helper method for the way out. Back to whatever the options were opened over (a fight, from its pause menu),
+    /// which is underneath as it was left, or to the main menu when they were opened from there.
     /// </summary>
+    private void Back()
+    {
+        if (!Return(Screen.BetweenMenus)) GoTo(new MainMenuScene());
+    }
+
+    /// <summary>
+    /// Helper method to swap this screen for a fresh one with the gamepad on the same row. A swap leaves whatever
+    /// is underneath where it is, so the way back is still there afterwards.
+    /// </summary>
+    /// <summary>
+    /// What is behind the options is whatever they were opened over, the fight or the main menu, which is still
+    /// drawn (it was put there with SceneBelow.Running) and blurs itself the way a fight does behind its pause
+    /// menu, with the blur on its own renderer. So the options bring no picture of their own and leave their
+    /// renderer out, it would cover the scene under them. Opened on their own, with nothing under them, they have
+    /// the backdrop every menu has.
+    /// </summary>
+    protected override void BuildBackdrop()
+    {
+        // Whoever opened the options over their own scene says so. Asking the engine whether there is a scene
+        // underneath is too early here, a scene that comes in through a transition is set up before it is put on
+        // top of anything. One that takes over from another options screen (see Reload) can ask
+        if (!OverScene && !CanReturn)
+        {
+            base.BuildBackdrop();
+            return;
+        }
+
+        // The renderer is switched back on as it is set up like everything is, so it is put out again on the
+        // first update (see UpdateMenu) and not here
+        _overAnother = true;
+    }
+
+    // Whether the options were opened over another scene, which is then what is behind them
+    private bool _overAnother;
+
+    /// <summary>
+    /// Set by whoever opens the options on top of their own scene (Open, with the scene underneath still drawn),
+    /// which is then what is behind them, blurred. Left alone the options bring the backdrop every menu has.
+    /// </summary>
+    public bool OverScene { get; init; }
+
     private void Reload(Horizon.Engine.SceneTransition? transition)
     {
         GoTo(new OptionsScene(_tabs.Selected, _settings.Selected), transition);
@@ -257,6 +326,8 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
 
     protected override void UpdateMenu(float dt)
     {
+        if (_overAnother && Canvas.Enabled) Canvas.Enabled = false;
+
         // Nobody has picked a gamepad yet, so the screen listens to all of them
         _hint.Text = ButtonGlyphs.Localize(HINT, GameInput.Manager.LastUsed);
 
@@ -272,7 +343,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
 
             if (gamepad.WasPressed(GamepadInput.B))
             {
-                GoTo(new MainMenuScene());
+                Back();
                 return;
             }
 

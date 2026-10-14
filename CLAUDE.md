@@ -19,20 +19,23 @@ Anything the game wants of the GPU goes through the engine, there is no GL in he
   of how the world is shaded that is a matter of taste, the highlights, the shadows, the bloom's threshold and
   strength, how much the corners darken out of the painted maps, the map's shape and the fighters, tune the look
   there and nowhere else).
-- `Scenes/` one class per screen, `Menus/` for the menu layouts, `Widgets/` for the bits they share (the character
+- `Scenes/` one class per screen (the fight and its setup in `Fight/`), `Menus/` for the menu layouts, `Widgets/` for the bits they share (the character
   portrait draws out of a character's atlas). From the main menu a fight is one screen away, `FightSetupScene` has
   the gamepads, the fighters, the map and the rules on it (and is the lobby of an online fight, its `.Online.cs`),
   the gamepad that picked the fight on the main menu is player one already. The keyboard is a gamepad too
   (`GameInput.Attach` adds the engine's `KeyboardGamepad`), which is all it takes for every menu to work off the keys
   and for its prompts to show keys, so nothing in a menu reads the keyboard itself. The bindings are got to from there and
   from the options, and go back to whichever it was.
-- `Fighters/` a fighter in the arena. `Player.cs` is the sprite plus the body plus the health, `CharacterArt.cs` reads
-  a character's .ase once and owns its atlas (shared across scenes, trimmed), `CharacterBoxes.cs` traces the hurt,
-  hit and body boxes off the frames, `PlayerBody.cs` shapes the physics body like the frame being shown,
+- `Fighters/` a fighter in the arena. `Player.cs` is the sprite plus the body plus the health, `Characters/CharacterArt.cs` reads
+  a character's .ase once and owns its atlas (shared across scenes, trimmed), `Boxes/CharacterBoxes.cs` traces the hurt,
+  hit and body boxes off the frames (everything to do with boxes is in `Boxes/`), `PlayerBody.cs` shapes the physics body like the frame being shown,
   `Control/` is the controller, moves and the stage route the dummy walks, `Inputs/` the gamepads, the dummy and the
   network.
-- `Moves/`, `Combat/`, `Match/` the fighting itself, `HUD/` the overlay, `Map/` the stages (Tiled maps, the preview,
-  the fight camera), `Effects/` particles, weather, the menu duel, `Networking/` the online fight, `Input/` bindings.
+- `Moves/`, `Combat/`, `Match/` the fighting itself, `HUD/` the overlay (`FrameBarDisplay.cs` is the two bars at
+  the bottom in the middle, what each player is doing and its startup, active frames and recovery with a line
+  running along them, or their stun running out, there in every mode unless frame data is off in the options), `Map/` the stages (Tiled maps, the preview,
+  the fight camera), `Effects/` particles, `Weather/`, the menu duel in `Menu/`, `Networking/` the online fight (sending the game
+  files over in `Content/`), `Input/` bindings.
 - `Content/` what counts as content (`GameContent.cs`, the folders and extensions that are sent to whoever joins),
   `PackedFiles.cs` unpacks the engine's files next to a published exe, `HorReader.cs` reads .hor data files.
 

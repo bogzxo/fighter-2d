@@ -19,9 +19,10 @@ let box = compositor.stack({
 
 let title = compositor.label({ parent: box, text: "Getting the host's game files", text_scale: 0.4 });
 let bar = compositor.progress_bar({ parent: box, scale: vec(4, 2), text_scale: 0.6 });
-let detail = compositor.label({
+let detail = compositor.readout({
     parent: box,
     text: "0.0 of 0.0 MB",
     text_scale: 0.26,
-    color: vec(0.58, 0.6, 0.66, 1)
+    color: vec(0.58, 0.6, 0.66, 1),
+    align: "center"
 });

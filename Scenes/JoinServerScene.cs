@@ -45,6 +45,9 @@ internal class JoinServerScene : MenuScene
         _addressBox.OnChanged = _ => _status.Text = string.Empty;
         _addressBox.OnSubmitted = _ => Connect();
 
+        // The button in the box (the layout puts it there) wipes it, for whoever has a mouse and a wrong address
+        _addressBox.OnButtonPressed = ClearAddress;
+
         // The layout only says where the keyboard goes, the keys are ours to make.
         // The digits type into the box by themselves, the two keys on the last row are ours to handle
         _keyboard = layout.Get<StackPanel>("keyboard_slot").Add(new OnScreenKeyboard([.. OnScreenKeyboard.Numeric, [KEY_BACK, KEY_CONNECT]])
@@ -55,6 +58,13 @@ internal class JoinServerScene : MenuScene
 
         _addressBox.Focus();
         _keyboard.Select("1");
+    }
+
+    private void ClearAddress()
+    {
+        _addressBox.Text = string.Empty;
+        _status.Text = string.Empty;
+        _addressBox.Focus();
     }
 
     protected override void UpdateMenu(float dt)

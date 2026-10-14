@@ -32,7 +32,10 @@ internal sealed class HitCalloutDisplay : IHudDisplay
     private static readonly Vector4 FrameDataColor = new(0.86f, 0.92f, 1.0f, 1.0f);
 
     private readonly RoundDirector _round;
-    private readonly Label[] _callouts, _combos, _frames;
+    private readonly Label[] _callouts, _frames;
+
+    // The combo counters are readouts, two numbers that go up with every hit and no string made for either
+    private readonly Readout[] _combos;
 
     // The last thing each player's attack came to that hasn't been put on screen yet
     private readonly AttackReport?[] _pending = new AttackReport?[2];
@@ -41,11 +44,11 @@ internal sealed class HitCalloutDisplay : IHudDisplay
     {
         _round = round;
         _callouts = [layout.Get<Label>("player1_callout"), layout.Get<Label>("player2_callout")];
-        _combos = [layout.Get<Label>("player1_combo"), layout.Get<Label>("player2_combo")];
+        _combos = [layout.Get<Readout>("player1_combo"), layout.Get<Readout>("player2_combo")];
         _frames = [layout.Get<Label>("player1_frames"), layout.Get<Label>("player2_frames")];
 
         foreach (Label label in _callouts) label.Opacity = 0.0f;
-        foreach (Label label in _combos) label.Opacity = 0.0f;
+        foreach (Readout counter in _combos) counter.Opacity = 0.0f;
         foreach (Label label in _frames) label.Opacity = 0.0f;
 
         log.Reported += OnReported;
@@ -69,7 +72,7 @@ internal sealed class HitCalloutDisplay : IHudDisplay
             Show(_callouts[i], text, color, HOLD_TIME);
 
             // The counter only shows up once it is actually a combo, and goes away with the next thing that isn't one
-            if (report.ComboCount >= MIN_COMBO) Show(_combos[i], $"{report.ComboCount} COMBO\t{report.ComboDamage} DMG", color, HOLD_TIME);
+            if (report.ComboCount >= MIN_COMBO) ShowCombo(_combos[i], report.ComboCount, report.ComboDamage, color);
             else _combos[i].FadeOut(FADE_TIME);
 
             if (GameOptions.FrameData) Show(_frames[i], DescribeFrames(report), FrameDataColor, FRAME_DATA_HOLD_TIME);
@@ -87,6 +90,19 @@ internal sealed class HitCalloutDisplay : IHudDisplay
 
         label.Punch(0.3f, 0.2f);
         label.FadeOut(FADE_TIME, holdTime);
+    }
+
+    /// <summary>
+    /// Helper method to pop a combo counter up the way a callout is, with how many hits it is and what they came to.
+    /// </summary>
+    private static void ShowCombo(Readout counter, int hits, int damage, Vector4 color)
+    {
+        counter.Clear().Add(hits).Add(" COMBO\t").Add(damage).Add(" DMG");
+        counter.Color = color;
+        counter.Opacity = 1.0f;
+
+        counter.Punch(0.3f, 0.2f);
+        counter.FadeOut(FADE_TIME, HOLD_TIME);
     }
 
     private static (string Text, Vector4 Color) Describe(HitResult result) => result switch

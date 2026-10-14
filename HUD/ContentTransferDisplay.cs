@@ -26,7 +26,10 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
     private static readonly Vector4 DetailColor = new(0.58f, 0.6f, 0.66f, 1.0f);
 
     private UICompositor _compositor = null!;
-    private Label _title = null!, _detail = null!;
+    private Label _title = null!;
+
+    // How much of the files has come, a readout, it is written every update while they do
+    private Readout _detail = null!;
     private ProgressBar _bar = null!;
 
     // Whether the panel is up, as of every tick: what the frames drawn alongside the simulation go by
@@ -60,7 +63,7 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
         _compositor.Initialize();
 
         _title = layout.Get<Label>("title");
-        _detail = layout.Get<Label>("detail");
+        _detail = layout.Get<Readout>("detail");
         _bar = layout.Get<ProgressBar>("bar");
     }
 
@@ -89,26 +92,27 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
         if (Failed)
         {
             _title.Text = "That went wrong";
-            _detail.Text = content.Error;
+            _detail.Write(content.Error);
             _detail.Color = ErrorColor;
             _bar.Progress = 0.0f;
         }
         else if (transferring)
         {
             _title.Text = hosting ? "Sending the game files" : "Getting the host's game files";
-            _detail.Text = $"{content.DoneBytes / MEGABYTE:0.0} of {content.TotalBytes / MEGABYTE:0.0} MB";
+            // Written every update for as long as the files are coming, into the same few characters
+            _detail.Clear().Add(content.DoneBytes / MEGABYTE, "0.0").Add(" of ").Add(content.TotalBytes / MEGABYTE, "0.0").Add(" MB");
             _bar.Progress = content.Progress;
         }
         else if (_linger > 0.0f)
         {
             _title.Text = hosting ? "Sent the game files" : "Got the host's game files";
-            _detail.Text = "all there";
+            _detail.Write("all there");
             _bar.Progress = 1.0f;
         }
         else
         {
             _title.Text = Waiting;
-            _detail.Text = WaitingDetail;
+            _detail.Write(WaitingDetail);
             _bar.Progress = WaitingProgress;
         }
     }

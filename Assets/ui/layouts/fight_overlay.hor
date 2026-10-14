@@ -79,12 +79,13 @@ let timer_background = compositor.panel({
     color: vec(1, 1, 1, 0.604)
 });
 
-let timer_label = compositor.label({
+let timer_label = compositor.readout({
     parent: timer_background,
     intro: "pop",
-    intro_delay: 0.65,
+    intro_delay: 0.3,
     text: "99",
-    text_scale: 1.25
+    text_scale: 1.25,
+    align: "center"
 });
 
 let round_label = compositor.label({
@@ -186,7 +187,7 @@ let player1_callout = compositor.label({
     text_scale: 0.6
 });
 
-let player1_combo = compositor.label({
+let player1_combo = compositor.readout({
     layer: "hud",
     pos: vec(330, -206),
     size: vec(480, 64),
@@ -219,7 +220,7 @@ let player2_callout = compositor.label({
     text_scale: 0.6
 });
 
-let player2_combo = compositor.label({
+let player2_combo = compositor.readout({
     layer: "hud",
     pos: vec(-330, -206),
     size: vec(480, 64),
@@ -240,6 +241,46 @@ let player2_frames = compositor.label({
     text: "",
     text_scale: 0.3
 });
+
+// The frame bars at the bottom in the middle, between the meters, player one over player two. What each is doing
+// and what that is made of, the startup, the active frames and the recovery of a move as a bar a line runs along,
+// see FrameBarDisplay.cs
+let frame_bars = compositor.stack({
+    layer: "hud",
+    pos: vec(0, 22),
+    anchor: "bottom",
+    pivot: "bottom",
+    spacing: 4,
+    intro: "slide",
+    intro_delay: 0.6,
+    intro_offset: vec(0, -160)
+});
+
+let player1_move_row = compositor.stack({ parent: frame_bars, direction: "horizontal", spacing: 0 });
+let player1_move = compositor.label({ parent: player1_move_row, size: vec(200, 20), align: "left", text: "P1", text_scale: 0.2 });
+let player1_move_data = compositor.readout({
+    parent: player1_move_row,
+    size: vec(420, 20),
+    align: "right",
+    text: "",
+    text_scale: 0.2,
+    color: vec(0.74, 0.78, 0.86, 1)
+});
+let player1_move_bar = compositor.segments({ parent: frame_bars, size: vec(620, 12), ahead_opacity: 0.3 });
+
+let frame_bars_gap = compositor.spacer({ parent: frame_bars, size: vec(620, 4) });
+
+let player2_move_row = compositor.stack({ parent: frame_bars, direction: "horizontal", spacing: 0 });
+let player2_move = compositor.label({ parent: player2_move_row, size: vec(200, 20), align: "left", text: "P2", text_scale: 0.2 });
+let player2_move_data = compositor.readout({
+    parent: player2_move_row,
+    size: vec(420, 20),
+    align: "right",
+    text: "",
+    text_scale: 0.2,
+    color: vec(0.74, 0.78, 0.86, 1)
+});
+let player2_move_bar = compositor.segments({ parent: frame_bars, size: vec(620, 12), ahead_opacity: 0.3 });
 
 // What is called out across the screen (ROUND 1, FIGHT!, K.O.) on a dark stripe, and the line under it, see RoundDisplay.cs
 let banner_stripe = compositor.panel({

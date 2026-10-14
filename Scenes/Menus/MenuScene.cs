@@ -47,9 +47,43 @@ internal abstract class MenuScene : Scene
 
         Prepare();
         BuildBackdrop();
-        BuildUi(MenuLayouts.Load(this, Camera, LayoutFile));
+
+        UILayout layout = MenuLayouts.Load(this, Camera, LayoutFile);
+        _ui = layout.Module.Compositor;
+        BuildUi(layout);
 
         base.Initialize();
+    }
+
+    // How far (in pixels) a menu is blurred while another screen is on top of it, and how long it takes to get
+    // there and back. The same as a fight behind its pause menu, see FightScene
+    private const float UNDERNEATH_BLUR = 10.0f;
+    private const float UNDERNEATH_BLUR_TIME = 0.16f;
+
+    private UICompositor _ui = null!;
+
+    /// <summary>
+    /// Another screen was put on top of this one (the options over the main menu). What is behind the buttons
+    /// blurs, the way a fight does behind its pause menu, and the buttons themselves go, the screen on top has its
+    /// own to read.
+    /// </summary>
+    protected override void OnSuspended()
+    {
+        if (Canvas.PostProcessing.Get<Horizon.Rendering.PostProcessing.BlurEffect>() is { } blur)
+        {
+            blur.Enabled = true;
+            blur.BlurTo(UNDERNEATH_BLUR, UNDERNEATH_BLUR_TIME);
+        }
+
+        _ui.Enabled = false;
+    }
+
+    /// <summary>Back on top, in focus again and with its buttons.</summary>
+    protected override void OnResumed()
+    {
+        Canvas.PostProcessing.Get<Horizon.Rendering.PostProcessing.BlurEffect>()?.BlurTo(0.0f, UNDERNEATH_BLUR_TIME);
+        Screen.ApplyOptions(Canvas, _ui);
+        _ui.Enabled = true;
     }
 
     /// <summary>
@@ -88,8 +122,9 @@ internal abstract class MenuScene : Scene
     {
         base.UpdateState(dt);
 
-        // A menu that has left for another scene (see GoTo) stays on screen until the engine has covered it up, and stays quiet for as long as that takes
-        if (!IsLeaving) UpdateMenu(dt);
+        // A menu that has left for another scene (see GoTo) stays on screen until the engine has covered it up, and stays quiet for as long as that takes.
+        // So does one that is underneath another scene (the main menu behind the options), it keeps moving and keeps its hands off the gamepads
+        if (!IsLeaving && !IsSuspended) UpdateMenu(dt);
     }
 
     /// <summary>

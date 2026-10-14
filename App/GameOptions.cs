@@ -75,6 +75,11 @@ internal static class GameOptions
 
     public static TransitionStyle Transitions = TransitionStyle.Fade;
 
+    // The skin the menus and the HUD are drawn in, one of the folders under Assets/uix, and which of its themes
+    // (empty for the one the skin says is its usual one). See Screen.ApplySkin
+    public static string UiSkin = Constants.UI_SKIN;
+    public static string UiTheme = Constants.UI_THEME;
+
     // Whether the game is drawn like it is on a crusty old CRT
     public static bool Crt = true;
 
@@ -141,6 +146,8 @@ internal static class GameOptions
             FrameLimit = SaneFrameLimit((int)HorReader.Number(options, "frame_limit", FrameLimit));
 
             Transitions = HorReader.Named(options, "transitions", Transitions);
+            UiSkin = HorReader.Text(options, "ui_skin", UiSkin);
+            UiTheme = HorReader.Text(options, "ui_theme", UiTheme);
             Crt = HorReader.Bool(options, "crt", Crt);
             Bloom = HorReader.Bool(options, "bloom", Bloom);
             RenderPathtraced = HorReader.Bool(options, "fancy", RenderPathtraced);
@@ -185,6 +192,8 @@ internal static class GameOptions
         text.AppendLine($"    vsync: {Write(VSync)},");
         text.AppendLine($"    frame_limit: {FrameLimit},");
         text.AppendLine($"    transitions: \"{Transitions.ToString().ToLowerInvariant()}\",");
+        text.AppendLine($"    ui_skin: \"{UiSkin}\",");
+        text.AppendLine($"    ui_theme: \"{UiTheme}\",");
         text.AppendLine($"    crt: {Write(Crt)},");
         text.AppendLine($"    bloom: {Write(Bloom)},");
         text.AppendLine($"    fancy: {Write(RenderPathtraced)},");

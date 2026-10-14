@@ -44,7 +44,7 @@ internal static class MenuLayouts
     /// </summary>
     public static (UILayout, UICompositor) Load(string file)
     {
-        var compositor = Configure(UICompositor.ForScreen(Constants.UI_THEME));
+        var compositor = Configure(UICompositor.ForScreen());
 
         return (CreateModule(compositor).LoadLayout(Path.Combine(DIRECTORY, file)), compositor);
     }
@@ -61,7 +61,8 @@ internal static class MenuLayouts
         return module;
     }
 
-    private static UICompositor CreateCompositor(Camera2D camera) => Configure(new UICompositor(camera, Constants.UI_THEME));
+    // In whichever skin and theme the options say (Screen.ApplySkin), every UI made without one of its own follows that
+    private static UICompositor CreateCompositor(Camera2D camera) => Configure(new UICompositor(camera));
 
     private static UICompositor Configure(UICompositor compositor)
     {

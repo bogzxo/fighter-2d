@@ -50,6 +50,7 @@ internal class Program
         if (GameOptions.Fullscreen) engine.WindowManager.Apply(GameOptions.Display);
 
         Screen.ApplyTransitions();
+        Screen.ApplySkin();
 
         // Every scene reads its gamepads through here, so the bindings have to be in before the first one
         GameInput.Attach(engine);
