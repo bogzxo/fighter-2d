@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System.Collections.Generic;
 using System.Text;
 
@@ -111,11 +112,11 @@ internal static class ButtonGlyphs
 
         foreach (uint combination in bindings.CombinationsOf(action))
         {
-            if (text.Length > 0) text.Append("  or  ");
+            if (text.Length > 0) text.Append(Localisation.Get("common.or"));
             text.Append(Describe(combination));
         }
 
-        return text.Length > 0 ? text.ToString() : "not bound";
+        return text.Length > 0 ? text.ToString() : Localisation.Get("common.not_bound");
     }
 
     /// <summary>
@@ -156,14 +157,17 @@ internal static class ButtonGlyphs
         GamepadInput.DPadDown => "[icon:dpad_down]",
         GamepadInput.DPadLeft => "[icon:dpad_left]",
         GamepadInput.DPadRight => "[icon:dpad_right]",
-        GamepadInput.LeftStickUp => "[icon:pad_ls] up",
-        GamepadInput.LeftStickDown => "[icon:pad_ls] down",
-        GamepadInput.LeftStickLeft => "[icon:pad_ls] left",
-        GamepadInput.LeftStickRight => "[icon:pad_ls] right",
-        GamepadInput.RightStickUp => "[icon:pad_rs] up",
-        GamepadInput.RightStickDown => "[icon:pad_rs] down",
-        GamepadInput.RightStickLeft => "[icon:pad_rs] left",
-        GamepadInput.RightStickRight => "[icon:pad_rs] right",
+        GamepadInput.LeftStickUp => Stick("[icon:pad_ls]", "bindings.stick_up"),
+        GamepadInput.LeftStickDown => Stick("[icon:pad_ls]", "bindings.stick_down"),
+        GamepadInput.LeftStickLeft => Stick("[icon:pad_ls]", "bindings.stick_left"),
+        GamepadInput.LeftStickRight => Stick("[icon:pad_ls]", "bindings.stick_right"),
+        GamepadInput.RightStickUp => Stick("[icon:pad_rs]", "bindings.stick_up"),
+        GamepadInput.RightStickDown => Stick("[icon:pad_rs]", "bindings.stick_down"),
+        GamepadInput.RightStickLeft => Stick("[icon:pad_rs]", "bindings.stick_left"),
+        GamepadInput.RightStickRight => Stick("[icon:pad_rs]", "bindings.stick_right"),
         _ => input.ToString()
     };
+
+    // A stick pushed one way, the icon of the stick put wherever the language puts it
+    private static string Stick(string icon, string key) => Localisation.Format(key, ("stick", icon));
 }

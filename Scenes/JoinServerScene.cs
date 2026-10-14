@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System.Net;
 
 using Horizon.Input;
@@ -12,9 +13,10 @@ namespace Fighter2D.Scenes;
 /// </summary>
 internal class JoinServerScene : MenuScene
 {
-    private const string KEY_BACK = "BACK";
-    private const string KEY_CONNECT = "CONNECT";
-    private const string HINT = "[icon:dpad] move    [icon:pad_a] press    [icon:pad_b] delete    [icon:pad_y] connect";
+    // The two keys of our own on the keyboard, which are what they say, the same string every time it is asked for
+    private static string KeyBack => Localisation.Get("join.key_back");
+    private static string KeyConnect => Localisation.Get("join.key_connect");
+    private static string Hint => Localisation.Get("join.hint");
 
     // The address that was typed in last, so it doesn't have to be typed again after every fight
     private static string lastAddress = "127.0.0.1";
@@ -50,7 +52,7 @@ internal class JoinServerScene : MenuScene
 
         // The layout only says where the keyboard goes, the keys are ours to make.
         // The digits type into the box by themselves, the two keys on the last row are ours to handle
-        _keyboard = layout.Get<StackPanel>("keyboard_slot").Add(new OnScreenKeyboard([.. OnScreenKeyboard.Numeric, [KEY_BACK, KEY_CONNECT]])
+        _keyboard = layout.Get<StackPanel>("keyboard_slot").Add(new OnScreenKeyboard([.. OnScreenKeyboard.Numeric, [KeyBack, KeyConnect]])
         {
             Target = _addressBox,
             OnKey = OnKey
@@ -70,7 +72,7 @@ internal class JoinServerScene : MenuScene
     protected override void UpdateMenu(float dt)
     {
         // The hint shows the buttons of whichever gamepad was touched last
-        _hint.Text = ButtonGlyphs.Localize(HINT, GameInput.Manager.LastUsed);
+        _hint.Text = ButtonGlyphs.Localize(Hint, GameInput.Manager.LastUsed);
 
         if (_session is not null)
         {
@@ -131,7 +133,7 @@ internal class JoinServerScene : MenuScene
             session.Dispose();
             _session = null;
 
-            ShowError("nobody home.");
+            ShowError(Localisation.Get("join.nobody_home"));
         }
     }
 
@@ -143,7 +145,7 @@ internal class JoinServerScene : MenuScene
 
         if (!IPAddress.TryParse(text, out _))
         {
-            ShowError("dude cmon.");
+            ShowError(Localisation.Get("join.bad_address"));
             return;
         }
 
@@ -151,7 +153,7 @@ internal class JoinServerScene : MenuScene
         _session = NetSession.Join(text);
 
         _status.Color = MenuColors.Hint;
-        _status.Text = "connecting...";
+        _status.Text = Localisation.Get("join.connecting");
     }
 
     private void ShowError(string message)
@@ -166,8 +168,8 @@ internal class JoinServerScene : MenuScene
     /// </summary>
     private void OnKey(string key)
     {
-        if (key == KEY_BACK) Back();
-        else if (key == KEY_CONNECT) Connect();
+        if (key == KeyBack) Back();
+        else if (key == KeyConnect) Connect();
     }
 
     private void Back()

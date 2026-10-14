@@ -1,3 +1,4 @@
+using Horizon.Content;
 using Horizon.Logging;
 using System;
 using System.Collections.Generic;
@@ -89,7 +90,7 @@ internal sealed class ContentClient
         long listedSize = _listed.Sum(known => known?.Size ?? 0);
         if (!GameContent.IsContentPath(file.Path) || file.Size < 0 || file.Size > MAX_FILE_SIZE || listedSize + file.Size > MAX_TOTAL_SIZE)
         {
-            Fail($"the host listed a file we will not take ('{file.Path}')");
+            Fail(Localisation.Format("online.file_refused", ("file", file.Path)));
             return;
         }
 
@@ -107,7 +108,7 @@ internal sealed class ContentClient
     {
         if (count <= 0 || count > MAX_FILES || listHash.Length != HASH_LENGTH || !listHash.All(char.IsAsciiHexDigit))
         {
-            Fail("the host has content that makes no sense");
+            Fail(Localisation.Get("online.content_nonsense"));
             return false;
         }
 
@@ -183,7 +184,7 @@ internal sealed class ContentClient
 
         if (ContentManifest.Hash(ContentManifest.Build(cache)) != _manifestHash)
         {
-            Fail("what we ended up with is not what the host has");
+            Fail(Localisation.Get("online.content_mismatch"));
             return;
         }
 

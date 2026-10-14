@@ -1,3 +1,4 @@
+using Horizon.Content;
 using Horizon.Logging;
 using System;
 using System.Numerics;
@@ -343,7 +344,7 @@ internal class FightScene : Scene
         // Offering the content again has the other machine fetch what is different, and say so once it has all of it
         Content.Offer();
         _reloadWait = RELOAD_PATIENCE;
-        if (_transfer is not null) _transfer.Waiting = "Reloading the data";
+        if (_transfer is not null) _transfer.Waiting = Localisation.Get("transfer.reloading");
     }
 
     /// <summary>
@@ -450,8 +451,8 @@ internal class FightScene : Scene
 
         if (_transfer is not null)
         {
-            _transfer.Waiting = "Data reloaded";
-            _transfer.WaitingDetail = "waiting for the other machine to do the same";
+            _transfer.Waiting = Localisation.Get("transfer.reloaded");
+            _transfer.WaitingDetail = Localisation.Get("transfer.other_machine_reloading");
             _transfer.WaitingProgress = 1.0f;
         }
     }

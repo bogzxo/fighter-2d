@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System.Collections.Generic;
 
 namespace Fighter2D.Match;
@@ -50,10 +51,10 @@ internal class MatchSetup(MatchMode mode)
 
     public string Title => Mode switch
     {
-        MatchMode.Pvp => "Player vs Player",
-        MatchMode.Host => "Online, hosting",
-        MatchMode.Join => "Online",
-        _ => "Practice"
+        MatchMode.Pvp => Localisation.Get("modes.pvp"),
+        MatchMode.Host => Localisation.Get("modes.host"),
+        MatchMode.Join => Localisation.Get("modes.join"),
+        _ => Localisation.Get("modes.practice")
     };
 
     /// <summary>

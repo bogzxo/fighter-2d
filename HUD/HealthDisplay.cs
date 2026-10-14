@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System.Numerics;
 using System.Text;
 
@@ -35,8 +36,8 @@ internal sealed class HealthDisplay : IHudDisplay
     // Under this much health the bar starts pulsing
     private const float LOW_HEALTH = 0.25f;
 
-    private const string METER_TEXT = "METER";
-    private const string METER_FULL_TEXT = "MAX";
+    private static string MeterText => Localisation.Get("fight.meter");
+    private static string MeterFullText => Localisation.Get("fight.meter_full");
 
     private static readonly Vector4 MeterColor = new(1.0f, 0.82f, 0.25f, 1.0f);
     private static readonly Vector4 LabelColor = MenuColors.Hint;
@@ -136,7 +137,7 @@ internal sealed class HealthDisplay : IHudDisplay
         _shownMeter[index] = meter;
         bar.Tweens.Play(Tween.To(() => bar.Progress, value => bar.Progress = value, meter, METER_FILL_TIME).SetEasing(Easing.OutCubic), METER_CHANNEL);
 
-        label.Text = full ? METER_FULL_TEXT : METER_TEXT;
+        label.Text = full ? MeterFullText : MeterText;
 
         if (filled)
         {

@@ -39,15 +39,15 @@ let column_2 = compositor.stack({
 let rule_2 = compositor.divider({ parent: panel, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
 
 let actions = compositor.stack({ parent: panel, direction: "horizontal", spacing: 16 });
-let btn_defaults = compositor.button({ parent: actions, label: "Back to the defaults", style: "button_flat", size: vec(330, 0), lbl_scale: 0.3 });
-let btn_done = compositor.button({ parent: actions, label: "Done", size: vec(220, 0), lbl_scale: 0.3 });
+let btn_defaults = compositor.button({ parent: actions, label: "@bindings.defaults", style: "button_flat", size: vec(330, 0), lbl_scale: 0.3 });
+let btn_done = compositor.button({ parent: actions, label: "@bindings.done", size: vec(220, 0), lbl_scale: 0.3 });
 
 // What to press, along the bottom of the screen where every menu has it
 let hint = compositor.label({
     anchor: "bottom",
     pos: vec(0, 22),
     size: vec(1500, 30),
-    text: "[icon:dpad] choose    [icon:pad_a] change    [icon:pad_b] done",
+    text: "@bindings.choose",
     text_scale: 0.25,
     color: vec(0.58, 0.6, 0.66, 1)
 });

@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System;
 
 using Horizon.Core.Components;
@@ -24,8 +25,8 @@ namespace Fighter2D.HUD;
 /// </summary>
 internal sealed class PauseMenu : GameComponent
 {
-    private const string HINT = "[icon:dpad] choose    [icon:pad_a] pick    [icon:pad_b] carry on";
-    private const string TRAINING_HINT = "[icon:dpad] choose and change    [icon:pad_a] pick    [icon:pad_b] carry on";
+    private static string Hint => Localisation.Get("pause.hint");
+    private static string TrainingHint => Localisation.Get("pause.training_hint");
 
     // What the menu was left on the last time it was up, by the name it has in the layout, null for the top of it. It
     // outlives the menu on purpose. A fight that is built again (another dummy, the data read again) has a
@@ -186,7 +187,7 @@ internal sealed class PauseMenu : GameComponent
 
         // The menu stays up while the data is read again, the fight that comes back from it has no pause on
         WireButton("btn_reload", ReloadData);
-        WireButton("btn_hitboxes", () => hitboxes.Label = ToggleHitboxes() ? "Hitboxes: on" : "Hitboxes: off");
+        WireButton("btn_hitboxes", () => hitboxes.Label = Localisation.Get(ToggleHitboxes() ? "pause.hitboxes_on" : "pause.hitboxes_off"));
     }
 
     /// <summary>
@@ -217,7 +218,7 @@ internal sealed class PauseMenu : GameComponent
         }
 
         var refill = _layout.Get<Selector>("refill");
-        refill.Options = ["Off", "On"];
+        refill.Options = [Localisation.Get("common.off"), Localisation.Get("common.on")];
         refill.Index = training.RefillHealth ? 1 : 0;
         refill.OnChanged = _ => training.RefillHealth = refill.Index == 1;
 
@@ -239,9 +240,9 @@ internal sealed class PauseMenu : GameComponent
     /// </summary>
     private void AskToQuit()
     {
-        UIDialog.Show(_layout.Module, "Leave the fight?", "The match is lost, there is no coming back to it.",
-            new DialogChoice("Leave", () => Leave(Quit)),
-            new DialogChoice("Stay"));
+        UIDialog.Show(_layout.Module, Localisation.Get("pause.leave_title"), Localisation.Get("pause.leave_question"),
+            new DialogChoice(Localisation.Get("pause.leave_confirm"), () => Leave(Quit)),
+            new DialogChoice(Localisation.Get("common.stay")));
     }
 
     private Button WireButton(string name, Action pressed)
@@ -344,7 +345,7 @@ internal sealed class PauseMenu : GameComponent
             return;
         }
 
-        _hint.Text = ButtonGlyphs.Localize(Training is null ? HINT : TRAINING_HINT, GameInput.Manager.LastUsed);
+        _hint.Text = ButtonGlyphs.Localize(Training is null ? Hint : TrainingHint, GameInput.Manager.LastUsed);
         _compositor.UpdateState(dt);
 
         // Whoever has a gamepad gets a say, it is not just player one who needs a piss

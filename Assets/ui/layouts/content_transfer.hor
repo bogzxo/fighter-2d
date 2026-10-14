@@ -17,7 +17,7 @@ let box = compositor.stack({
     intro_offset: vec(0, -220)
 });
 
-let title = compositor.label({ parent: box, text: "Getting the host's game files", text_scale: 0.4 });
+let title = compositor.label({ parent: box, text: "@transfer.getting", text_scale: 0.4 });
 let bar = compositor.progress_bar({ parent: box, scale: vec(4, 2), text_scale: 0.6 });
 let detail = compositor.readout({
     parent: box,

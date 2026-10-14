@@ -135,7 +135,7 @@ let player1_meter_label = compositor.label({
     layer: "hud",
     anchor: "bottom_left",
     pivot: "bottom_left",
-    text: "METER",
+    text: "@fight.meter",
     text_scale: 0.22,
     color: vec(0.58, 0.6, 0.66, 1)
 });
@@ -161,7 +161,7 @@ let player2_meter_label = compositor.label({
     layer: "hud",
     anchor: "bottom_right",
     pivot: "bottom_right",
-    text: "METER",
+    text: "@fight.meter",
     text_scale: 0.22,
     color: vec(0.58, 0.6, 0.66, 1)
 });
@@ -381,7 +381,7 @@ let versus_title = compositor.label({
     pos: vec(45.490143, -98.82355),
     intro: "pop",
     intro_delay: 0.3,
-    text: "VS",
+    text: "@fight.versus",
     text_scale: 1.6
 });
 

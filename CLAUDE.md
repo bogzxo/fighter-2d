@@ -49,6 +49,11 @@ Anything the game wants of the GPU goes through the engine, there is no GL in he
 - `sprites/characters/<name>/<name>.ase` the characters, one Aseprite file each, a tag per animation, read by the
   engine as they are. A folder with a `spritesheet.png` and a `definition.hor` still works for the old ones.
 - `backgrounds/` the two the menus use, `ui/layouts/` the UIX layouts, `ui/logo.png`.
+- `ui/localisation/` every text of the game by key, one file a language (`en-gb.hor` is the only one so far), loaded
+  in `Program.Main` from `GameOptions.Language`. A layout names a text as `"@main_menu.quit"`, the code asks
+  `Localisation.Get("main_menu.quit")` or `Localisation.Format("fight.takes_round", ("name", name))`. Nothing a
+  player reads goes into the code or a layout as words any more, it goes in there and gets a key. The logs and the
+  errors of content files are for whoever makes the game and stay in English in the code.
 
 `Art/` is source material and never ships. The sheets the characters were cut from and `tools/build_ase.py` that
 turns a sheet into an .ase, art that was drawn and then not used, two fonts nothing reads. Its README says what's what.

@@ -1,3 +1,5 @@
+using Horizon.Content;
+
 
 namespace Fighter2D.Match;
 
@@ -59,14 +61,14 @@ internal sealed class MatchRules
 
     /* How the rules are written out in the menus and on the HUD */
 
-    public static string DescribeRounds(int roundsToWin) => roundsToWin == 1 ? "Single round" : $"First to {roundsToWin}";
+    public static string DescribeRounds(int roundsToWin) => roundsToWin == 1 ? Localisation.Get("rules.single_round") : Localisation.Format("rules.first_to", ("rounds", roundsToWin));
 
-    public static string DescribeTime(int seconds) => seconds > 0 ? $"{seconds} seconds" : "No time limit";
+    public static string DescribeTime(int seconds) => seconds > 0 ? Localisation.Format("rules.seconds", ("seconds", seconds)) : Localisation.Get("rules.no_time_limit");
 
     public static string DescribeWeather(WeatherSetting weather) => weather switch
     {
-        WeatherSetting.Clear => "Clear skies",
-        WeatherSetting.Storm => "Thunderstorm",
-        _ => "As the map has it"
+        WeatherSetting.Clear => Localisation.Get("rules.weather_clear"),
+        WeatherSetting.Storm => Localisation.Get("rules.weather_storm"),
+        _ => Localisation.Get("rules.weather_map")
     };
 }

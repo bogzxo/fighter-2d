@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -11,7 +12,7 @@ namespace Fighter2D.Scenes;
 
 /// <summary>
 /// Scene where the player sets the game up the way they like it. The window, the look of the game and what a fight shows on top of itself.
-/// The options come in three tabs the bumpers flip between, so nobody has to scroll through the lot to get to the one they want.
+/// The options come in four tabs the bumpers flip between (the window, how a fight is drawn, the look of the menus and the fight itself), so nobody has to scroll through the lot to get to the one they want.
 /// Every option is a row of its tab and takes hold the moment it is changed, there is nothing to confirm. They are all kept in <see cref="GameOptions"/>.
 /// What the row the gamepad is on is and does is written in a box next to the rows. Y on a gamepad opens its bindings (<see cref="BindingsScene"/>),
 /// which is the way to them without setting a fight up first.
@@ -19,13 +20,13 @@ namespace Fighter2D.Scenes;
 /// <param name="tab">The tab that is open to begin with, and the row the gamepad starts on in it: for when the screen had to be made again half way through (see <see cref="Reload"/>).</param>
 internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
 {
-    private const string HINT = "[icon:dpad] choose and change    [icon:pad_lb] [icon:pad_rb] tabs    [icon:pad_y] bindings    [icon:pad_b] back";
+    private static string Hint => Localisation.Get("options.hint");
 
     protected override string LayoutFile => MenuLayouts.OPTIONS;
     protected override float InputDelay => 0.2f;
 
     // A list of rows for every page of the tabs (the gamepad goes down the rows of the open one), and the tabs themselves
-    private readonly SettingList[] _pages = [new(), new(), new()];
+    private readonly SettingList[] _pages = [new(), new(), new(), new()];
     private SettingList _settings = null!;
     private TabPanel _tabs = null!;
 
@@ -53,8 +54,10 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
         _settings = _pages[0];
         AddWindowOptions(layout);
         _settings = _pages[1];
-        AddLookOptions(layout);
+        AddGraphicsOptions(layout);
         _settings = _pages[2];
+        AddLookOptions(layout);
+        _settings = _pages[3];
         AddFightOptions(layout);
 
         foreach (SettingList list in _pages) list.Changed = GameOptions.Save;
@@ -76,15 +79,15 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
 
     private void AddWindowOptions(UILayout layout)
     {
-        _settings.Add(layout, "display", [false, true], GameOptions.Fullscreen, fullscreen => fullscreen ? "Fullscreen" : "Windowed",
+        _settings.Add(layout, "display", [false, true], GameOptions.Fullscreen, fullscreen => Localisation.Get(fullscreen ? "options.fullscreen" : "options.windowed"),
             fullscreen =>
             {
                 GameOptions.Fullscreen = fullscreen;
                 ResizeWindow();
             },
-            "Fullscreen takes up the whole screen,\nat whatever resolution that screen is set to.");
+            Localisation.Get("options.about_display"));
 
-        _settings.Add(layout, "resolution", FittingResolutions(), GameOptions.Resolution, size => $"{size.X:0} x {size.Y:0}",
+        _settings.Add(layout, "resolution", FittingResolutions(), GameOptions.Resolution, size => Localisation.Format("options.size", ("width", size.X.ToString("0")), ("height", size.Y.ToString("0"))),
             size =>
             {
                 GameOptions.Resolution = size;
@@ -92,7 +95,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 // Nothing to see of it while the game is fullscreen, it is remembered for when it isn't
                 if (!GameOptions.Fullscreen) ResizeWindow();
             },
-            "How big the window is.\nIt makes no difference while the game is fullscreen.");
+            Localisation.Get("options.about_resolution"));
 
         _settings.AddSwitch(layout, "vsync", GameOptions.VSync,
             on =>
@@ -100,7 +103,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 GameOptions.VSync = on;
                 Engine.WindowManager.Apply(GameOptions.Display);
             },
-            "Waits for the screen before showing a frame,\nso none of them is torn in two.");
+            Localisation.Get("options.about_vsync"));
 
         _settings.Add(layout, "frame_limit", GameOptions.FrameLimits, GameOptions.FrameLimit, DescribeFrameLimit,
             limit =>
@@ -108,21 +111,21 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 GameOptions.FrameLimit = limit;
                 Engine.WindowManager.Apply(GameOptions.Display);
             },
-            $"The most frames that are drawn a second.\nThe fight runs at {GameOptions.MIN_FRAME_LIMIT} ticks a second, so that is as low as it goes.");
+            Localisation.Format("options.about_frame_limit", ("ticks", GameOptions.MIN_FRAME_LIMIT)));
 
-        _settings.Add(layout, "performance", Enum.GetValues<PerformanceDetail>(), GameOptions.Performance, detail => detail.ToString(),
+        _settings.Add(layout, "performance", Enum.GetValues<PerformanceDetail>(), GameOptions.Performance, detail => Localisation.Get("options.performance_" + detail.ToString().ToLowerInvariant()),
             detail =>
             {
                 GameOptions.Performance = detail;
                 if (Screen.Performance is { } overlay) overlay.Detail = detail;
             },
-            "Frames a second in the corner, or the whole lot: every loop of the engine,\ngarbage, graphs. F3 flips through them anywhere.");
+            Localisation.Get("options.about_performance"));
     }
 
     private void AddLookOptions(UILayout layout)
     {
         // In the order they are in on the screen, the gamepad goes down the rows by the order they were added in
-        _settings.Add(layout, "gui_scale", GameOptions.GuiScales, GameOptions.GuiScale, scale => $"{scale * 100:0}%",
+        _settings.Add(layout, "gui_scale", GameOptions.GuiScales, GameOptions.GuiScale, scale => Localisation.Format("options.percent", ("percent", (scale * 100).ToString("0"))),
             scale =>
             {
                 GameOptions.GuiScale = scale;
@@ -130,7 +133,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 // Shown off on this screen straight away, every other one is made with it
                 _ui.Scale = scale;
             },
-            "How big the menus and the HUD are drawn,\non top of fitting the window.");
+            Localisation.Get("options.about_gui_scale"));
 
         // The skin, and the themes of whichever skin it is. Another skin has other themes, so the screen is made
         // again when it changes, which shows the new one off as well
@@ -144,9 +147,9 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 Screen.ApplySkin();
                 Reload(null);
             },
-            "What the menus and the HUD are made of.\nEvery one of them is a folder under Assets/uix.");
+            Localisation.Get("options.about_ui_skin"));
 
-        string[] themes = skin.Themes.Count > 0 ? [.. skin.Themes] : ["one look"];
+        string[] themes = skin.Themes.Count > 0 ? [.. skin.Themes] : [Localisation.Get("options.one_look")];
         string theme = Horizon.UI.Skinning.UISkins.Theme ?? skin.UsualTheme ?? themes[0];
         _settings.Add(layout, "ui_theme", themes, themes.Contains(theme) ? theme : themes[0], name => name,
             name =>
@@ -156,7 +159,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 GameOptions.UiTheme = name;
                 Screen.ApplySkin();
             },
-            "The colour of it.");
+            Localisation.Get("options.about_ui_theme"));
 
         _settings.Add(layout, "transitions", Enum.GetValues<TransitionStyle>(), GameOptions.Transitions, DescribeTransitions,
             style =>
@@ -167,15 +170,23 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 // Shown off right away, by going from this screen to itself
                 Reload(Screen.BetweenMenus);
             },
-            "How one screen hands over to the next.\nMixed melts the menus into each other and rots a fight in and out.");
+            Localisation.Get("options.about_transitions"));
 
+    }
+
+    /// <summary>
+    /// Helper method to add how a fight is drawn, the light and what is laid over the picture. Apart from the window
+    /// and from the look of the menus, these are the ones that cost the GPU something.
+    /// </summary>
+    private void AddGraphicsOptions(UILayout layout)
+    {
         _settings.AddSwitch(layout, "crt", GameOptions.Crt,
             on =>
             {
                 GameOptions.Crt = on;
                 Screen.ApplyOptions(Canvas, _ui);
             },
-            "Draws the game like it is on a crusty old picture tube.");
+            Localisation.Get("options.about_crt"));
 
         _settings.AddSwitch(layout, "bloom", GameOptions.Bloom,
             on =>
@@ -183,7 +194,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 GameOptions.Bloom = on;
                 Screen.ApplyOptions(Canvas, _ui);
             },
-            "A glow round the lanterns and whatever else shines in a fight.");
+            Localisation.Get("options.about_bloom"));
 
         _settings.AddSwitch(layout, "pathtraced", GameOptions.RenderPathtraced,
             on =>
@@ -191,33 +202,33 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
                 GameOptions.RenderPathtraced = on;
                 Screen.ApplyOptions(Canvas, _ui);
             },
-            "Path traces the light of a fight, so it bounces off the arena\nand spills round corners. Wants a proper GPU.");
+            Localisation.Get("options.about_pathtraced"));
 
-        _settings.Add(layout, "light_quality", Enum.GetValues<LightQuality>(), GameOptions.LightQuality, quality => quality.ToString(),
+        _settings.Add(layout, "light_quality", Enum.GetValues<LightQuality>(), GameOptions.LightQuality, quality => Localisation.Get("options.light_" + quality.ToString().ToLowerInvariant()),
             quality =>
             {
                 GameOptions.LightQuality = quality;
                 Screen.ApplyOptions(Canvas, _ui);
             },
-            "How finely the pathtraced light is worked out. Low costs about half\nof High, the light round small lamps shimmers a touch more.");
+            Localisation.Get("options.about_light_quality"));
     }
 
     private void AddFightOptions(UILayout layout)
     {
         _settings.Add(layout, "camera_zoom", GameOptions.CameraZooms, GameOptions.CameraZoom, DescribeZoom, zoom => GameOptions.CameraZoom = zoom,
-            "How close in the camera of a fight is.\nCloser is bigger fighters, further out is more of the arena.");
+            Localisation.Get("options.about_camera_zoom"));
 
         _settings.AddSwitch(layout, "input_display", GameOptions.InputDisplay, on => GameOptions.InputDisplay = on,
-            "Shows what both players are pressing down the sides of a fight.");
+            Localisation.Get("options.about_input_display"));
 
         _settings.AddSwitch(layout, "hit_callouts", GameOptions.HitCallouts, on => GameOptions.HitCallouts = on,
-            "Calls out what every attack came to.\nHIT, COUNTER HIT, PUNISH, BLOCKED or WHIFF.");
+            Localisation.Get("options.about_hit_callouts"));
 
         _settings.AddSwitch(layout, "frame_data", GameOptions.FrameData, on => GameOptions.FrameData = on,
-            "Adds the startup of a move to the callouts, and who gets to act first after it.\nFor the lab rats.");
+            Localisation.Get("options.about_frame_data"));
 
         _settings.AddSwitch(layout, "hitboxes", GameOptions.Hitboxes, on => GameOptions.Hitboxes = on,
-            "Draws the collision of a fight over it.");
+            Localisation.Get("options.about_hitboxes"));
     }
 
     /// <summary>
@@ -235,25 +246,20 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
 
     private static string DescribeFrameLimit(int limit)
     {
-        if (limit == GameOptions.NO_FRAME_LIMIT) return "No limit";
+        if (limit == GameOptions.NO_FRAME_LIMIT) return Localisation.Get("options.no_limit");
 
-        return limit == GameOptions.MIN_FRAME_LIMIT ? $"{limit} (the tick rate)" : limit.ToString();
+        return limit == GameOptions.MIN_FRAME_LIMIT ? Localisation.Format("options.tick_rate", ("limit", limit)) : limit.ToString();
     }
 
-    private static string DescribeZoom(float zoom) => zoom switch
+    private static string DescribeZoom(float zoom) => Localisation.Get(zoom switch
     {
-        <= 0.6f => "Close",
-        <= 0.75f => "Normal",
-        <= 0.9f => "Far",
-        _ => "Furthest"
-    };
+        <= 0.6f => "options.zoom_close",
+        <= 0.75f => "options.zoom_normal",
+        <= 0.9f => "options.zoom_far",
+        _ => "options.zoom_furthest"
+    });
 
-    private static string DescribeTransitions(TransitionStyle style) => style switch
-    {
-        TransitionStyle.Mixed => "Mixed",
-        TransitionStyle.Off => "Off",
-        _ => style.ToString()
-    };
+    private static string DescribeTransitions(TransitionStyle style) => Localisation.Get("options.transitions_" + style.ToString().ToLowerInvariant());
 
     /// <summary>
     /// Helper method for whatever changes the size of the window. Nothing of this screen fits the new one, so it is made again.
@@ -321,7 +327,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
     private void OpenBindings(Gamepad gamepad)
     {
         int page = _tabs.Selected, row = _settings.Selected;
-        GoTo(new BindingsScene(gamepad.Slot, "Gamepad bindings", () => new OptionsScene(page, row)));
+        GoTo(new BindingsScene(gamepad.Slot, Localisation.Get("bindings.title_options"), () => new OptionsScene(page, row)));
     }
 
     protected override void UpdateMenu(float dt)
@@ -329,7 +335,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
         if (_overAnother && Canvas.Enabled) Canvas.Enabled = false;
 
         // Nobody has picked a gamepad yet, so the screen listens to all of them
-        _hint.Text = ButtonGlyphs.Localize(HINT, GameInput.Manager.LastUsed);
+        _hint.Text = ButtonGlyphs.Localize(Hint, GameInput.Manager.LastUsed);
 
         // The lines about the options were broken by hand for a wider screen than the box they are in now, which wraps by itself
         _aboutTitle.Text = _settings.Title;

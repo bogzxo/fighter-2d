@@ -1,3 +1,4 @@
+using Horizon.Content;
 using Horizon.Logging;
 using System;
 
@@ -32,6 +33,11 @@ internal class Program
         GameOptions.Load();
         if (args.Contains(ARGUMENT_WINDOWED)) GameOptions.Fullscreen = false;
 
+        // Every text of the game, the window's title among them, comes out of Assets/ui/localisation in the language
+        // the options say. One that isn't there falls back on British English, which is always there
+        if (!Localisation.Load(Constants.LOCALISATION_DIRECTORY, GameOptions.Language))
+            Localisation.Load(Constants.LOCALISATION_DIRECTORY, Localisation.DEFAULT_LANGUAGE);
+
         if (TryGetArgument(args, ARGUMENT_CONTENT, out string content))
         {
             if (Directory.Exists(Path.Combine(content, GameContent.MAPS_DIRECTORY))) GameContent.UseHome(content);
@@ -40,7 +46,7 @@ internal class Program
 
         var engine = new GameEngine(WindowManagerConfiguration.Default1600x900 with
         {
-            WindowTitle = Constants.WINDOW_TITLE,
+            WindowTitle = Constants.WindowTitle,
             WindowSize = GameOptions.Resolution,
             VSync = GameOptions.VSync,
             FramesPerSecond = GameOptions.FrameLimit

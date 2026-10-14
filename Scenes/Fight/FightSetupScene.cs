@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -35,11 +36,11 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
     // The row the bumpers flick through the maps of, by its name, wherever the layout has it
     private const string MAP_ROW = "map";
 
-    private const string HINT_JOIN = "press any button on a gamepad to join    [icon:pad_b] back";
-    private const string HINT_PICK = "[icon:dpad] choose    [icon:pad_a] lock in    [icon:pad_lb] [icon:pad_rb] map    [icon:pad_y] bindings    [icon:pad_b] back";
-    private const string HINT_PICK_PRACTICE = "[icon:dpad] choose    [icon:pad_a] lock in    [icon:pad_x] make them the dummy    [icon:pad_lb] [icon:pad_rb] map    [icon:pad_y] bindings    [icon:pad_b] back";
-    private const string HINT_WAIT = "waiting for everybody to lock in    [icon:pad_b] change your mind";
-    private const string HINT_MATCH = "[icon:dpad] choose and change    [icon:pad_a] fight    [icon:pad_b] back to the fighters";
+    private static string HintJoin => Localisation.Get("setup.hint_join");
+    private static string HintPick => Localisation.Get("setup.hint_pick");
+    private static string HintPickPractice => Localisation.Get("setup.hint_pick_practice");
+    private static string HintWait => Localisation.Get("setup.hint_wait");
+    private static string HintMatch => Localisation.Get("setup.hint_match");
 
     // The colours of the two corners, the same ones the health bars of a fight have
     private static readonly Vector4 BlueCorner = new(0.42f, 0.66f, 1.0f, 1.0f);
@@ -333,7 +334,7 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         }
 
         int player = Math.Max(0, setup.Slots.IndexOf(slot));
-        GoTo(new BindingsScene(slot, $"Bindings of player {player + 1}", () => new FightSetupScene(setup)));
+        GoTo(new BindingsScene(slot, Localisation.Format("bindings.title_player", ("number", player + 1)), () => new FightSetupScene(setup)));
     }
 
     /* The roster */
@@ -489,7 +490,7 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
     private void ShowPlayer(FighterPanel panel, int player)
     {
         int corner = CornerOf(player);
-        panel.ShowTitle(setup.IsOnline ? "You" : $"Player {player + 1}", corner == 0 ? BlueCorner : RedCorner);
+        panel.ShowTitle(setup.IsOnline ? Localisation.Get("setup.you") : Localisation.Format("common.player", ("number", player + 1)), corner == 0 ? BlueCorner : RedCorner);
 
         if (player < setup.Slots.Count && GameInput.Manager.TryGet(setup.Slots[player], out Gamepad gamepad))
         {
@@ -498,31 +499,31 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
             // Holding anything turns the name white, which is how you check the gamepad in your hands is the one that joined
             panel.ShowStatus(FighterPanel.Shorten(gamepad.Name), gamepad.AnyDown ? Vector4.One : MenuColors.Name);
 
-            if (IsLocked(player)) panel.ShowDetail("locked in!", MenuColors.Ready);
+            if (IsLocked(player)) panel.ShowDetail(Localisation.Get("setup.locked_in"), MenuColors.Ready);
             else panel.ShowDetail(DescribeWaiting(gamepad), MenuColors.Hint);
         }
         else if (player == setup.Slots.Count)
         {
             panel.Show(null);
-            panel.ShowStatus("press any button", _fastPulse.Grey);
-            panel.ShowDetail("on your gamepad", MenuColors.Hint);
+            panel.ShowStatus(Localisation.Get("setup.press_any_button"), _fastPulse.Grey);
+            panel.ShowDetail(Localisation.Get("setup.on_your_gamepad"), MenuColors.Hint);
         }
         else
         {
             panel.Show(null);
             panel.ShowStatus("waiting", MenuColors.Hint);
-            panel.ShowDetail($"for player {player}", MenuColors.Hint);
+            panel.ShowDetail(Localisation.Format("setup.for_player", ("number", player)), MenuColors.Hint);
         }
     }
 
     private void ShowDummy(FighterPanel panel)
     {
-        panel.ShowTitle("The dummy", RedCorner);
+        panel.ShowTitle(Localisation.Get("setup.the_dummy"), RedCorner);
         panel.Show(Dummy);
-        panel.ShowStatus("stands there and takes it", MenuColors.Hint);
+        panel.ShowStatus(Localisation.Get("setup.dummy_takes_it"), MenuColors.Hint);
 
         GameInput.Manager.TryGet(setup.MenuSlot, out Gamepad? gamepad);
-        panel.ShowDetail(ButtonGlyphs.Localize("[icon:pad_x] on the roster swaps them", gamepad), MenuColors.Hint);
+        panel.ShowDetail(ButtonGlyphs.Localize(Localisation.Get("setup.dummy_swap"), gamepad), MenuColors.Hint);
     }
 
     /// <summary>
@@ -543,7 +544,7 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
                 if (_cursors[player] != i) continue;
 
                 if (tags.Length > 0) tags.Append(' ');
-                tags.Append(setup.IsOnline ? "YOU" : $"P{player + 1}");
+                tags.Append(setup.IsOnline ? Localisation.Get("setup.tag_you") : Localisation.Format("setup.tag_player", ("number", player + 1)));
 
                 anybody = true;
                 everybodyLocked &= IsLocked(player);
@@ -551,8 +552,8 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
 
             // Whoever isn't picked by a gamepad of this machine is on the roster as well, a tag and no cursor
             string? id = _cells[i].Character?.Id;
-            if (id is not null && id == dummy) tags.Append(tags.Length > 0 ? " " : "").Append("DUMMY");
-            if (id is not null && id == opponent) tags.Append(tags.Length > 0 ? " " : "").Append("THEM");
+            if (id is not null && id == dummy) tags.Append(tags.Length > 0 ? " " : "").Append(Localisation.Get("setup.tag_dummy"));
+            if (id is not null && id == opponent) tags.Append(tags.Length > 0 ? " " : "").Append(Localisation.Get("setup.tag_them"));
 
             // Green once everybody standing on the cell has locked it in
             _cells[i].ShowPlayers(tags.ToString(), anybody && everybodyLocked ? MenuColors.Ready : Vector4.One, lit: anybody);
@@ -564,7 +565,7 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         GameInput.Manager.TryGet(setup.MenuSlot, out Gamepad? first);
         Gamepad? gamepad = GameInput.Manager.LastUsed ?? first;
 
-        _subtitle.Text = _matchStage ? "where, and by what rules" : EverybodyLocked ? "everybody is locked in" : "pick your fighters";
+        _subtitle.Text = Localisation.Get(_matchStage ? "setup.where_and_rules" : EverybodyLocked ? "setup.everybody_locked" : "setup.pick_fighters");
 
         if (_messageTime > 0.0f)
         {
@@ -580,15 +581,15 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
     private string DescribeHint()
     {
         if (LobbyHint is { } lobby) return lobby;
-        if (_matchStage) return HINT_MATCH;
+        if (_matchStage) return HintMatch;
 
         if (!setup.IsReady)
         {
-            return GameInput.Manager.ConnectedCount <= setup.Slots.Count ? "Plug in a gamepad to continue    [icon:pad_b] back" : HINT_JOIN;
+            return GameInput.Manager.ConnectedCount <= setup.Slots.Count ? Localisation.Get("setup.hint_plug_in") : HintJoin;
         }
 
-        if (EverybodyLocked || IsLocked(0)) return HINT_WAIT;
-        return IsPractice ? HINT_PICK_PRACTICE : HINT_PICK;
+        if (EverybodyLocked || IsLocked(0)) return HintWait;
+        return IsPractice ? HintPickPractice : HintPick;
     }
 
     /// <summary>

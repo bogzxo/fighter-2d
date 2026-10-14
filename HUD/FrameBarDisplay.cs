@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -125,12 +126,12 @@ internal sealed class FrameBarDisplay : IHudDisplay
             row.Bar.Whole = 0.0f;
 
             row.Data.Clear()
-                .Add("STARTUP ").Add(frames.Startup)
-                .Add("  ACTIVE ").Add(active)
-                .Add("  RECOVERY ").Add(frames.Recovery)
-                .Add("  HIT ").Add(Sign(frames.OnHit)).Add(Math.Abs(frames.OnHit))
-                .Add("  BLOCK ").Add(Sign(frames.OnBlock)).Add(Math.Abs(frames.OnBlock))
-                .Add("  DMG ").Add(move.Damage);
+                .Add(Localisation.Get("frame_data.startup")).Add(frames.Startup)
+                .Add(Localisation.Get("frame_data.active")).Add(active)
+                .Add(Localisation.Get("frame_data.recovery")).Add(frames.Recovery)
+                .Add(Localisation.Get("frame_data.hit")).Add(Sign(frames.OnHit)).Add(Math.Abs(frames.OnHit))
+                .Add(Localisation.Get("frame_data.block")).Add(Sign(frames.OnBlock)).Add(Math.Abs(frames.OnBlock))
+                .Add(Localisation.Get("frame_data.damage")).Add(move.Damage);
         }
 
         // How far into the move the playback is, the phases that are done and the frames of the one that is playing.
@@ -169,7 +170,7 @@ internal sealed class FrameBarDisplay : IHudDisplay
         row.Bar.Marker = row.StunWhole - left;
 
         // Every tick, the number changes every tick. A readout takes it without making a string
-        row.Data.Clear().Add(kind == Showing.Hitstun ? "HITSTUN " : "BLOCKSTUN ").Add(left);
+        row.Data.Clear().Add(Localisation.Get(kind == Showing.Hitstun ? "frame_data.hitstun" : "frame_data.blockstun")).Add(left);
         Wake(row);
     }
 
@@ -187,7 +188,7 @@ internal sealed class FrameBarDisplay : IHudDisplay
         // And whatever comes next is new, another stun of the same kind as well
         if (row.Showing != Showing.Attack)
         {
-            row.Data.Clear().Add(row.Showing == Showing.Hitstun ? "HITSTUN " : "BLOCKSTUN ").Add(row.StunWhole).Add(" IN ALL");
+            row.Data.Clear().Add(Localisation.Get(row.Showing == Showing.Hitstun ? "frame_data.hitstun" : "frame_data.blockstun")).Add(row.StunWhole).Add(Localisation.Get("frame_data.in_all"));
             row.Showing = Showing.Nothing;
         }
 

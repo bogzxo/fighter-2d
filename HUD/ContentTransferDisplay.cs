@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System.Numerics;
 
 using Horizon.Core;
@@ -47,7 +48,7 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
     /// <summary>
     /// The line under the bar and how full the bar is while the panel is only waiting.
     /// </summary>
-    public string WaitingDetail { get; set; } = "checking what the other machine has";
+    public string WaitingDetail { get; set; } = Localisation.Get("transfer.waiting_detail");
     public float WaitingProgress { get; set; }
 
     private bool Failed => content.Phase == ContentPhase.Failed;
@@ -91,22 +92,22 @@ internal sealed class ContentTransferDisplay(ContentSync content, bool hosting) 
 
         if (Failed)
         {
-            _title.Text = "That went wrong";
+            _title.Text = Localisation.Get("transfer.went_wrong");
             _detail.Write(content.Error);
             _detail.Color = ErrorColor;
             _bar.Progress = 0.0f;
         }
         else if (transferring)
         {
-            _title.Text = hosting ? "Sending the game files" : "Getting the host's game files";
+            _title.Text = Localisation.Get(hosting ? "transfer.sending" : "transfer.getting");
             // Written every update for as long as the files are coming, into the same few characters
-            _detail.Clear().Add(content.DoneBytes / MEGABYTE, "0.0").Add(" of ").Add(content.TotalBytes / MEGABYTE, "0.0").Add(" MB");
+            _detail.Clear().Add(content.DoneBytes / MEGABYTE, "0.0").Add(Localisation.Get("transfer.of")).Add(content.TotalBytes / MEGABYTE, "0.0").Add(Localisation.Get("transfer.megabytes"));
             _bar.Progress = content.Progress;
         }
         else if (_linger > 0.0f)
         {
-            _title.Text = hosting ? "Sent the game files" : "Got the host's game files";
-            _detail.Write("all there");
+            _title.Text = Localisation.Get(hosting ? "transfer.sent" : "transfer.got");
+            _detail.Write(Localisation.Get("transfer.all_there"));
             _bar.Progress = 1.0f;
         }
         else

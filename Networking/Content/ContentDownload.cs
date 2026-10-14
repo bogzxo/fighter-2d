@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -93,7 +94,7 @@ internal sealed class ContentDownload : IDisposable
         ContentFile file = _manifest[index];
         if (offset < 0 || offset + data.Length > file.Size)
         {
-            problem = $"the host sent more of '{file.Path}' than there is of it";
+            problem = Localisation.Format("online.too_much_sent", ("file", file.Path));
             return false;
         }
 
@@ -123,7 +124,7 @@ internal sealed class ContentDownload : IDisposable
         if (ContentManifest.HashFile(target + PARTIAL_SUFFIX) != file.Hash)
         {
             File.Delete(target + PARTIAL_SUFFIX);
-            problem = $"'{file.Path}' did not arrive in one piece";
+            problem = Localisation.Format("online.broken_file", ("file", file.Path));
             return false;
         }
 

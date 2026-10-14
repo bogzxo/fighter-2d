@@ -26,13 +26,13 @@ let menu = compositor.stack({
 
 let title = compositor.label({
     parent: menu,
-    text: "PAUSED",
+    text: "@pause.paused",
     text_scale: 0.8
 });
 
 let subtitle = compositor.label({
     parent: menu,
-    text: "the fight is on hold",
+    text: "@pause.on_hold",
     text_scale: 0.24,
     color: vec(0.58, 0.6, 0.66, 1)
 });
@@ -47,14 +47,14 @@ let btn_resume = compositor.button({
     parent: menu,
     size: vec(360, 0),
     intro: "pop",
-    label: "Carry on"
+    label: "@pause.carry_on"
 });
 
 let btn_rematch = compositor.button({
     parent: menu,
     size: vec(360, 0),
     intro: "pop",
-    label: "Start over"
+    label: "@pause.start_over"
 });
 
 let btn_options = compositor.button({
@@ -62,7 +62,7 @@ let btn_options = compositor.button({
     pos: vec(16, -16),
     size: vec(360, 0),
     intro: "pop",
-    label: "Options",
+    label: "@pause.options",
     style: "button_flat"
 });
 
@@ -70,7 +70,7 @@ let btn_quit = compositor.button({
     parent: menu,
     size: vec(360, 0),
     intro: "pop",
-    label: "Main menu",
+    label: "@pause.main_menu",
     style: "button_flat"
 });
 
@@ -91,7 +91,7 @@ let side = compositor.stack({
 let tools_title = compositor.label({
     parent: side,
     intro: "pop",
-    text: "HOST TOOLS",
+    text: "@pause.host_tools",
     text_scale: 0.26,
     color: vec(0.58, 0.6, 0.66, 1)
 });
@@ -100,7 +100,7 @@ let btn_reload = compositor.button({
     parent: side,
     size: vec(400, 0),
     intro: "pop",
-    label: "Reload data",
+    label: "@pause.reload",
     lbl_scale: 0.3,
     style: "button_flat"
 });
@@ -109,7 +109,7 @@ let btn_hitboxes = compositor.button({
     parent: side,
     size: vec(400, 0),
     intro: "pop",
-    label: "Hitboxes: off",
+    label: "@pause.hitboxes_off",
     lbl_scale: 0.3,
     style: "button_flat"
 });
@@ -126,7 +126,7 @@ let training_title = compositor.label({
     parent: side,
     layer: "training",
     intro: "pop",
-    text: "TRAINING",
+    text: "@pause.training",
     text_scale: 0.26,
     color: vec(0.58, 0.6, 0.66, 1)
 });
@@ -142,7 +142,7 @@ let dummy_row = compositor.stack({
 let dummy_title = compositor.label({
     parent: dummy_row,
     size: vec(130, 0),
-    text: "Dummy",
+    text: "@pause.dummy",
     text_scale: 0.28,
     align: "left"
 });
@@ -164,7 +164,7 @@ let opponent_row = compositor.stack({
 let opponent_title = compositor.label({
     parent: opponent_row,
     size: vec(130, 0),
-    text: "Opponent",
+    text: "@pause.opponent",
     text_scale: 0.28,
     align: "left"
 });
@@ -186,7 +186,7 @@ let refill_row = compositor.stack({
 let refill_title = compositor.label({
     parent: refill_row,
     size: vec(130, 0),
-    text: "Refill",
+    text: "@pause.refill",
     text_scale: 0.28,
     align: "left"
 });
@@ -202,7 +202,7 @@ let btn_reset = compositor.button({
     size: vec(400, 0),
     layer: "training",
     intro: "pop",
-    label: "Reset positions",
+    label: "@pause.reset_positions",
     lbl_scale: 0.3,
     style: "button_flat"
 });
@@ -213,7 +213,7 @@ let hint = compositor.label({
     layer: "menu",
     anchor: "bottom",
     pivot: "bottom",
-    text: "[icon:dpad] choose    [icon:pad_a] pick    [icon:pad_b] carry on",
+    text: "@pause.hint",
     text_scale: 0.25,
     color: vec(0.86, 0.88, 0.92, 1)
 });
@@ -235,13 +235,13 @@ let waiting = compositor.stack({
 
 let waiting_title = compositor.label({
     parent: waiting,
-    text: "PAUSED",
+    text: "@pause.paused",
     text_scale: 0.8
 });
 
 let waiting_detail = compositor.label({
     parent: waiting,
-    text: "the other player has paused the fight",
+    text: "@pause.other_paused",
     text_scale: 0.28,
     color: vec(0.58, 0.6, 0.66, 1)
 });

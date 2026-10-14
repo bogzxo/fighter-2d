@@ -1,3 +1,4 @@
+using Horizon.Content;
 using Horizon.Logging;
 using System;
 using System.Linq;
@@ -157,12 +158,12 @@ internal sealed class NetSession : IDisposable
                 .Take(2)
                 .ToArray();
 
-            return addresses.Length > 0 ? string.Join(" or ", addresses) : "127.0.0.1";
+            return addresses.Length > 0 ? string.Join(Localisation.Get("online.addresses_or"), addresses) : "127.0.0.1";
         }
         catch
         {
             // Not knowing our own address is no reason to stop hosting
-            return "this machine";
+            return Localisation.Get("online.this_machine");
         }
     }
 

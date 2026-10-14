@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -101,6 +101,10 @@
   <ItemGroup>
     <ProjectReference Include="..\horizon\Horizon\Horizon.csproj" />
     <ProjectReference Include="..\horizon\Horizon.HIDL\Horizon.HIDL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Assets\ui\localisation\" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,343 @@
+// Every text of the game in English (British), by key. A layout names one as "@main_menu.quit", the code asks for it
+// with Localisation.Get("main_menu.quit"). Another language is another file in this folder with the same keys, what
+// it leaves out comes out as the key, so a missing one is plain to see.
+// A name in braces ({player}) is filled in by the game, keep it, move it about to wherever it goes in the sentence.
+// [icon:pad_a] and friends are the buttons of whatever gamepad is in use, drawn as pictures, keep those too.
+
+let strings = {
+    app: {
+        window_title: "Crash Out Combat - {version}"
+    },
+
+    common: {
+        on: "On",
+        off: "Off",
+        stay: "Stay",
+        player: "Player {number}",
+        gamepad: "Gamepad",
+        not_bound: "not bound",
+        or: "  or  "
+    },
+
+    main_menu: {
+        pvp: "PVP",
+        practice: "Practice",
+        host: "Host Server",
+        join: "Join Multiplayer",
+        options: "Options",
+        quit: "Quit",
+        about_pvp: "Two players on this machine, a gamepad each.",
+        about_practice: "The lab. You against the dummy, with health that comes back and frame data on screen.",
+        about_host: "Open a fight for somebody on another machine to join.",
+        about_join: "Join a fight somebody else is hosting, by their address.",
+        about_options: "The window, the look of the game and what a fight shows on top of itself.",
+        about_quit: "Back to the desktop.",
+        hint: "[icon:dpad] choose    [icon:pad_a] pick",
+        port_taken: "port {port} is taken",
+        quit_title: "Quit?",
+        quit_question: "Leave the game and go back to the desktop.",
+        quit_confirm: "Quit"
+    },
+
+    options: {
+        title: "Options",
+        tab_display: "Display",
+        tab_graphics: "Graphics",
+        tab_look: "Look",
+        tab_fight: "Fight",
+        bindings: "Gamepad bindings",
+        back: "Back",
+        hint: "[icon:dpad] choose and change    [icon:pad_lb] [icon:pad_rb] tabs    [icon:pad_y] bindings    [icon:pad_b] back",
+
+        display: "Display",
+        resolution: "Resolution",
+        vsync: "V-Sync",
+        frame_limit: "Frame limit",
+        performance: "Performance",
+        gui_scale: "GUI scale",
+        pathtraced: "Pathtraced lighting",
+        ui_skin: "UI skin",
+        ui_theme: "UI theme",
+        transitions: "Scene transitions",
+        crt: "CRT screen",
+        bloom: "Bloom",
+        light_quality: "Light quality",
+        camera_zoom: "Camera zoom",
+        input_display: "Input display",
+        hit_callouts: "Hit callouts",
+        frame_data: "Frame data",
+        hitboxes: "Hitboxes",
+
+        about_display: "Fullscreen takes up the whole screen, at whatever resolution that screen is set to.",
+        about_resolution: "How big the window is. It makes no difference while the game is fullscreen.",
+        about_vsync: "Waits for the screen before showing a frame, so none of them is torn in two.",
+        about_frame_limit: "The most frames that are drawn a second. The fight runs at {ticks} ticks a second, so that is as low as it goes.",
+        about_performance: "Frames a second in the corner, or the whole lot: every loop of the engine, garbage, graphs. F3 flips through them anywhere.",
+        about_gui_scale: "How big the menus and the HUD are drawn, on top of fitting the window.",
+        about_ui_skin: "What the menus and the HUD are made of. Every one of them is a folder under Assets/uix.",
+        about_ui_theme: "The colour of it.",
+        about_transitions: "How one screen hands over to the next. Mixed melts the menus into each other and rots a fight in and out.",
+        about_crt: "Draws the game like it is on a crusty old picture tube.",
+        about_bloom: "A glow round the lanterns and whatever else shines in a fight.",
+        about_pathtraced: "Path traces the light of a fight, so it bounces off the arena and spills round corners. Wants a proper GPU.",
+        about_light_quality: "How finely the pathtraced light is worked out. Low costs about half of High, the light round small lamps shimmers a touch more.",
+        about_camera_zoom: "How close in the camera of a fight is. Closer is bigger fighters, further out is more of the arena.",
+        about_input_display: "Shows what both players are pressing down the sides of a fight.",
+        about_hit_callouts: "Calls out what every attack came to. HIT, COUNTER HIT, PUNISH, BLOCKED or WHIFF.",
+        about_frame_data: "Adds the startup of a move to the callouts, and who gets to act first after it. For the lab rats.",
+        about_hitboxes: "Draws the collision of a fight over it.",
+
+        fullscreen: "Fullscreen",
+        windowed: "Windowed",
+        size: "{width} x {height}",
+        percent: "{percent}%",
+        no_limit: "No limit",
+        tick_rate: "{limit} (the tick rate)",
+        one_look: "one look",
+
+        performance_off: "Off",
+        performance_compact: "Compact",
+        performance_full: "Full",
+
+        transitions_mixed: "Mixed",
+        transitions_blur: "Blur",
+        transitions_fade: "Fade",
+        transitions_rot: "Rot",
+        transitions_off: "Off",
+
+        light_low: "Low",
+        light_medium: "Medium",
+        light_high: "High",
+
+        zoom_close: "Close",
+        zoom_normal: "Normal",
+        zoom_far: "Far",
+        zoom_furthest: "Furthest"
+    },
+
+    bindings: {
+        title_options: "Gamepad bindings",
+        title_player: "Bindings of player {number}",
+        choose: "[icon:dpad] choose    [icon:pad_a] change    [icon:pad_b] done",
+        hint: "[icon:dpad] choose    [icon:pad_a] change    [icon:pad_x] add another    [icon:pad_y] clear    [icon:pad_b] done",
+        listening: "press a button...",
+        defaults: "Back to the defaults",
+        done: "Done",
+        press_for: "Press the button for {action}, or several together    [icon:pad_menu] cancels",
+
+        move_left: "Move left",
+        move_right: "Move right",
+        jump: "Jump",
+        crouch: "Crouch",
+        kick_left: "Left kick",
+        kick_right: "Right kick",
+        block: "Block",
+        left_bumper: "Left bumper",
+        punch_left: "Left punch",
+        punch_right: "Right punch",
+        left_trigger: "Left trigger",
+        right_trigger: "Right trigger",
+        combo_a_b: "A + B at once",
+        combo_x_y: "X + Y at once",
+        combo_a_x: "A + X at once",
+        combo_b_y: "B + Y at once",
+
+        stick_up: "{stick} up",
+        stick_down: "{stick} down",
+        stick_left: "{stick} left",
+        stick_right: "{stick} right"
+    },
+
+    setup: {
+        pick_fighters: "pick your fighters",
+        map: "Map",
+        rounds: "Rounds",
+        round_time: "Round time",
+        weather: "Weather",
+        fight: "Fight",
+        back: "Back",
+        speed: "Speed",
+        health: "Health",
+        bulkiness: "Bulkiness",
+        complexity: "Complexity",
+        where_and_rules: "where, and by what rules",
+        everybody_locked: "everybody is locked in",
+        hint_join: "press any button on a gamepad to join    [icon:pad_b] back",
+        hint_pick: "[icon:dpad] choose    [icon:pad_a] lock in    [icon:pad_lb] [icon:pad_rb] map    [icon:pad_y] bindings    [icon:pad_b] back",
+        hint_pick_practice: "[icon:dpad] choose    [icon:pad_a] lock in    [icon:pad_x] make them the dummy    [icon:pad_lb] [icon:pad_rb] map    [icon:pad_y] bindings    [icon:pad_b] back",
+        hint_wait: "waiting for everybody to lock in    [icon:pad_b] change your mind",
+        hint_match: "[icon:dpad] choose and change    [icon:pad_a] fight    [icon:pad_b] back to the fighters",
+        hint_plug_in: "Plug in a gamepad to continue    [icon:pad_b] back",
+
+        you: "You",
+        locked_in: "locked in!",
+        press_any_button: "press any button",
+        on_your_gamepad: "on your gamepad",
+        for_player: "for player {number}",
+        the_dummy: "The dummy",
+        dummy_takes_it: "stands there and takes it",
+        dummy_swap: "[icon:pad_x] on the roster swaps them",
+
+        tag_you: "YOU",
+        tag_player: "P{number}",
+        tag_dummy: "DUMMY",
+        tag_them: "THEM"
+    },
+
+    online: {
+        hint_lobby: "[icon:dpad] choose    [icon:pad_a] ready    [icon:pad_x] switch corners    [icon:pad_y] bindings    [icon:pad_b] leave",
+        hint_lobby_alone: "[icon:dpad] choose    [icon:pad_y] bindings    [icon:pad_b] leave",
+        hint_lock_in: "[icon:pad_a] lock in    [icon:pad_y] bindings",
+        hint_ready: "[icon:pad_a] ready    [icon:pad_y] bindings",
+        hint_find_you: "They can find you at {addresses}    {hint}",
+        hint_host_choosing: "The host is settling on the map and the rules    [icon:pad_b] not ready",
+        hint_waiting_host: "Waiting for the host    [icon:pad_b] not ready",
+        hint_waiting_them: "waiting for them to be ready    [icon:pad_b] not ready",
+
+        nobody_to_ready_for: "nobody to be ready for yet",
+        files_not_here: "the game files aren't here yet",
+        getting_files: "getting the game files {percent}%",
+        no_fight: "no fight, {reason}",
+        checking_files: "checking the game files",
+
+        your_opponent: "Your opponent",
+        waiting_for_player: "waiting for a player",
+        to_join: "to join",
+        on_other_machine: "on the other machine",
+        ready: "ready!",
+        making_up_mind: "making up their mind",
+        sending_files: "sending them the game files {percent}%",
+        checking_their_files: "checking their game files",
+
+        addresses_or: " or ",
+        this_machine: "this machine",
+
+        file_refused: "the host listed a file we will not take ('{file}')",
+        content_nonsense: "the host has content that makes no sense",
+        content_mismatch: "what we ended up with is not what the host has",
+        too_much_sent: "the host sent more of '{file}' than there is of it",
+        broken_file: "'{file}' did not arrive in one piece"
+    },
+
+    join: {
+        title: "Join a fight",
+        address_help: "the address of whoever is hosting it",
+        clear: "clear",
+        hint: "[icon:dpad] move    [icon:pad_a] press    [icon:pad_b] delete    [icon:pad_y] connect",
+        key_back: "BACK",
+        key_connect: "CONNECT",
+        nobody_home: "nobody home.",
+        bad_address: "dude cmon.",
+        connecting: "connecting..."
+    },
+
+    transfer: {
+        waiting_detail: "checking what the other machine has",
+        went_wrong: "That went wrong",
+        sending: "Sending the game files",
+        getting: "Getting the host's game files",
+        sent: "Sent the game files",
+        got: "Got the host's game files",
+        of: " of ",
+        megabytes: " MB",
+        all_there: "all there",
+        reloading: "Reloading the data",
+        reloaded: "Data reloaded",
+        other_machine_reloading: "waiting for the other machine to do the same"
+    },
+
+    pause: {
+        paused: "PAUSED",
+        on_hold: "the fight is on hold",
+        other_paused: "the other player has paused the fight",
+        carry_on: "Carry on",
+        start_over: "Start over",
+        options: "Options",
+        main_menu: "Main menu",
+        host_tools: "HOST TOOLS",
+        reload: "Reload data",
+        hitboxes_on: "Hitboxes: on",
+        hitboxes_off: "Hitboxes: off",
+        training: "TRAINING",
+        dummy: "Dummy",
+        opponent: "Opponent",
+        refill: "Refill",
+        reset_positions: "Reset positions",
+        hint: "[icon:dpad] choose    [icon:pad_a] pick    [icon:pad_b] carry on",
+        training_hint: "[icon:dpad] choose and change    [icon:pad_a] pick    [icon:pad_b] carry on",
+        leave_title: "Leave the fight?",
+        leave_question: "The match is lost, there is no coming back to it.",
+        leave_confirm: "Leave"
+    },
+
+    fight: {
+        versus: "VS",
+        meter: "METER",
+        meter_full: "MAX",
+        round: "ROUND {round}",
+        final_round: "FINAL ROUND",
+        fight: "FIGHT!",
+        draw: "DRAW",
+        double_ko: "DOUBLE K.O.",
+        time_up: "TIME UP",
+        perfect: "PERFECT",
+        ko: "K.O.",
+        takes_round: "{name} takes the round",
+        nobody_takes_round: "nobody takes the round",
+        wins: "{name} WINS",
+        result: "{one} - {two}    {hint}",
+        continue_hint: "[icon:pad_a] continue",
+        rematch_hint: "[icon:pad_a] rematch    [icon:pad_b] main menu"
+    },
+
+    callouts: {
+        hit: "HIT",
+        counter_hit: "COUNTER HIT",
+        punish: "PUNISH",
+        blocked: "BLOCKED",
+        whiff: "WHIFF",
+        combo: " COMBO\t",
+        damage: " DMG",
+        on_hit: "on hit",
+        on_block: "on block",
+        on_whiff: "on whiff",
+        frames: "startup {startup}    {advantage} {outcome}"
+    },
+
+    frame_data: {
+        startup: "STARTUP ",
+        active: "  ACTIVE ",
+        recovery: "  RECOVERY ",
+        hit: "  HIT ",
+        block: "  BLOCK ",
+        damage: "  DMG ",
+        hitstun: "HITSTUN ",
+        blockstun: "BLOCKSTUN ",
+        in_all: " IN ALL"
+    },
+
+    rules: {
+        single_round: "Single round",
+        first_to: "First to {rounds}",
+        seconds: "{seconds} seconds",
+        no_time_limit: "No time limit",
+        weather_map: "As the map has it",
+        weather_clear: "Clear skies",
+        weather_storm: "Thunderstorm"
+    },
+
+    modes: {
+        pvp: "Player vs Player",
+        host: "Online, hosting",
+        join: "Online",
+        practice: "Practice"
+    },
+
+    dummy: {
+        fight: "CPU",
+        stand: "Stand",
+        crouch: "Crouch",
+        block: "Block",
+        crouch_block: "Crouch block"
+    }
+};

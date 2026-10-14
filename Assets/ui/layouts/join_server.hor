@@ -13,15 +13,15 @@ let panel = compositor.stack({
     intro_time: 0.3
 });
 
-let title = compositor.label({ parent: panel, text: "Join a fight", text_scale: 0.6 });
+let title = compositor.label({ parent: panel, text: "@join.title", text_scale: 0.6 });
 let subtitle = compositor.label({
     parent: panel,
-    text: "the address of whoever is hosting it",
+    text: "@join.address_help",
     text_scale: 0.26,
     color: vec(0.58, 0.6, 0.66, 1)
 });
 let rule = compositor.divider({ parent: panel, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
-let address = compositor.textbox({ parent: panel, size: vec(460, 60), text: "127.0.0.1", max_length: 15, button: "clear", button_side: "right", button_width: 96 });
+let address = compositor.textbox({ parent: panel, size: vec(460, 60), text: "127.0.0.1", max_length: 15, button: "@join.clear", button_side: "right", button_width: 96 });
 let status = compositor.label({ parent: panel, size: vec(0, 22), text_scale: 0.25, color: vec(1, 0.45, 0.4, 1) });
 let keyboard_slot = compositor.stack({ parent: panel });
 
@@ -30,7 +30,7 @@ let hint = compositor.label({
     anchor: "bottom",
     pos: vec(0, 22),
     size: vec(1500, 30),
-    text: "[icon:dpad] move    [icon:pad_a] press    [icon:pad_b] delete    [icon:pad_y] connect",
+    text: "@join.hint",
     text_scale: 0.25,
     color: vec(0.58, 0.6, 0.66, 1)
 });

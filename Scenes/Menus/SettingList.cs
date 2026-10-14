@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -120,7 +121,7 @@ internal sealed class SettingList
     /// </summary>
     public void AddSwitch(UILayout layout, string name, bool current, Action<bool> apply, string hint = "")
     {
-        Add(layout, name, [false, true], current, on => on ? "On" : "Off", apply, hint);
+        Add(layout, name, [false, true], current, on => Localisation.Get(on ? "common.on" : "common.off"), apply, hint);
     }
 
     public void Select(int index)

@@ -1,3 +1,4 @@
+using Horizon.Content;
 using Horizon.Logging;
 using System;
 using System.IO;
@@ -20,29 +21,33 @@ internal static class GameInput
     /// <summary>
     /// An action of the fight, what it is called on the bindings screen and the button of the move files it stands for.
     /// </summary>
-    public readonly record struct FightAction(string Name, string Label, InputFlags Flag);
+    public readonly record struct FightAction(string Name, InputFlags Flag)
+    {
+        /// <summary>What it is called on the bindings screen, bindings.(its name) in the language that is loaded.</summary>
+        public string Label => Localisation.Get("bindings." + Name);
+    }
 
     // The move files are written with buttons (A, B, DPadLeft...), an action is simply one of those wherever the player has bound it.
     // The combos are two buttons at once on a single button for whoever would rather not press both, they start out not bound to anything
     public static readonly FightAction[] Actions =
     [
-        new("move_left", "Move left", InputFlags.DPadLeft),
-        new("move_right", "Move right", InputFlags.DPadRight),
-        new("jump", "Jump", InputFlags.DPadUp),
-        new("crouch", "Crouch", InputFlags.DPadDown),
-        new("kick_left", "Left kick", InputFlags.A),
-        new("kick_right", "Right kick", InputFlags.B),
-        new("block", "Block", InputFlags.RightBumper),
-        new("left_bumper", "Left bumper", InputFlags.LeftBumper),
+        new("move_left", InputFlags.DPadLeft),
+        new("move_right", InputFlags.DPadRight),
+        new("jump", InputFlags.DPadUp),
+        new("crouch", InputFlags.DPadDown),
+        new("kick_left", InputFlags.A),
+        new("kick_right", InputFlags.B),
+        new("block", InputFlags.RightBumper),
+        new("left_bumper", InputFlags.LeftBumper),
 
-        new("punch_left", "Left punch", InputFlags.X),
-        new("punch_right", "Right punch", InputFlags.Y),
-        new("left_trigger", "Left trigger", InputFlags.LeftTrigger),
-        new("right_trigger", "Right trigger", InputFlags.RightTrigger),
-        new("combo_a_b", "A + B at once", InputFlags.A | InputFlags.B),
-        new("combo_x_y", "X + Y at once", InputFlags.X | InputFlags.Y),
-        new("combo_a_x", "A + X at once", InputFlags.A | InputFlags.X),
-        new("combo_b_y", "B + Y at once", InputFlags.B | InputFlags.Y),
+        new("punch_left", InputFlags.X),
+        new("punch_right", InputFlags.Y),
+        new("left_trigger", InputFlags.LeftTrigger),
+        new("right_trigger", InputFlags.RightTrigger),
+        new("combo_a_b", InputFlags.A | InputFlags.B),
+        new("combo_x_y", InputFlags.X | InputFlags.Y),
+        new("combo_a_x", InputFlags.A | InputFlags.X),
+        new("combo_b_y", InputFlags.B | InputFlags.Y),
     ];
 
     public static GamepadInputManager Manager { get; private set; } = null!;

@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System;
 using System.Numerics;
 
@@ -27,8 +28,8 @@ internal sealed class RoundDisplay : IHudDisplay
     private const float STRIPE_TIME = 0.18f;
 
     private const string NO_TIME_LIMIT = "--";
-    private const string CONTINUE_HINT = "[icon:pad_a] continue";
-    private const string REMATCH_HINT = "[icon:pad_a] rematch    [icon:pad_b] main menu";
+    private static string ContinueHint => Localisation.Get("fight.continue_hint");
+    private static string RematchHint => Localisation.Get("fight.rematch_hint");
 
     private static readonly Vector4 TimeColor = Vector4.One;
     private static readonly Vector4 LowTimeColor = new(1.0f, 0.38f, 0.32f, 1.0f);
@@ -123,7 +124,7 @@ internal sealed class RoundDisplay : IHudDisplay
         if (round == _shownRound) return;
 
         _shownRound = round;
-        _roundLabel.Text = IsDecider() ? "FINAL ROUND" : $"ROUND {round}";
+        _roundLabel.Text = RoundCall(round);
         _roundLabel.Punch(0.2f, 0.3f);
     }
 
@@ -148,26 +149,26 @@ internal sealed class RoundDisplay : IHudDisplay
         switch (_round.Phase)
         {
             case RoundPhase.Ready:
-                return (IsDecider() ? "FINAL ROUND" : $"ROUND {score.Round}", string.Empty);
+                return (RoundCall(score.Round), string.Empty);
 
             case RoundPhase.Fight:
-                return (_round.PhaseTime < FIGHT_CALL_TIME ? "FIGHT!" : string.Empty, string.Empty);
+                return (_round.PhaseTime < FIGHT_CALL_TIME ? Localisation.Get("fight.fight") : string.Empty, string.Empty);
 
             case RoundPhase.RoundOver:
                 return _round.LastOutcome switch
                 {
-                    RoundOutcome.PlayerOne => (CallFor(0), $"{NameOf(0)} takes the round"),
-                    RoundOutcome.PlayerTwo => (CallFor(1), $"{NameOf(1)} takes the round"),
-                    _ => (_round.TimedOut ? "DRAW" : "DOUBLE K.O.", "nobody takes the round")
+                    RoundOutcome.PlayerOne => (CallFor(0), Localisation.Format("fight.takes_round", ("name", NameOf(0)))),
+                    RoundOutcome.PlayerTwo => (CallFor(1), Localisation.Format("fight.takes_round", ("name", NameOf(1)))),
+                    _ => (Localisation.Get(_round.TimedOut ? "fight.draw" : "fight.double_ko"), Localisation.Get("fight.nobody_takes_round"))
                 };
 
             case RoundPhase.MatchOver:
-                string hint = _round.RematchOffered ? REMATCH_HINT : CONTINUE_HINT;
-                string result = $"{score.Wins(0)} - {score.Wins(1)}    {ButtonGlyphs.Localize(hint, GameInput.Manager.LastUsed)}";
+                string hint = _round.RematchOffered ? RematchHint : ContinueHint;
+                string result = Localisation.Format("fight.result", ("one", score.Wins(0)), ("two", score.Wins(1)), ("hint", ButtonGlyphs.Localize(hint, GameInput.Manager.LastUsed)));
 
                 return score.Winner is int winner
-                    ? ($"{NameOf(winner).ToUpperInvariant()} WINS", result)
-                    : ("DRAW", result);
+                    ? (Localisation.Format("fight.wins", ("name", NameOf(winner).ToUpperInvariant())), result)
+                    : (Localisation.Get("fight.draw"), result);
 
             default:
                 return (string.Empty, string.Empty);
@@ -203,14 +204,17 @@ internal sealed class RoundDisplay : IHudDisplay
     /// </summary>
     private string CallFor(int winner)
     {
-        if (_round.TimedOut) return "TIME UP";
+        if (_round.TimedOut) return Localisation.Get("fight.time_up");
 
         // The players aren't put back until the next round starts, so their health is still what the round ended on
-        return _round.PlayerOf(winner).Health == Player.MAX_HEALTH ? "PERFECT" : "K.O.";
+        return _round.PlayerOf(winner).Health == Player.MAX_HEALTH ? Localisation.Get("fight.perfect") : Localisation.Get("fight.ko");
     }
 
     /// <summary>
     /// Helper method to get what a player is called on screen, which is the character they play.
     /// </summary>
-    private string NameOf(int player) => _round.PlayerOf(player).Character?.PrettyName ?? $"Player {player + 1}";
+    private string NameOf(int player) => _round.PlayerOf(player).Character?.PrettyName ?? Localisation.Format("common.player", ("number", player + 1));
+
+    /// <summary>Helper method to say which round it is, or that it is the one that decides the match.</summary>
+    private string RoundCall(int round) => IsDecider() ? Localisation.Get("fight.final_round") : Localisation.Format("fight.round", ("round", round));
 }

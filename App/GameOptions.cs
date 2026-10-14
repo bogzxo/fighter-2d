@@ -1,3 +1,4 @@
+using Horizon.Content;
 using Horizon.Logging;
 using System;
 using System.IO;
@@ -60,6 +61,9 @@ internal static class GameOptions
     [
         new(1280, 720), new(1366, 768), new(1600, 900), new(1920, 1080), new(2560, 1440), new(3840, 2160)
     ];
+
+    // Which file of Assets/ui/localisation every text of the game comes out of, there is only British English so far
+    public static string Language = Localisation.DEFAULT_LANGUAGE;
 
     /* The window */
 
@@ -140,6 +144,7 @@ internal static class GameOptions
         {
             var options = HorReader.LoadObject(FILE, "options");
 
+            Language = HorReader.Text(options, "language", Language);
             Fullscreen = HorReader.Bool(options, "fullscreen", Fullscreen);
             Resolution = SaneResolution(HorReader.Vector(options, "resolution", Resolution));
             VSync = HorReader.Bool(options, "vsync", VSync);
@@ -187,6 +192,7 @@ internal static class GameOptions
         var text = new StringBuilder();
         text.AppendLine("// Written by the game, change these on the options screen instead.");
         text.AppendLine("let options = {");
+        text.AppendLine($"    language: \"{Language}\",");
         text.AppendLine($"    fullscreen: {Write(Fullscreen)},");
         text.AppendLine($"    resolution: vec({(int)Resolution.X}, {(int)Resolution.Y}),");
         text.AppendLine($"    vsync: {Write(VSync)},");

@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System;
 using System.Collections.Generic;
 
@@ -18,8 +19,8 @@ namespace Fighter2D.Scenes;
 /// <param name="back">Makes the scene to go back to.</param>
 internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> back) : MenuScene
 {
-    private const string HINT_BROWSE = "[icon:dpad] choose    [icon:pad_a] change    [icon:pad_x] add another    [icon:pad_y] clear    [icon:pad_b] done";
-    private const string TEXT_LISTENING = "press a button...";
+    private static string HintBrowse => Localisation.Get("bindings.hint");
+    private static string TextListening => Localisation.Get("bindings.listening");
 
     protected override string LayoutFile => MenuLayouts.BINDINGS;
 
@@ -193,8 +194,8 @@ internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> 
     {
         _capture.Start(index, adding);
 
-        _entries[index].Label = TEXT_LISTENING;
-        _hint.Text = ButtonGlyphs.Localize($"Press the button for {GameInput.Actions[index].Label.ToLowerInvariant()}, or several together    [icon:pad_menu] cancels", _gamepad);
+        _entries[index].Label = TextListening;
+        _hint.Text = ButtonGlyphs.Localize(Localisation.Format("bindings.press_for", ("action", GameInput.Actions[index].Label.ToLowerInvariant())), _gamepad);
     }
 
     private void StopCapture()
@@ -248,6 +249,6 @@ internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> 
             _entries[i].Label = ButtonGlyphs.Describe(_gamepad, GameInput.Actions[i].Name);
         }
 
-        _hint.Text = ButtonGlyphs.Localize(HINT_BROWSE, _gamepad);
+        _hint.Text = ButtonGlyphs.Localize(HintBrowse, _gamepad);
     }
 }

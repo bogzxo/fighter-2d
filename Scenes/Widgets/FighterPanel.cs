@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System.Numerics;
 
 using Horizon.UI;
@@ -105,7 +106,7 @@ internal sealed class FighterPanel
     /// </summary>
     public static string Shorten(string name)
     {
-        if (name.Length == 0) return "Gamepad";
+        if (name.Length == 0) return Localisation.Get("common.gamepad");
 
         return name.Length <= MAX_NAME_LENGTH ? name : name[..(MAX_NAME_LENGTH - 2)] + "..";
     }

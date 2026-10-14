@@ -23,7 +23,7 @@ let btn_pvp = compositor.button({
     intro: "pop",
     intro_delay: 0.35,
     hover: "pulse",
-    label: "PVP"
+    label: "@main_menu.pvp"
 });
 
 let btn_practice = compositor.button({
@@ -32,7 +32,7 @@ let btn_practice = compositor.button({
     intro: "pop",
     intro_delay: 0.35,
     hover: "pulse",
-    label: "Practice"
+    label: "@main_menu.practice"
 });
 
 let btn_host = compositor.button({
@@ -41,7 +41,7 @@ let btn_host = compositor.button({
     intro: "pop",
     intro_delay: 0.35,
     hover: "pulse",
-    label: "Host Server"
+    label: "@main_menu.host"
 });
 
 let btn_join = compositor.button({
@@ -50,7 +50,7 @@ let btn_join = compositor.button({
     intro: "pop",
     intro_delay: 0.35,
     hover: "pulse",
-    label: "Join Multiplayer"
+    label: "@main_menu.join"
 });
 
 let btn_options = compositor.button({
@@ -59,7 +59,7 @@ let btn_options = compositor.button({
     intro: "pop",
     intro_delay: 0.35,
     hover: "pulse",
-    label: "Options",
+    label: "@main_menu.options",
     style: "button_flat"
 });
 
@@ -69,7 +69,7 @@ let btn_quit = compositor.button({
     intro: "pop",
     intro_delay: 0.35,
     hover: "pulse",
-    label: "Quit",
+    label: "@main_menu.quit",
     style: "button_flat"
 });
 
@@ -82,7 +82,7 @@ let rule = compositor.divider({
 let description = compositor.label({
     parent: menu,
     size: vec(360, 46),
-    text: "Two players on this machine",
+    text: "@main_menu.about_pvp",
     text_scale: 0.24,
     color: vec(0.86, 0.88, 0.92, 1),
     wrap: true,
@@ -92,7 +92,7 @@ let description = compositor.label({
 let hint = compositor.label({
     parent: menu,
     size: vec(0, 30),
-    text: "[icon:dpad] choose    [icon:pad_a] pick",
+    text: "@main_menu.hint",
     text_scale: 0.25,
     color: vec(0.58, 0.6, 0.66, 1)
 });

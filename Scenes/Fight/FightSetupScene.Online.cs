@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System.Numerics;
 
 using Horizon.Input;
@@ -15,8 +16,8 @@ namespace Fighter2D.Scenes;
 // right here and follows the host in. Everything in here does nothing at all for a fight on one machine
 internal partial class FightSetupScene
 {
-    private const string HINT_LOBBY = "[icon:dpad] choose    [icon:pad_a] ready    [icon:pad_x] switch corners    [icon:pad_y] bindings    [icon:pad_b] leave";
-    private const string HINT_LOBBY_ALONE = "[icon:dpad] choose    [icon:pad_y] bindings    [icon:pad_b] leave";
+    private static string HintLobby => Localisation.Get("online.hint_lobby");
+    private static string HintLobbyAlone => Localisation.Get("online.hint_lobby_alone");
 
     private OnlineLobby? _lobby;
     private string _hostAddresses = string.Empty;
@@ -114,8 +115,8 @@ internal partial class FightSetupScene
         why = string.Empty;
         if (_lobby is not { } lobby) return true;
 
-        if (!lobby.PeerPresent) why = "nobody to be ready for yet";
-        else if (!lobby.IsHost && lobby.Content.Phase != ContentPhase.Ready) why = "the game files aren't here yet";
+        if (!lobby.PeerPresent) why = Localisation.Get("online.nobody_to_ready_for");
+        else if (!lobby.IsHost && lobby.Content.Phase != ContentPhase.Ready) why = Localisation.Get("online.files_not_here");
 
         return why.Length == 0;
     }
@@ -149,40 +150,40 @@ internal partial class FightSetupScene
         {
             return lobby.Content.Phase switch
             {
-                ContentPhase.Downloading => $"getting the game files {lobby.Content.Progress * 100:0}%",
-                ContentPhase.Failed => $"no fight, {lobby.Content.Error}",
-                _ => "checking the game files"
+                ContentPhase.Downloading => Localisation.Format("online.getting_files", ("percent", (lobby.Content.Progress * 100).ToString("0"))),
+                ContentPhase.Failed => Localisation.Format("online.no_fight", ("reason", lobby.Content.Error)),
+                _ => Localisation.Get("online.checking_files")
             };
         }
 
-        return ButtonGlyphs.Localize(_lobby is null ? "[icon:pad_a] lock in    [icon:pad_y] bindings" : "[icon:pad_a] ready    [icon:pad_y] bindings", gamepad);
+        return ButtonGlyphs.Localize(Localisation.Get(_lobby is null ? "online.hint_lock_in" : "online.hint_ready"), gamepad);
     }
 
     private void ShowOpponent(FighterPanel panel)
     {
         if (_lobby is not { } lobby) return;
 
-        panel.ShowTitle("Your opponent", lobby.LocalSide == 0 ? RedCorner : BlueCorner);
+        panel.ShowTitle(Localisation.Get("online.your_opponent"), lobby.LocalSide == 0 ? RedCorner : BlueCorner);
 
         if (!lobby.PeerPresent)
         {
             // Only the host ever sees this, somebody who joined has the host for company
             panel.Show(null);
-            panel.ShowStatus("waiting for a player", _slowPulse.Grey);
-            panel.ShowDetail("to join", MenuColors.Hint);
+            panel.ShowStatus(Localisation.Get("online.waiting_for_player"), _slowPulse.Grey);
+            panel.ShowDetail(Localisation.Get("online.to_join"), MenuColors.Hint);
             return;
         }
 
         panel.Show(_characters.Find(character => character.Id == lobby.RemoteCharacter));
-        panel.ShowStatus("on the other machine", Vector4.One);
-        panel.ShowDetail(lobby.RemoteReady ? "ready!" : "making up their mind", lobby.RemoteReady ? MenuColors.Ready : MenuColors.Hint);
+        panel.ShowStatus(Localisation.Get("online.on_other_machine"), Vector4.One);
+        panel.ShowDetail(Localisation.Get(lobby.RemoteReady ? "online.ready" : "online.making_up_mind"), lobby.RemoteReady ? MenuColors.Ready : MenuColors.Hint);
 
         // The host sees how far along the other player is with getting its files
         if (lobby.IsHost && !lobby.Content.PeerVerified)
         {
             panel.ShowDetail(lobby.Content.IsTransferring
-                ? $"sending them the game files {lobby.Content.Progress * 100:0}%"
-                : "checking their game files", MenuColors.Hint);
+                ? Localisation.Format("online.sending_files", ("percent", (lobby.Content.Progress * 100).ToString("0")))
+                : Localisation.Get("online.checking_their_files"), MenuColors.Hint);
         }
     }
 
@@ -195,15 +196,15 @@ internal partial class FightSetupScene
         {
             if (_lobby is not { } lobby || setup.Slots.Count == 0) return null;
 
-            if (!lobby.PeerPresent) return $"They can find you at {_hostAddresses}    {HINT_LOBBY_ALONE}";
+            if (!lobby.PeerPresent) return Localisation.Format("online.hint_find_you", ("addresses", _hostAddresses), ("hint", HintLobbyAlone));
 
             if (lobby.BothReady)
             {
                 if (lobby.IsHost) return null;
-                return lobby.ChoosingMap ? "The host is settling on the map and the rules    [icon:pad_b] not ready" : "Waiting for the host    [icon:pad_b] not ready";
+                return Localisation.Get(lobby.ChoosingMap ? "online.hint_host_choosing" : "online.hint_waiting_host");
             }
 
-            return lobby.LocalReady ? "waiting for them to be ready    [icon:pad_b] not ready" : HINT_LOBBY;
+            return lobby.LocalReady ? Localisation.Get("online.hint_waiting_them") : HintLobby;
         }
     }
 }

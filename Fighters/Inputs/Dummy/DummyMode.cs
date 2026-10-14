@@ -1,3 +1,5 @@
+using Horizon.Content;
+
 namespace Fighter2D.Fighters.Inputs.Dummy;
 
 /// <summary>
@@ -31,10 +33,10 @@ internal static class DummyModes
 
     public static string Describe(DummyMode mode) => mode switch
     {
-        DummyMode.Stand => "Stand",
-        DummyMode.Crouch => "Crouch",
-        DummyMode.Block => "Block",
-        DummyMode.CrouchBlock => "Crouch block",
-        _ => "CPU"
+        DummyMode.Stand => Localisation.Get("dummy.stand"),
+        DummyMode.Crouch => Localisation.Get("dummy.crouch"),
+        DummyMode.Block => Localisation.Get("dummy.block"),
+        DummyMode.CrouchBlock => Localisation.Get("dummy.crouch_block"),
+        _ => Localisation.Get("dummy.fight")
     };
 }

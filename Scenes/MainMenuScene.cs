@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System;
 using System.Numerics;
 
@@ -21,7 +22,8 @@ namespace Fighter2D.Scenes;
 /// </summary>
 internal class MainMenuScene : MenuScene
 {
-    private const string HINT = "[icon:dpad] choose    [icon:pad_a] pick";
+    // Which buttons do what, out of the language that is loaded like every other text of the game
+    private static string Hint => Localisation.Get("main_menu.hint");
 
     // Where the fighters of the background meet and the ground they stand on, in pixels of the window
     private static readonly Vector2 DuelCenter = new(330, -330);
@@ -73,12 +75,12 @@ internal class MainMenuScene : MenuScene
         if (layout.TryGet<Image>("logo", out var logo) && _duel is { } duel) duel.Struck += () => logo.Shake(8.0f, 0.35f);
 
         // The menu is laid out in Assets/ui/layouts/main_menu.hor, what its buttons do is decided here
-        AddButton(layout, "btn_pvp", () => Play(MatchMode.Pvp), "Two players on this machine, a gamepad each.");
-        AddButton(layout, "btn_practice", () => Play(MatchMode.Practice), "The lab. You against the dummy, with health that comes back and frame data on screen.");
-        AddButton(layout, "btn_host", HostServer, "Open a fight for somebody on another machine to join.");
-        AddButton(layout, "btn_join", () => GoTo(new JoinServerScene()), "Join a fight somebody else is hosting, by their address.");
-        AddButton(layout, "btn_options", () => Open(new OptionsScene { OverScene = true }, Screen.BetweenMenus, Horizon.Engine.Components.SceneBelow.Running), "The window, the look of the game and what a fight shows on top of itself.");
-        AddButton(layout, "btn_quit", AskToQuit, "Back to the desktop.");
+        AddButton(layout, "btn_pvp", () => Play(MatchMode.Pvp), "main_menu.about_pvp");
+        AddButton(layout, "btn_practice", () => Play(MatchMode.Practice), "main_menu.about_practice");
+        AddButton(layout, "btn_host", HostServer, "main_menu.about_host");
+        AddButton(layout, "btn_join", () => GoTo(new JoinServerScene()), "main_menu.about_join");
+        AddButton(layout, "btn_options", () => Open(new OptionsScene { OverScene = true }, Screen.BetweenMenus, Horizon.Engine.Components.SceneBelow.Running), "main_menu.about_options");
+        AddButton(layout, "btn_quit", AskToQuit, "main_menu.about_quit");
 
         _hint = layout.Get<Label>("hint");
         _description = layout.Get<Label>("description");
@@ -90,11 +92,12 @@ internal class MainMenuScene : MenuScene
         _nav.SelectFirst();
     }
 
+    /// <param name="description">The key of what the button has to say for itself, see Assets/ui/localisation.</param>
     private void AddButton(UILayout layout, string name, Action pressed, string description)
     {
         var button = layout.Get<Button>(name);
         button.OnPressed = pressed;
-        _descriptions[button] = description;
+        _descriptions[button] = Localisation.Get(description);
     }
 
     private void Play(MatchMode mode) => GoTo(new FightSetupScene(Claim(new MatchSetup(mode))));
@@ -115,7 +118,7 @@ internal class MainMenuScene : MenuScene
         if (session.HasFailed)
         {
             session.Dispose();
-            ShowMessage($"port {NetSession.PORT} is taken");
+            ShowMessage(Localisation.Format("main_menu.port_taken", ("port", NetSession.PORT)));
             return;
         }
 
@@ -124,9 +127,9 @@ internal class MainMenuScene : MenuScene
 
     private void AskToQuit()
     {
-        UIDialog.Show(_layout.Module, "Quit?", "Leave the game and go back to the desktop.",
-            new DialogChoice("Quit", () => Engine.WindowManager.Window.Close()),
-            new DialogChoice("Stay"));
+        UIDialog.Show(_layout.Module, Localisation.Get("main_menu.quit_title"), Localisation.Get("main_menu.quit_question"),
+            new DialogChoice(Localisation.Get("main_menu.quit_confirm"), () => Engine.WindowManager.Window.Close()),
+            new DialogChoice(Localisation.Get("common.stay")));
     }
 
     private void ShowMessage(string message)
@@ -139,7 +142,7 @@ internal class MainMenuScene : MenuScene
     protected override void UpdateMenu(float dt)
     {
         // The hint shows the buttons of whichever gamepad was touched last
-        if (!_hintIsMessage) _hint.Text = ButtonGlyphs.Localize(HINT, GameInput.Manager.LastUsed);
+        if (!_hintIsMessage) _hint.Text = ButtonGlyphs.Localize(Hint, GameInput.Manager.LastUsed);
 
         if (!InputReady) return;
 

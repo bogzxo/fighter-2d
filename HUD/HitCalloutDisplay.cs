@@ -1,3 +1,4 @@
+using Horizon.Content;
 using System;
 using System.Numerics;
 
@@ -97,7 +98,7 @@ internal sealed class HitCalloutDisplay : IHudDisplay
     /// </summary>
     private static void ShowCombo(Readout counter, int hits, int damage, Vector4 color)
     {
-        counter.Clear().Add(hits).Add(" COMBO\t").Add(damage).Add(" DMG");
+        counter.Clear().Add(hits).Add(Localisation.Get("callouts.combo")).Add(damage).Add(Localisation.Get("callouts.damage"));
         counter.Color = color;
         counter.Opacity = 1.0f;
 
@@ -107,11 +108,11 @@ internal sealed class HitCalloutDisplay : IHudDisplay
 
     private static (string Text, Vector4 Color) Describe(HitResult result) => result switch
     {
-        HitResult.CounterHit => ("COUNTER HIT", CounterColor),
-        HitResult.Punish => ("PUNISH", PunishColor),
-        HitResult.Blocked => ("BLOCKED", BlockedColor),
-        HitResult.Whiff => ("WHIFF", WhiffColor),
-        _ => ("HIT", HitColor)
+        HitResult.CounterHit => (Localisation.Get("callouts.counter_hit"), CounterColor),
+        HitResult.Punish => (Localisation.Get("callouts.punish"), PunishColor),
+        HitResult.Blocked => (Localisation.Get("callouts.blocked"), BlockedColor),
+        HitResult.Whiff => (Localisation.Get("callouts.whiff"), WhiffColor),
+        _ => (Localisation.Get("callouts.hit"), HitColor)
     };
 
     /// <summary>
@@ -138,11 +139,11 @@ internal sealed class HitCalloutDisplay : IHudDisplay
 
         string outcome = report.Result switch
         {
-            HitResult.Whiff => "on whiff",
-            HitResult.Blocked => "on block",
-            _ => "on hit"
+            HitResult.Whiff => Localisation.Get("callouts.on_whiff"),
+            HitResult.Blocked => Localisation.Get("callouts.on_block"),
+            _ => Localisation.Get("callouts.on_hit")
         };
 
-        return $"startup {frames.Startup}    {advantage:+0;-0;0} {outcome}";
+        return Localisation.Format("callouts.frames", ("startup", frames.Startup), ("advantage", advantage.ToString("+0;-0;0")), ("outcome", outcome));
     }
 }
