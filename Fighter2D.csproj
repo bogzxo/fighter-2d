@@ -85,6 +85,12 @@
     <None Remove="HitboxEditor\**" />
     <Content Remove="HitboxEditor\**" />
     <EmbeddedResource Remove="HitboxEditor\**" />
+
+    <!-- The engine is a submodule in external/ and comes in as the projects below, not as files of the game's -->
+    <Compile Remove="external\**" />
+    <None Remove="external\**" />
+    <Content Remove="external\**" />
+    <EmbeddedResource Remove="external\**" />
     <InternalsVisibleTo Include="HitboxEditor" />
   </ItemGroup>
 
@@ -99,8 +105,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\horizon\Horizon\Horizon.csproj" />
-    <ProjectReference Include="..\horizon\Horizon.HIDL\Horizon.HIDL.csproj" />
+    <!-- bogzxo/horizon as a submodule (on its development), with the language a submodule inside of that -->
+    <ProjectReference Include="external\horizon\Horizon\Horizon.csproj" />
+    <ProjectReference Include="external\horizon\Horizon.HIDL\Horizon.HIDL.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -16,8 +16,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Fighter2D.csproj" />
-    <ProjectReference Include="..\..\horizon\Horizon\Horizon.csproj" />
-    <ProjectReference Include="..\..\horizon\Horizon.HIDL\Horizon.HIDL.csproj" />
+    <ProjectReference Include="..\external\horizon\Horizon\Horizon.csproj" />
+    <ProjectReference Include="..\external\horizon\Horizon.HIDL\Horizon.HIDL.csproj" />
   </ItemGroup>
 
 </Project>

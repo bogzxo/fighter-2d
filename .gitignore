@@ -506,3 +506,14 @@ FodyWeavers.xsd
 /bin/x64/Debug/net10.0/System.Reactive.dll
 
 /New Art 3D
+
+# Syncthing's half written copies and its folders, and what a Mac or Windows leaves lying about
+~syncthing~*
+.stfolder/
+.stversions/
+.DS_Store
+Thumbs.db
+
+# Editors and their settings, which are whoever's machine's own
+.idea/
+.claudiaideconfig

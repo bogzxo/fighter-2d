@@ -6,9 +6,12 @@ commit bodies.
 
 ## The engine
 
-The game references `../horizon/Horizon/Horizon.csproj` and `../horizon/Horizon.HIDL/Horizon.HIDL.csproj` by relative
-path, so the two checkouts sit side by side and the game builds against whatever branch of Horizon is checked out.
-Anything the game wants of the GPU goes through the engine, there is no GL in here.
+Horizon is a submodule at `external/horizon` (bogzxo/horizon, on its `development`), with HIDL a submodule inside
+of that, so clone with `--recursive` or run `git submodule update --init --recursive` after. The game and the hitbox
+editor build against that copy. A change to the engine is made in the engine's own repo, pushed, and then
+`git submodule update --remote external/horizon` here and the new commit committed, or the game is still built
+against the old one. `Fighter2D.sln` has the game, the hitbox editor and the engine. Anything the game wants of the
+GPU goes through the engine, there is no GL in here.
 
 ## Where everything is
 
