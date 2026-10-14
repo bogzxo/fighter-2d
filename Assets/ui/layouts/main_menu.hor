@@ -22,6 +22,7 @@ let btn_pvp = compositor.button({
     size: vec(360, 0),
     intro: "pop",
     intro_delay: 0.35,
+    hover: "pulse",
     label: "PVP"
 });
 
@@ -30,6 +31,7 @@ let btn_practice = compositor.button({
     size: vec(360, 0),
     intro: "pop",
     intro_delay: 0.35,
+    hover: "pulse",
     label: "Practice"
 });
 
@@ -38,6 +40,7 @@ let btn_host = compositor.button({
     size: vec(360, 0),
     intro: "pop",
     intro_delay: 0.35,
+    hover: "pulse",
     label: "Host Server"
 });
 
@@ -46,6 +49,7 @@ let btn_join = compositor.button({
     size: vec(360, 0),
     intro: "pop",
     intro_delay: 0.35,
+    hover: "pulse",
     label: "Join Multiplayer"
 });
 
@@ -54,6 +58,7 @@ let btn_options = compositor.button({
     size: vec(360, 0),
     intro: "pop",
     intro_delay: 0.35,
+    hover: "pulse",
     label: "Options",
     style: "button_flat"
 });
@@ -63,6 +68,7 @@ let btn_quit = compositor.button({
     size: vec(360, 0),
     intro: "pop",
     intro_delay: 0.35,
+    hover: "pulse",
     label: "Quit",
     style: "button_flat"
 });
