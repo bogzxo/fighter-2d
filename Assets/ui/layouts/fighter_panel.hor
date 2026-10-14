@@ -2,6 +2,7 @@
 // they are like in four bars, and under that whoever is going to play them (a gamepad, the dummy, somebody on
 // another machine) and what they are up to. The two lines at the bottom are a fixed size so nothing jumps about as
 // their texts change.
+#define layout
 
 let box = compositor.stack({
     background: "panel",

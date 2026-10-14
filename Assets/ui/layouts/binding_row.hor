@@ -1,5 +1,6 @@
 // binding_row, laid out with Horizon.Hex.
 // Load it with UILayout.Load, every component is there under the name it has here.
+#define layout
 
 let row = compositor.stack({
     intro: "fade",

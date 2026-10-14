@@ -1,5 +1,6 @@
 // fighter_cell, laid out with Horizon.Hex.
 // Load it with UILayout.Load, every component is there under the name it has here.
+#define layout
 
 let box = compositor.button({
     size: vec(170, 146),

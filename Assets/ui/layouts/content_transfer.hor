@@ -1,5 +1,6 @@
 // content_transfer, laid out with Horizon.Hex.
 // Load it with UILayout.Load, every component is there under the name it has here.
+#define layout
 
 compositor.design({ size: vec(1600, 900), fit: "contain" });
 
