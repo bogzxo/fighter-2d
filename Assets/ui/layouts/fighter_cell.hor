@@ -1,22 +1,44 @@
-// One cell of the roster on the fight setup screen, made once per cell by fight_setup.hor.
-// With a character in it the game shows the portrait and the name, without one the question mark.
+// fighter_cell, laid out with Horizon.Hex.
+// Load it with UILayout.Load, every component is there under the name it has here.
 
 let box = compositor.button({
-    style: "button_flat",
     size: vec(170, 146),
-    intro: "pop",
+    intro: "slide",
     intro_time: 0.3,
-    intro_delay: 0.15
+    intro_delay: 0.15,
+    intro_offset: vec(0, 31.5),
+    style: "button_flat"
 });
 
-let tags = compositor.label({ parent: box, anchor: "top", pos: vec(0, -10), text: "P1", text_scale: 0.22 });
-let portrait = compositor.image({ parent: box, pos: vec(0, 2), size: vec(96, 96) });
+let tags = compositor.label({
+    parent: box,
+    pos: vec(0, -10),
+    anchor: "top",
+    pivot: "top",
+    text: "P1",
+    text_scale: 0.22
+});
+
+let portrait = compositor.image({
+    parent: box,
+    pos: vec(0, 2),
+    size: vec(96, 96)
+});
+
 let name = compositor.label({
     parent: box,
-    anchor: "bottom",
     pos: vec(0, 12),
+    anchor: "bottom",
+    pivot: "bottom",
     text: "Fighter",
     text_scale: 0.19,
     color: vec(0.58, 0.6, 0.66, 1)
 });
-let empty = compositor.label({ parent: box, visible: false, text: "?", text_scale: 0.6, color: vec(0.58, 0.6, 0.66, 1) });
+
+let empty = compositor.label({
+    parent: box,
+    visible: false,
+    text: "?",
+    text_scale: 0.6,
+    color: vec(0.58, 0.6, 0.66, 1)
+});

@@ -1,46 +1,44 @@
-// Everything there is to settle before a fight, on the one screen (FightSetupScene.cs). It used to be four of them,
-// gamepads, fighters, map and rules, one after the other. A fighter either side, each with whoever is going to play
-// them, the roster in the middle and under it where the fight is and how it's played. Behind it all is the map
-// that's picked, alive, so nothing here is a solid wall of panel.
-// The game makes the two fighter panels out of fighter_panel.hor and the cells of the roster out of fighter_cell.hor.
+// fight_setup, laid out with Horizon.Hex.
+// Load it with UILayout.Load, every component is there under the name it has here.
 
-// Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
 compositor.design({ size: vec(1600, 900), fit: "contain" });
 
-// Player one, or the blue corner of an online fight
 let left = compositor.stack({
+    pos: vec(36, 6),
     anchor: "left",
     pivot: "left",
-    pos: vec(36, 6),
-    template: "fighter_panel.hor",
-    preview_count: 1,
     intro: "slide",
     intro_time: 0.4,
-    intro_offset: vec(-460, 0)
+    intro_offset: vec(-460, 0),
+    template: "fighter_panel.hor",
+    preview_count: 1
 });
 
-// Player two, the dummy of a practice fight, or the red corner
 let right = compositor.stack({
+    pos: vec(-36, 6),
     anchor: "right",
     pivot: "right",
-    pos: vec(-36, 6),
-    template: "fighter_panel.hor",
-    preview_count: 1,
     intro: "slide",
     intro_time: 0.4,
-    intro_offset: vec(460, 0)
+    intro_offset: vec(460, 0),
+    template: "fighter_panel.hor",
+    preview_count: 1
 });
 
 let middle = compositor.stack({
     pos: vec(0, 6),
-    background: "panel",
-    padding: vec(30, 24),
-    spacing: 12,
+    padding: vec(30, 24, 30, 24),
     intro: "pop",
-    intro_time: 0.35
+    background: "panel",
+    spacing: 12
 });
 
-let title = compositor.label({ parent: middle, text: "Versus", text_scale: 0.56 });
+let title = compositor.label({
+    parent: middle,
+    text: "Versus",
+    text_scale: 0.56
+});
+
 let subtitle = compositor.label({
     parent: middle,
     size: vec(520, 22),
@@ -51,45 +49,133 @@ let subtitle = compositor.label({
 
 let grid = compositor.grid({
     parent: middle,
-    columns: 3,
-    spacing: 8,
-    stagger: 0.03,
     template: "fighter_cell.hor",
-    preview_count: 6
+    preview_count: 6,
+    stagger: 0.03,
+    columns: 3,
+    spacing: 8
 });
 
-let rule = compositor.divider({ parent: middle, fill: "horizontal", color: vec(0.58, 0.6, 0.66, 0.35) });
+let rule = compositor.divider({
+    parent: middle,
+    fill: "horizontal",
+    color: vec(0.58, 0.6, 0.66, 0.35)
+});
 
-// Where and how. Dimmed until everybody has picked, player one's to change after that (the bumpers change the map any time)
 let rows = compositor.stack({ parent: middle, spacing: 6 });
 
-let map_row = compositor.stack({ parent: rows, direction: "horizontal", spacing: 16, padding: vec(10, 3), radius: 6 });
-let map_title = compositor.label({ parent: map_row, size: vec(150, 0), text: "@setup.map", text_scale: 0.3, align: "left" });
-let map = compositor.selector({ parent: map_row, size: vec(340, 44), text_scale: 0.28 });
+let map_row = compositor.stack({
+    parent: rows,
+    padding: vec(10, 3, 10, 3),
+    radius: 6,
+    spacing: 16,
+    direction: "horizontal"
+});
 
-let rounds_row = compositor.stack({ parent: rows, direction: "horizontal", spacing: 16, padding: vec(10, 3), radius: 6 });
-let rounds_title = compositor.label({ parent: rounds_row, size: vec(150, 0), text: "@setup.rounds", text_scale: 0.3, align: "left" });
-let rounds = compositor.selector({ parent: rounds_row, size: vec(340, 44), text_scale: 0.28 });
+let map_title = compositor.label({
+    parent: map_row,
+    size: vec(150, 0),
+    text: "@setup.map",
+    text_scale: 0.3,
+    align: "left"
+});
 
-let time_row = compositor.stack({ parent: rows, direction: "horizontal", spacing: 16, padding: vec(10, 3), radius: 6 });
-let time_title = compositor.label({ parent: time_row, size: vec(150, 0), text: "@setup.round_time", text_scale: 0.3, align: "left" });
-let time = compositor.selector({ parent: time_row, size: vec(340, 44), text_scale: 0.28 });
+let map = compositor.selector({
+    parent: map_row,
+    size: vec(340, 44),
+    text_scale: 0.28
+});
 
-let weather_row = compositor.stack({ parent: rows, direction: "horizontal", spacing: 16, padding: vec(10, 3), radius: 6 });
-let weather_title = compositor.label({ parent: weather_row, size: vec(150, 0), text: "@setup.weather", text_scale: 0.3, align: "left" });
-let weather = compositor.selector({ parent: weather_row, size: vec(340, 44), text_scale: 0.28 });
+let rounds_row = compositor.stack({
+    parent: rows,
+    padding: vec(10, 3, 10, 3),
+    radius: 6,
+    spacing: 16,
+    direction: "horizontal"
+});
 
-let btn_fight = compositor.button({ parent: middle, label: "@setup.fight", size: vec(260, 0) });
+let rounds_title = compositor.label({
+    parent: rounds_row,
+    size: vec(150, 0),
+    text: "@setup.rounds",
+    text_scale: 0.3,
+    align: "left"
+});
 
-// What to press, along the bottom of the screen where every menu has it
+let rounds = compositor.selector({
+    parent: rounds_row,
+    size: vec(340, 44),
+    text_scale: 0.28
+});
+
+let time_row = compositor.stack({
+    parent: rows,
+    padding: vec(10, 3, 10, 3),
+    radius: 6,
+    spacing: 16,
+    direction: "horizontal"
+});
+
+let time_title = compositor.label({
+    parent: time_row,
+    size: vec(150, 0),
+    text: "@setup.round_time",
+    text_scale: 0.3,
+    align: "left"
+});
+
+let time = compositor.selector({
+    parent: time_row,
+    size: vec(340, 44),
+    text_scale: 0.28
+});
+
+let weather_row = compositor.stack({
+    parent: rows,
+    padding: vec(10, 3, 10, 3),
+    radius: 6,
+    spacing: 16,
+    direction: "horizontal"
+});
+
+let weather_title = compositor.label({
+    parent: weather_row,
+    size: vec(150, 0),
+    text: "@setup.weather",
+    text_scale: 0.3,
+    align: "left"
+});
+
+let weather = compositor.selector({
+    parent: weather_row,
+    size: vec(340, 44),
+    text_scale: 0.28
+});
+
+let btn_fight = compositor.button({
+    parent: middle,
+    size: vec(260, 0),
+    intro: "pop",
+    intro_delay: 0.2,
+    label: "@setup.fight"
+});
+
 let hint = compositor.label({
-    anchor: "bottom",
     pos: vec(0, 22),
     size: vec(1500, 30),
+    anchor: "bottom",
+    pivot: "bottom",
     text: "@setup.hint_pick",
     text_scale: 0.25,
     color: vec(0.58, 0.6, 0.66, 1)
 });
 
-// For the mouse, a gamepad goes back with B
-let btn_back = compositor.button({ anchor: "top_left", pos: vec(36, -22), label: "@setup.back", style: "button_flat", size: vec(130, 0), lbl_scale: 0.26 });
+let btn_back = compositor.button({
+    pos: vec(36, -22),
+    size: vec(130, 0),
+    anchor: "top_left",
+    pivot: "top_left",
+    label: "@setup.back",
+    lbl_scale: 0.26,
+    style: "button_flat"
+});

@@ -1,24 +1,33 @@
-// The panel that comes up while the game files go from the host to the other machine (ContentTransferDisplay.cs).
-// It sits along the bottom of the screen so it is out of the way of the lobby and of the pause menu, both of which it can be up over.
-// The game writes the title, the line under the bar and how full the bar is.
+// content_transfer, laid out with Horizon.Hex.
+// Load it with UILayout.Load, every component is there under the name it has here.
 
-// Made for 16:9 and kept 16:9, smack in the middle of whatever screen it ends up on
 compositor.design({ size: vec(1600, 900), fit: "contain" });
 
 let box = compositor.stack({
+    pos: vec(0, 48),
     anchor: "bottom",
     pivot: "bottom",
-    pos: vec(0, 48),
-    background: "panel",
-    padding: vec(36, 24),
-    spacing: 12,
+    padding: vec(36, 24, 36, 24),
     intro: "slide",
     intro_time: 0.3,
-    intro_offset: vec(0, -220)
+    intro_offset: vec(0, -220),
+    background: "panel",
+    spacing: 12
 });
 
-let title = compositor.label({ parent: box, text: "@transfer.getting", text_scale: 0.4 });
-let bar = compositor.progress_bar({ parent: box, scale: vec(4, 2), text_scale: 0.6 });
+let title = compositor.label({
+    parent: box,
+    text: "@transfer.getting",
+    text_scale: 0.4
+});
+
+let bar = compositor.progress_bar({
+    parent: box,
+    scale: vec(4, 2),
+    fill: "horizontal",
+    text_scale: 0.6
+});
+
 let detail = compositor.readout({
     parent: box,
     text: "0.0 of 0.0 MB",

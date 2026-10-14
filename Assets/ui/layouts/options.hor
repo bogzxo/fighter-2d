@@ -500,7 +500,7 @@ let hitboxes = compositor.selector({
 
 let about = compositor.stack({
     parent: body,
-    pos: vec(-1.5686035, 0),
+    pos: vec(-0.03515625, -26.06668),
     anchor: "top",
     pivot: "top",
     fill: "both",
@@ -528,7 +528,7 @@ let about_rule = compositor.divider({
 
 let description = compositor.label({
     parent: about,
-    size: vec(330, 330),
+    size: vec(330, 267.53336),
     fill: "vertical",
     text_scale: 0.25,
     color: vec(0.86, 0.88, 0.92, 1),
