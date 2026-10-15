@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<template>
- <object type="spawn">
-  <properties>
-   <property name="player" type="int" value="1"/>
-  </properties>
-  <point/>
- </object>
-</template>
