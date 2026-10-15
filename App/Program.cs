@@ -40,7 +40,13 @@ internal class Program
 
         if (TryGetArgument(args, ARGUMENT_CONTENT, out string content))
         {
-            if (Directory.Exists(Path.Combine(content, GameContent.MAPS_DIRECTORY))) GameContent.UseHome(content);
+            if (Directory.Exists(Path.Combine(content, GameContent.MAPS_DIRECTORY)))
+            {
+                GameContent.UseHome(content);
+
+                // Worked on where it's kept, the fight reloads what's saved there by itself (a move saved in Hex)
+                ContentWatcher.Start(content);
+            }
             else Log.Warning($"There is no content in '{content}', going with what the game came with.");
         }
 

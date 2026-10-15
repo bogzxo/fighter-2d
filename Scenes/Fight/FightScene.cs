@@ -513,6 +513,9 @@ internal class FightScene : Scene
         UpdatePauseBlur();
         UpdateReload(dt);
 
+        // Our own content changed on the disk (saved in Hex), read again the way the pause menu's reload does it
+        if (ContentWatcher.TakeSettled() && IsHost && Reload is not null) ReloadData();
+
         // Held for the other machine to catch up after a reload, which is a pause nobody asked for.
         // The HUD is kept going through every kind of hold. A fight that comes back from a reload is held from its first update,
         // and a HUD that was never updated has nothing to draw

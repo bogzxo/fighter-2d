@@ -55,7 +55,7 @@ internal readonly record struct CustomHitbox(Box[] Boxes)
 
 /// <summary>
 /// The hand drawn hitboxes of a character, one file a character (Assets/data/hitboxes/the_id.hor), made with the
-/// hitbox editor (HitboxEditor/). A move that isn't in there goes on hitting with whatever limb the art has sticking out
+/// move editor (Hex's Move editor extension). A move that isn't in there goes on hitting with whatever limb the art has sticking out
 /// (<see cref="SpriteBoxTracer"/>), which is most of them and the way it should be, a box is only drawn by hand where
 /// the trace gets it wrong or a move wants more reach, or more frames out, than the art shows.
 /// <code>
@@ -140,7 +140,7 @@ internal static class CustomHitboxes
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
 
         var text = new StringBuilder();
-        text.AppendLine($"// The hand drawn hitboxes of {characterId}, written by the hitbox editor (HitboxEditor/). A move that isn't here hits");
+        text.AppendLine($"// The hand drawn hitboxes of {characterId}, written by the move editor (Hex). A move that isn't here hits");
         text.AppendLine("// with whatever limb its art has sticking out. min and max are a share of the frame from its middle, x the way the");
         text.AppendLine("// character faces and y up, active is how many frames of the move the box stays out for from the hit frame. A move whose");
         text.AppendLine("// box changes from one active frame to the next has frames, a box for every one of them from the hit frame on.");

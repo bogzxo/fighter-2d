@@ -10,7 +10,7 @@ Horizon is a submodule at `external/horizon` (bogzxo/horizon, on its `developmen
 of that, so clone with `--recursive` or run `git submodule update --init --recursive` after. The game and the hitbox
 editor build against that copy. A change to the engine is made in the engine's own repo, pushed, and then
 `git submodule update --remote external/horizon` here and the new commit committed, or the game is still built
-against the old one. `Fighter2D.sln` has the game, the hitbox editor and the engine. On bogz's machines the
+against the old one. `Fighter2D.sln` has the game and the engine, moves and their hitboxes are edited in Hex (its Move editor extension). On bogz's machines the
 workspace one folder up (`Horizon.Workspace.sln`, `Directory.Build.props`) has the game build against the
 `../horizon` checkout instead of the submodule (`HorizonRoot`), which is the way to work on the engine and the game
 together, the submodule is only moved on when a game change that needs the engine change is pushed. Anything the game wants of the

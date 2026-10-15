@@ -16,6 +16,8 @@
 //   and the sweep, the drill and the spike all knock down.
 //   LeftBumper    spinning_knuckle, a spin on the spot into a backfist that carries her forwards
 
+#define fight_move
+
 let moves = {
     block: {
         input: "RightBumper",
