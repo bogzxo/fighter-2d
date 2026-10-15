@@ -110,7 +110,7 @@ let moves = {
             crouching: "sweep"
         },
         phases: {
-            swing: { animation: "heavy_kick", hit: 0 }
+            swing: { animation: "heavy_kick", hit: 3 }
         }
     },
 
@@ -129,7 +129,7 @@ let moves = {
             crouching: "crouch_punch"
         },
         phases: {
-            swing: { animation: "light_punch", hit: 0 }
+            swing: { animation: "light_punch", hit: 1 }
         }
     },
 
@@ -148,7 +148,7 @@ let moves = {
             crouching: "crouch_heavy_punch"
         },
         phases: {
-            swing: { animation: "heavy_punch", hit: 0 }
+            swing: { animation: "heavy_punch", hit: 2 }
         }
     },
 
@@ -280,7 +280,7 @@ let moves = {
         knockback: vec(900, 800),
         hitstun: 12,
         knockdown: true,
-        meter_cost: 25,
+        meter_cost: 5,
         cancellable: false,
         status: "attacking",
         finish_reroutes: {
@@ -304,7 +304,7 @@ let moves = {
         knockback: vec(350, 2200),
         hitstun: 24,
         knockdown: true,
-        meter_cost: 25,
+        meter_cost: 5,
         cancellable: false,
         status: "attacking",
         finish_reroutes: {
