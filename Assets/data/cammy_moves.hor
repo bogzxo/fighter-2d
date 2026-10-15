@@ -24,18 +24,16 @@ let moves = {
         trigger: "held",
         priority: 40,
         stances: "standing | crouching",
-        cancellable: true,
-        steering: false,
+        walk: 0,
         phases: {
-            raise: { animation: "block_start", cancel: 0, commit: 1, status: "blocking", status_frame: 1 },
+            raise: { animation: "block_start", cancel: 0, commit: 5, status: "blocking", status_frame: 5 },
             hold: { animation: "block_loop", loop_while: "held", commit: 0 }
         }
     },
 
     hit_stun: {
         stances: "standing | crouching | jumping | falling",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         finish_reroutes: {
             jumping: "fall",
             falling: "fall"
@@ -47,8 +45,7 @@ let moves = {
 
     knocked_out: {
         stances: "standing | crouching | jumping | falling",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         phases: {
             reel: { animation: "hit" },
             down: { animation: "knocked_out", loop_while: "always" }
@@ -57,22 +54,20 @@ let moves = {
 
     knocked_down: {
         stances: "standing | crouching | jumping | falling",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         finish_reroutes: {
             standing: "get_up",
             crouching: "get_up"
         },
         phases: {
             drop: { animation: "knocked_out" },
-            floor: { frames: 1, loop_while: "hitstun" }
+            floor: { frames: 5, loop_while: "hitstun" }
         }
     },
 
     get_up: {
         stances: "standing | crouching",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         status: "invulnerable",
         phases: {
             rise: { animation: "hard_landing" }
@@ -81,28 +76,30 @@ let moves = {
 
     kick_left: {
         input: "A",
-        steering: false,
+        walk: 0,
         trigger: "pressed",
         priority: 20,
         stances: "standing | falling | jumping | crouching",
         damage: 6,
-        cancellable: false,
+        hitstun: 22,
+        blockstun: 15,
         status: "attacking",
         stance_reroutes: { jumping: "jump_light_kick", falling: "jump_light_kick", crouching: "crouch_kick" },
         phases: {
-            swing: { animation: "kick", hit: 2 }
+            swing: { animation: "kick", hit: 10, active: 5 }
         }
     },
 
     kick_right: {
         input: "B",
-        steering: false,
+        walk: 0,
         trigger: "pressed",
         priority: 30,
         stances: "standing | falling | jumping | crouching",
         damage: 8,
-        knockback: vec(480, 350),
-        cancellable: false,
+        hitstun: 22,
+        blockstun: 15,
+        push: 26,
         status: "attacking",
         stance_reroutes: {
             jumping: "jump_kick",
@@ -110,18 +107,19 @@ let moves = {
             crouching: "sweep"
         },
         phases: {
-            swing: { animation: "heavy_kick", hit: 3 }
+            swing: { animation: "heavy_kick", hit: 15, active: 5 }
         }
     },
 
     punch_left: {
         input: "X",
-        steering: false,
+        walk: 0,
         trigger: "pressed",
         priority: 24,
         stances: "standing | falling | jumping | crouching",
         damage: 4,
-        cancellable: false,
+        hitstun: 12,
+        blockstun: 9,
         status: "attacking",
         stance_reroutes: {
             jumping: "jump_light_punch",
@@ -129,18 +127,19 @@ let moves = {
             crouching: "crouch_punch"
         },
         phases: {
-            swing: { animation: "light_punch", hit: 1 }
+            swing: { animation: "light_punch", hit: 5, active: 5 }
         }
     },
 
     punch_right: {
         input: "Y",
-        steering: false,
+        walk: 0,
         trigger: "pressed",
         priority: 34,
         stances: "standing | falling | jumping | crouching",
         damage: 7,
-        cancellable: false,
+        hitstun: 23,
+        blockstun: 16,
         status: "attacking",
         stance_reroutes: {
             jumping: "jump_punch",
@@ -148,140 +147,150 @@ let moves = {
             crouching: "crouch_heavy_punch"
         },
         phases: {
-            swing: { animation: "heavy_punch", hit: 2 }
+            swing: { animation: "heavy_punch", hit: 10, active: 5 }
         }
     },
 
     crouch_kick: {
         stances: "crouching",
-        steering: false,
+        walk: 0,
         damage: 5,
+        hitstun: 13,
+        blockstun: 9,
         level: "low",
-        cancellable: false,
         status: "attacking",
         stance: "crouching",
         finish_reroutes: { crouching: "crouch_hold" },
         phases: {
-            swing: { animation: "crouch_kick", hit: 1 }
+            swing: { animation: "crouch_kick", hit: 5, active: 5 }
         }
     },
 
     sweep: {
         stances: "crouching",
-        steering: false,
+        walk: 0,
         damage: 7,
-        knockback: vec(300, 1100),
-        hitstun: 12,
+        blockstun: 42,
+        launch: vec(11, 28),
+        hitstun: 60,
         level: "low",
         knockdown: true,
-        cancellable: false,
         status: "attacking",
         stance: "crouching",
         finish_reroutes: { crouching: "crouch_hold" },
         phases: {
-            swing: { animation: "sweep", hit: 2 }
+            swing: { animation: "sweep", hit: 10, active: 5 }
         }
     },
 
     crouch_punch: {
         stances: "crouching",
-        steering: false,
+        walk: 0,
         damage: 4,
-        cancellable: false,
+        hitstun: 12,
+        blockstun: 9,
         status: "attacking",
         stance: "crouching",
         finish_reroutes: { crouching: "crouch_hold" },
         phases: {
-            swing: { animation: "crouch_punch", hit: 1 }
+            swing: { animation: "crouch_punch", hit: 5, active: 5 }
         }
     },
 
     crouch_heavy_punch: {
         stances: "crouching",
-        steering: false,
+        walk: 0,
         damage: 7,
-        knockback: vec(250, 2200),
-        cancellable: false,
+        hitstun: 40,
+        blockstun: 12,
+        launch: vec(11, 74),
+        hit_cancel: ["jump"],
         status: "attacking",
         stance: "crouching",
         finish_reroutes: { crouching: "crouch_hold" },
         phases: {
-            swing: { animation: "crouch_heavy_punch", hit: 2 }
+            swing: { animation: "crouch_heavy_punch", hit: 10, active: 5 }
         }
     },
 
     jump_kick: {
         stances: "jumping | falling",
-        steering: false,
+        walk: 0,
         damage: 8,
-        knockback: vec(600, 1300),
-        hitstun: 6,
+        launch: vec(24, 35),
+        hitstun: 30,
         level: "overhead",
         knockdown: true,
-        cancellable: false,
+        landing_lag: 10,
         status: "attacking",
         finish_reroutes: { standing: "idle", falling: "fall" },
         phases: {
-            swing: { animation: "jump_kick", hit: 1 }
+            swing: { animation: "jump_kick", hit: 5, active: 10 }
         },
-        blockstun: 1
+        blockstun: 5
     },
 
     jump_light_kick: {
         stances: "jumping | falling",
-        steering: false,
+        walk: 0,
         damage: 5,
+        hitstun: 13,
+        blockstun: 9,
         level: "overhead",
-        cancellable: false,
+        landing_lag: 6,
         status: "attacking",
         finish_reroutes: { standing: "idle", falling: "fall" },
         phases: {
-            swing: { animation: "jump_light_kick", hit: 1 }
+            swing: { animation: "jump_light_kick", hit: 5, active: 5 }
         }
     },
 
     jump_punch: {
         stances: "jumping | falling",
-        steering: false,
+        walk: 0,
         damage: 7,
-        knockback: vec(420, 250),
+        hitstun: 18,
+        blockstun: 12,
+        push: 23,
         level: "overhead",
-        cancellable: false,
+        landing_lag: 8,
         status: "attacking",
         finish_reroutes: {
             standing: "idle",
             falling: "fall"
         },
         phases: {
-            swing: { animation: "jump_punch", hit: 2 }
+            swing: { animation: "jump_punch", hit: 10, active: 5 }
         }
     },
 
     jump_light_punch: {
         stances: "jumping | falling",
-        steering: false,
+        walk: 0,
         damage: 4,
+        hitstun: 12,
+        blockstun: 8,
         level: "overhead",
-        cancellable: false,
+        landing_lag: 6,
         status: "attacking",
         finish_reroutes: { standing: "idle", falling: "fall" },
         phases: {
-            swing: { animation: "jump_light_punch", hit: 2 }
+            swing: { animation: "jump_light_punch", hit: 10, active: 5 }
         }
     },
 
     cannon_drill: {
         input: "A + B",
-        steering: false,
+        walk: 0,
         trigger: "pressed",
         priority: 5,
         stances: "standing | crouching",
         damage: 10,
-        knockback: vec(900, 800),
-        hitstun: 12,
+        blockstun: 42,
+        launch: vec(31, 17),
+        hitstun: 60,
         knockdown: true,
         meter_cost: 5,
-        cancellable: false,
         status: "attacking",
         finish_reroutes: {
             standing: "idle",
@@ -289,47 +298,48 @@ let moves = {
         },
         phases: {
             wind_up: { animation: "drill_start" },
-            drill: { animation: "drill_spin", hit: 2, impulse: vec(3400, 700), effect: "roll", effect_frames: 6 },
+            drill: { animation: "drill_spin", hit: 10, active: 5, impulse: vec(1110, 287), effect: "roll", effect_frames: 30 },
             land: { animation: "drill_end" }
         }
     },
 
     cannon_spike: {
         input: "X + Y",
-        steering: false,
+        walk: 0,
         trigger: "pressed",
         priority: 6,
         stances: "standing | crouching",
         damage: 11,
-        knockback: vec(350, 2200),
-        hitstun: 24,
+        blockstun: 84,
+        launch: vec(16, 74),
+        hitstun: 120,
         knockdown: true,
         meter_cost: 5,
-        cancellable: false,
         status: "attacking",
         finish_reroutes: {
             standing: "idle",
             falling: "fall"
         },
         phases: {
-            crouch: { animation: "cannon_spike", frames: 1 },
-            rise: { frames: 7, hit: 2, impulse: vec(900, 3300), effect: "jump" }
+            crouch: { animation: "cannon_spike", frames: 5 },
+            rise: { frames: 35, hit: 10, active: 5, impulse: vec(149, 864), effect: "jump" }
         }
     },
 
     spinning_knuckle: {
         input: "LeftBumper",
-        steering: false,
+        walk: 0,
         trigger: "pressed",
         priority: 36,
         stances: "standing",
         damage: 12,
-        knockback: vec(700, 300),
-        cancellable: false,
+        hitstun: 44,
+        blockstun: 31,
+        push: 38,
         status: "attacking",
         phases: {
-            turn: { animation: "spinning_knuckle", frames: 6, impulse: vec(1400, 0) },
-            strike: { frames: 4, hit: 1, impulse: vec(1200, 0) }
+            turn: { animation: "spinning_knuckle", frames: 30, impulse: vec(652, 0) },
+            strike: { frames: 20, hit: 5, active: 5, impulse: vec(603, 0) }
         }
     }
 }

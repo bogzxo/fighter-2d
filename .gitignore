@@ -517,3 +517,4 @@ Thumbs.db
 # Editors and their settings, which are whoever's machine's own
 .idea/
 .claudiaideconfig
+/Art/tools/migrate_moves.py

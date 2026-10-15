@@ -11,4 +11,8 @@ internal static class FightTicks
 
     public const int INPUT_BUFFER_TICKS = 8;      // How long a press stays valid (in ticks), so pressing slightly too early still counts
     public const int DOUBLE_TAP_TICKS = 18;       // Longest gap (in ticks) between the two presses of a double tap
+
+    // How long (in ticks) after a press started a move the second button of a two button move still turns it into that one.
+    // Nobody presses A and B on the same sixtieth of a second, the A comes first and has started a kick by the time B is down
+    public const int CHORD_TICKS = 4;
 }

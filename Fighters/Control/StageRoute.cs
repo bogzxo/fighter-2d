@@ -18,13 +18,9 @@ internal sealed class StageRoute(PlayerController controller)
     // What of a character there is to get past things, in pixels of its art (it grows with the scale of the character)
     private static readonly Vector2 BODY = new(28.0f, 70.0f);
 
-    // What a jump clears upwards. Measured against the jump move's impulse (3500) and the gravity of the fight scene, the feet get
-    // about 130 up and this is on the careful side of that, a jump that comes up short is worse than a walk around
-    private const float JUMP_HEIGHT = 104.0f;
-
-    // How far a jump carries for every unit of walk speed, in world units. A jump is about half a second in the air and the walk
-    // settles at roughly a quarter of the walk speed against the drag, so this is a bit under those two multiplied
-    private const float JUMP_CARRY = 0.1f;
+    // How much of what a jump of the character could clear we count on, up and along. A jump that comes up short is worse
+    // than a walk around, so the way is found on the careful side of the numbers (see CharacterMovement)
+    private const float JUMP_MARGIN = 0.78f;
 
     // How close to a stop counts as standing on it, and how far above or below it our feet can be and still count
     private const float ARRIVED = 8.0f;
@@ -33,8 +29,8 @@ internal sealed class StageRoute(PlayerController controller)
     // How far along the take off tile we jump from, 0 the moment we step on it and 1 at the very edge
     private const float TAKE_OFF_POINT = 0.2f;
 
-    // How close to the landing spot we let go of the direction in the air. The drag kills what speed is left in a few ticks,
-    // so letting go is how a jump is aimed
+    // How close to the landing spot we let go of the direction in the air. The air friction takes what speed is left off
+    // over a moment, so letting go a little early is how a jump is aimed
     private const float AIR_AIM = 6.0f;
 
     // How little we have to move in a tick to count as stuck, and how many ticks of that it takes to look for another way
@@ -117,8 +113,11 @@ internal sealed class StageRoute(PlayerController controller)
 
         if (Fight.Stage?.Paths is not { } paths) return false;
 
-        float distance = Player.Character.WalkSpeed * pace * JUMP_CARRY;
-        var walker = new TileMapAgent(BODY * Player.Scale, Walks: true, JumpHeight: JUMP_HEIGHT, JumpDistance: distance);
+        // The numbers of the character say how high a jump goes and for how long, drifting all the way at the pace we walk
+        var numbers = Player.Character.Movement;
+        float height = numbers.JumpHeight * JUMP_MARGIN;
+        float distance = numbers.AirSpeed * pace * numbers.AirTime(numbers.JumpHeight) * JUMP_MARGIN;
+        var walker = new TileMapAgent(BODY * Player.Scale, Walks: true, JumpHeight: height, JumpDistance: distance);
 
         return paths.TryFindPath(Player.FeetPosition, to, walker, _path);
     }

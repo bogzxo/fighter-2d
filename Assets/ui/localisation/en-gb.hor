@@ -83,7 +83,7 @@ let strings = {
         about_light_quality: "How finely the pathtraced light is worked out. Low costs about half of High, the light around smaller lamps shimmer a touch more.\n\nMedium looks perfect, high _is_ pixel perfect.",
         about_camera_zoom: "How zoomed in the camera is during a fight. Closer is bigger fighters, further out is more of the arena.",
         about_input_display: "Shows both players inputs as a waterfall down the sides of the HUD.",
-        about_hit_callouts: "Calls out what every attack resolved to. HIT, COUNTER HIT, PUNISH, BLOCKED or WHIFF.",
+        about_hit_callouts: "Calls out what every attack resolved to. HIT, COUNTER HIT, PUNISH, BLOCKED, PARRY or WHIFF.",
         about_frame_data: "Adds the startup of a move to the callouts, and who gets to act first after it. For the lab rats, Jean.",
         about_hitboxes: "Draws all the active collision boxes over all colliders in a scene.",
 
@@ -295,6 +295,7 @@ let strings = {
         counter_hit: "COUNTER HIT",
         punish: "PUNISH",
         blocked: "BLOCKED",
+        parry: "PARRY",
         whiff: "WHIFF",
         combo: " COMBO\t",
         damage: " DMG",

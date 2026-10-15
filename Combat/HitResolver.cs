@@ -65,6 +65,10 @@ internal static class HitResolver
                 Block(attacker, victim, move, direction, predicted);
                 break;
 
+            case HitResult.Parried:
+                Parry(attacker, victim);
+                break;
+
             case HitResult.Whiff:
                 break;
 
@@ -78,7 +82,7 @@ internal static class HitResolver
         HitFeedback.Play(attacker, victim, move, result, direction, impact, lethal);
 
         var state = victim.State;
-        bool landed = result is not (HitResult.Whiff or HitResult.Blocked);
+        bool landed = result is not (HitResult.Whiff or HitResult.Blocked or HitResult.Parried);
         Fight.CombatLog.Report(new AttackReport(attacker.Player, move, result, landed ? state.ComboCount : 0, landed ? state.ComboDamage : 0));
 
         return result;
@@ -91,22 +95,31 @@ internal static class HitResolver
     private static bool Land(PlayerController attacker, PlayerController victim, FightingMove move, HitResult result, float direction, bool predicted)
     {
         bool counter = result == HitResult.CounterHit;
-        int damage = DamageOf(move, counter, victim.State.ComboCount);
+        int damage = DamageOf(attacker, move, counter, victim.State.ComboCount);
+        attacker.RememberLanded(move);
 
         // Going by the health we know of. For a network player that is whatever their last snapshot said
         bool lethal = damage >= victim.Player.Health;
+        int healthAfter = Math.Max(0, victim.Player.Health - damage);
 
-        if (!predicted) victim.Player.Health = (byte)Math.Max(0, victim.Player.Health - damage);
+        if (!predicted) victim.Player.Health = (byte)healthAfter;
 
         attacker.Player.GainMeter((int)MathF.Round(damage * CombatRules.METER_PER_DAMAGE_DEALT));
         victim.Player.GainMeter((int)MathF.Round(damage * CombatRules.METER_PER_DAMAGE_TAKEN));
 
-        Shove(victim.Player, move, direction);
-        Shove(attacker.Player, move, -direction);
-        victim.ApplyHitstun(HitstunFor(victim, move, counter), damage, move.Knockdown);
+        // Already up in the air in hitstun, this is a juggle and they come down a bit heavier every time
+        var state = victim.State;
+        bool juggle = state.IsInHitstun && !state.IsGrounded;
+        float gravityShare = GravityShareOf(victim, move, juggle);
+
+        Send(attacker, victim, move, direction, gravityShare, Player.MAX_HEALTH - healthAfter);
+
+        // Exactly what the move says, a counter hit a few frames more
+        int hitstun = move.FrameData.Hitstun + (counter ? CombatRules.COUNTER_HITSTUN_BONUS : 0);
+        victim.ApplyHitstun(hitstun, damage, move.Knockdown, gravityShare, juggle);
 
         // A knockdown that doesn't lift them off the ground puts them down right here, the others wait for the landing
-        if (move.Knockdown && !move.HasKnockback && victim.State.IsGrounded) victim.KnockDown();
+        if (move.Knockdown && !move.Launches && victim.State.IsGrounded) victim.KnockDown();
 
         return lethal;
     }
@@ -118,7 +131,8 @@ internal static class HitResolver
     /// </summary>
     private static bool LandOnDowned(PlayerController attacker, PlayerController victim, FightingMove move, bool predicted)
     {
-        int damage = DamageOf(move, false, victim.State.ComboCount);
+        int damage = DamageOf(attacker, move, false, victim.State.ComboCount);
+        attacker.RememberLanded(move);
         bool lethal = damage >= victim.Player.Health;
 
         if (!predicted) victim.Player.Health = (byte)Math.Max(0, victim.Player.Health - damage);
@@ -141,8 +155,19 @@ internal static class HitResolver
         attacker.Player.GainMeter(CombatRules.METER_ON_BLOCKED);
         victim.Player.GainMeter(CombatRules.METER_ON_BLOCK);
 
-        victim.Player.PhysicsBody.ApplyImpulse(new Vector2(direction * CombatRules.BLOCK_PUSHBACK, 0.0f));
+        var body = victim.Player.PhysicsBody;
+        victim.QueueLaunch(new Vector2(direction * victim.Player.Character.Movement.SpeedToSlide(CombatRules.BLOCK_PUSH), body.Velocity.Y), influenced: false);
         victim.ApplyBlockstun(move.FrameData.Blockstun);
+    }
+
+    /// <summary>
+    /// Helper method for a hit that was parried, the block went up just as it came in. Nothing happens to whoever parried
+    /// it, no chip, no blockstun and no shove, and the attacker is stuck for a while. A bit more meter than a block.
+    /// </summary>
+    private static void Parry(PlayerController attacker, PlayerController victim)
+    {
+        victim.Player.GainMeter(CombatRules.METER_ON_BLOCK * 2);
+        attacker.ApplyHitstun(CombatRules.PARRY_STUN);
     }
 
     /// <summary>
@@ -176,7 +201,11 @@ internal static class HitResolver
 
         // Blocking only covers the front (a hit from behind travels the same way the victim is facing), and only the
         // level the block is held at: crouched for a low, standing for an overhead, either for a mid
-        if (victim.IsBlocking && direction * victim.Player.Facing < 0 && Covers(state.CurrentStance, move.Level)) return HitResult.Blocked;
+        if (victim.IsBlocking && direction * victim.Player.Facing < 0 && Covers(state.CurrentStance, move.Level))
+        {
+            // A block that only just went up is a parry
+            return victim.Tick - victim.BlockStartedAt <= CombatRules.PARRY_TICKS ? HitResult.Parried : HitResult.Blocked;
+        }
 
         // Caught winding up their own attack, should have blocked
         if (victim.IsInStartup) return HitResult.CounterHit;
@@ -198,50 +227,73 @@ internal static class HitResolver
     };
 
     /// <summary>
-    /// Helper method to work out what a hit takes off. A counter hit hurts more, and every hit of a combo after the first hurts less.
+    /// Helper method to work out what a hit takes off. A counter hit hurts more, every hit of a combo after the first hurts
+    /// less, and so does a move the attacker has landed a lot lately (stale moves).
     /// </summary>
     /// <param name="hitsBefore">How many hits of the combo landed before this one.</param>
-    private static int DamageOf(FightingMove move, bool counter, int hitsBefore)
+    private static int DamageOf(PlayerController attacker, FightingMove move, bool counter, int hitsBefore)
     {
         float scale = MathF.Max(CombatRules.MIN_COMBO_DAMAGE_SCALE, MathF.Pow(CombatRules.COMBO_DAMAGE_SCALE, hitsBefore));
         if (counter) scale *= CombatRules.COUNTER_DAMAGE_SCALE;
+        scale *= attacker.StaleScale(move);
 
         return Math.Max(1, (int)MathF.Round(move.Damage * scale));
     }
 
     /// <summary>
-    /// Helper method to shove the victim away from the attacker. Launchers send them into the air, everything else pushes them back a step.
+    /// Helper method to send whoever got hit where the move says, once the hitlag is over (it is queued, see
+    /// PlayerController.QueueLaunch). A launcher sets off so they get exactly launch.y above where they were hit and are
+    /// launch.x along by the time they're at the top, on the gravity they fall with in hitstun, further with every 10 health
+    /// they have lost (launch_growth) and the direction they hold turns it a little (DI). Anything else slides them push
+    /// along the ground (and the attacker back half of that), or in the air pops them up a little and pushes them that far
+    /// before the air stops them.
     /// </summary>
-    private static void Shove(Player victim, FightingMove move, float direction)
+    /// <param name="healthLost">How much health they have lost this round, this hit's among it.</param>
+    private static void Send(PlayerController attacker, PlayerController victim, FightingMove move, float direction, float gravityShare, int healthLost)
     {
-        Vector2 impulse = move.HasKnockback
-            ? new Vector2(direction * move.Knockback.X, move.Knockback.Y)
-            : new Vector2(direction * CombatRules.HIT_PUSHBACK, 0.0f);
+        var numbers = victim.Player.Character.Movement;
+        var body = victim.Player.PhysicsBody;
 
-        victim.PhysicsBody.ApplyImpulse(impulse);
+        if (move.Launches)
+        {
+            Vector2 launch = move.Launch + move.LaunchGrowth * (healthLost / 10.0f) * (100.0f / numbers.Weight);
+            float gravity = numbers.Gravity * gravityShare;
+            float up = numbers.SpeedToReach(launch.Y, gravityShare);
+            float away = launch.X / (up / gravity);
+            victim.QueueLaunch(new Vector2(direction * away, up), influenced: true);
+            victim.State.ResetFallDuration();
+            return;
+        }
+
+        float push = move.Push >= 0.0f ? move.Push : CombatRules.PUSH;
+
+        if (!victim.State.IsGrounded)
+        {
+            float pop = MathF.Max(body.Velocity.Y, numbers.SpeedToReach(CombatRules.AIR_HIT_POP, gravityShare));
+            victim.QueueLaunch(new Vector2(direction * MathF.Sqrt(2.0f * numbers.AirFriction * push), pop), influenced: true);
+            return;
+        }
+
+        victim.QueueLaunch(new Vector2(direction * numbers.SpeedToSlide(push), body.Velocity.Y), influenced: false);
+
+        // The attacker gives a little ground too, never off a launcher, they want to be under whoever they sent up
+        var attackerBody = attacker.Player.PhysicsBody;
+        if (attacker.State.IsGrounded)
+        {
+            float recoil = attacker.Player.Character.Movement.SpeedToSlide(push * CombatRules.ATTACKER_RECOIL);
+            attacker.QueueLaunch(new Vector2(-direction * recoil, attackerBody.Velocity.Y), influenced: false);
+        }
     }
 
     /// <summary>
-    /// Helper method to work out how long a hit leaves the victim in hitstun, which depends on whether they were already in it.
+    /// Helper method to work out how much of their gravity whoever got hit falls with until their hitstun is over. What
+    /// the move says or what their character does, and a little more for every hit of a juggle.
     /// </summary>
-    private static int HitstunFor(PlayerController victim, FightingMove move, bool counter)
+    private static float GravityShareOf(PlayerController victim, FightingMove move, bool juggle)
     {
-        var state = victim.State;
+        float share = move.HitstunGravity ?? victim.Player.Character.Movement.HitstunGravity;
+        if (!juggle) return share;
 
-        int hitstun = move.FrameData.Hitstun;
-        if (counter) hitstun = (int)MathF.Round(hitstun * CombatRules.COUNTER_HITSTUN_SCALE);
-
-        // First hit, nothing fancy
-        if (!state.IsInHitstun) return hitstun;
-
-        // Juggle. Every hit on somebody who is airborne and in hitstun only adds a little, and less each time
-        if (!state.IsGrounded)
-        {
-            int extension = CombatRules.JUGGLE_EXTENSION - CombatRules.JUGGLE_DECAY * (state.ComboCount - 1);
-            return state.HitstunTicks + Math.Max(CombatRules.MIN_JUGGLE_EXTENSION, extension);
-        }
-
-        // Combo on the ground. A jab in the middle of a long hitstun doesn't cut it short
-        return Math.Max(state.HitstunTicks, hitstun);
+        return MathF.Min(MathF.Max(1.0f, share), share + CombatRules.JUGGLE_GRAVITY_STEP * (victim.State.JuggleHits + 1));
     }
 }

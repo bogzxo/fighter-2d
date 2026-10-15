@@ -10,5 +10,6 @@ public enum MoveCondition
     Hitstun,   // the player is in hitstun
     Jumping,   // the player is on the way up
     Falling,   // the player is on the way down
+    Landing,   // the player is stuck in the landing lag of an aerial they came down in the middle of
     Always
 }

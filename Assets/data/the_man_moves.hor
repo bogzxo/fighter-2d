@@ -9,35 +9,32 @@
 let moves = {
     knocked_out: {
         stances: "standing | crouching | jumping | falling",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         phases: {
-            drop: { animation: "knocked_out", start: 1, hold: 2 },
-            down: { frames: 1, loop_while: "always" }
+            drop: { animation: "knocked_out", start: 1, art_speed: 0.5 },
+            down: { frames: 2, loop_while: "always" }
         }
     },
 
     knocked_down: {
         stances: "standing | crouching | jumping | falling",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         finish_reroutes: {
             standing: "get_up",
             crouching: "get_up"
         },
         phases: {
-            drop: { animation: "knocked_out", start: 1, hold: 2 },
-            floor: { frames: 1, loop_while: "hitstun" }
+            drop: { animation: "knocked_out", start: 1, art_speed: 0.5 },
+            floor: { frames: 2, loop_while: "hitstun" }
         }
     },
 
     get_up: {
         stances: "standing | crouching",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         status: "invulnerable",
         phases: {
-            rise: { animation: "roll", start: 6, hold: 2 }
+            rise: { animation: "roll", start: 6, art_speed: 0.5 }
         }
     }
 }

@@ -2,6 +2,7 @@
 // Load it with UILayout.Load, every component is there under the name it has here.
 #define layout
 
+
 compositor.design({ size: vec(1600, 900), fit: "contain" });
 
 let menu = compositor.stack({
@@ -14,12 +15,13 @@ let menu = compositor.stack({
     intro_delay: 0.2,
     intro_offset: vec(-520, 0),
     background: "panel",
-    stagger: 0.08,
+    stagger: 0.1,
     spacing: 10
 });
 
 let btn_pvp = compositor.button({
     parent: menu,
+    pos: vec(0, 1.1349335),
     size: vec(360, 0),
     intro: "pop",
     intro_delay: 0.35,

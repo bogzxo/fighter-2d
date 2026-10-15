@@ -38,6 +38,10 @@ internal static class Pushboxes
         // Somebody who is down for good is furniture, nobody trips over them
         if (one.Health == 0 || two.Health == 0) return;
 
+        // Somebody sent flying is a juggle, whoever goes up after them passes through rather than shoving them off the
+        // line the launch put them on. Nobody is shoved about in the freeze of a hit either
+        if (IsFlying(one) || IsFlying(two)) return;
+
         // The box of the bulk of each of them, the same one that stands on the map, where it is in the world
         PhysicsRectangle ours = one.Body.Box, theirs = two.Body.Box;
         Vector2 ourMin = first.Position + ours.Position, ourMax = ourMin + ours.Size;
@@ -62,6 +66,8 @@ internal static class Pushboxes
 
         Drag(first, second, dt);
     }
+
+    private static bool IsFlying(Player player) => player.Controller.IsFrozen || player.Controller.State is { IsInHitstun: true, IsGrounded: false };
 
     /// <summary>
     /// Helper method to make shoving somebody along the floor hard work. What the two of them have in common is how fast they go

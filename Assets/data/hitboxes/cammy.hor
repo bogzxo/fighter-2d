@@ -1,23 +1,24 @@
 // The hand drawn hitboxes of cammy, written by the move editor (Hex). A move that isn't here hits with whatever
 // limb its art has sticking out. min and max are a share of the frame from its middle, x the way the character
-// faces and y up, active is how many frames of the move the box stays out for from the hit frame. A move whose box
+// faces and y up, active is how many frames of the fight (60 a second) the box stays out for from the hit frame. A move whose box
 // changes from one active frame to the next has frames, a box for every one of them from the hit frame on.
 
 let hitboxes = {
-    crouch_heavy_punch: { min: vec(0.225, -0.125), max: vec(0.325, 0), active: 1 },
-    crouch_kick: { min: vec(0.1, -0.5062), max: vec(0.2938, -0.4188), active: 1 },
-    crouch_punch: { min: vec(0.1375, -0.3188), max: vec(0.2875, -0.2562), active: 1 },
+    cannon_spike: { min: vec(0.025, -0.1875), max: vec(0.2375, 0.1375), active: 1 },
+    crouch_heavy_punch: { min: vec(0.225, -0.125), max: vec(0.325, 0), active: 5 },
+    crouch_kick: { min: vec(0.1, -0.5062), max: vec(0.2938, -0.4188), active: 5 },
+    crouch_punch: { min: vec(0.1375, -0.3188), max: vec(0.2875, -0.2562), active: 5 },
     jump_kick: { frames: [
         { min: vec(0.075, -0.4188), max: vec(0.2875, -0.3312) },
         { min: vec(0.0312, -0.4188), max: vec(0.2438, -0.3312) }
     ] },
-    jump_light_kick: { min: vec(0.1125, -0.275), max: vec(0.3125, -0.15), active: 1 },
-    jump_light_punch: { min: vec(0.0688, -0.4375), max: vec(0.2312, -0.3125), active: 1 },
-    jump_punch: { min: vec(0.1188, -0.4312), max: vec(0.2875, -0.2375), active: 1 },
-    kick_left: { min: vec(-0.0625, -0.2313), max: vec(0.2, -0.0313), active: 1 },
-    kick_right: { min: vec(-0.0313, -0.3688), max: vec(0.2125, -0.1125), active: 1 },
-    punch_left: { min: vec(0.0875, -0.2), max: vec(0.3125, -0), active: 1 },
-    punch_right: { min: vec(0.15, -0.325), max: vec(0.3438, -0.1063), active: 1 },
-    spinning_knuckle: { min: vec(0.1688, -0.3688), max: vec(0.3375, -0.1063), active: 1 },
-    sweep: { min: vec(-0.025, -0.4438), max: vec(0.2062, -0.3562), active: 1 }
+    jump_light_kick: { min: vec(0.1125, -0.275), max: vec(0.3125, -0.15), active: 5 },
+    jump_light_punch: { min: vec(0.0688, -0.4375), max: vec(0.2312, -0.3125), active: 5 },
+    jump_punch: { min: vec(0.1188, -0.4312), max: vec(0.2875, -0.2375), active: 5 },
+    kick_left: { min: vec(-0.0625, -0.2313), max: vec(0.2, -0.0313), active: 5 },
+    kick_right: { min: vec(-0.0313, -0.3688), max: vec(0.2125, -0.1125), active: 5 },
+    punch_left: { min: vec(0.0875, -0.2), max: vec(0.3125, -0), active: 5 },
+    punch_right: { min: vec(0.15, -0.325), max: vec(0.3438, -0.1063), active: 5 },
+    spinning_knuckle: { min: vec(0.1688, -0.3688), max: vec(0.3375, -0.1063), active: 5 },
+    sweep: { min: vec(-0.025, -0.4438), max: vec(0.2062, -0.3562), active: 5 }
 };

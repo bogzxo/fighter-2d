@@ -45,6 +45,26 @@ GPU goes through the engine, there is no GL in here.
 - `Content/` what counts as content (`GameContent.cs`, the folders and extensions that are sent to whoever joins),
   `PackedFiles.cs` unpacks the engine's files next to a published exe, `HorReader.cs` reads .hor data files.
 
+## How a fight moves
+
+Smash, more or less. Every number in a move file means what it says, a frame is a frame of the fight (60 a second)
+whoever plays the move and whatever rate their art was drawn at, and a distance is world units. `hitstun: 20` is 20
+frames, exactly, `launch: vec(20, 90)` puts them 90 up and 20 along at the top. The key reference is the top of
+`fighting_moves.hor`, Blocky (`blocky_moves.hor`) is the fighter the feel is tuned on.
+
+There is no drag on a fighter any more (there was 16, which is why a jump needed 3500 and walking came out at a quarter
+of `walk_speed`). `PlayerMovement` does the lot out of the character's `movement` in characters.hor, walking and the
+traction, drifting in the air, its own gravity and fall speed, jumps by height (a tap of up is a short hop), fast fall,
+double jumps and the landing lag of aerials. A move says how much of the walk (`walk`, 0 plants you, which is what an
+attack on the ground does) and of the drift (`drift`, aerials keep all of it) it allows. Somebody in hitstun falls on half
+their gravity (`hitstun_gravity`) so they can be juggled, every hit in the air makes them a tenth heavier so it comes
+down by itself, and a launcher that says `hit_cancel: ["jump"]` lets the attacker jump straight after them. A move
+without a cancel frame plays out, `cancellable` went. Hits land the way the competitive games do it (hitlag both ways
+with the launch at the end of it, DI, SDI, teching, parry, stale moves, a normal/special/super cancel by `kind`, whiff
+lag, knockback that grows with the health gone), `docs/competitive-mechanics.md` has where each came from and what's next. `Art/tools/migrate_moves.py` turned the old files into these, keep
+it for a game pack somebody made against the old numbers. Hex's move editor has `CombatRules` and the movement in HIDL,
+change one and change the other.
+
 ## Assets and Art
 
 `Assets/` is exactly what the game reads and it ships by one glob in the csproj, nothing in it is optional.

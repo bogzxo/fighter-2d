@@ -17,5 +17,8 @@ internal enum HitResult
     CounterHit,
 
     // Caught them in the recovery of an attack they already threw
-    Punish
+    Punish,
+
+    // They put their block up just as it came in, and the attacker is the one stuck
+    Parried
 }

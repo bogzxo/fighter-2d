@@ -7,8 +7,20 @@
 //   sprites       its .ase file. A folder with a spritesheet.png and a definition.hor in it (how characters used to come) works as well
 //   moves         the files its moves come from. A move in a later file replaces the one of the same name from an earlier one,
 //                 so a character can share most of its moves with another and only change a few
-//   walk_speed    the speed it walks up to
-//   frame_rate    how many frames of animation a second its moves play at
+//   frame_rate    how many frames a second its art plays at. The moves are timed in frames of the fight (60 a second) whatever this is
+//   movement      how it gets about, every number what it really does, in world units and seconds (a fighter is about 30 wide
+//                 and 73 tall, a tile 16). There is no drag, a speed is the speed.
+//                   walk_speed           how fast it walks
+//                   ground_acceleration  how quickly it gets up to that, units a second every second
+//                   traction             how quickly it stops on the ground, and what eats a shove or a push
+//                   air_speed            how fast it drifts in the air
+//                   air_acceleration     how quickly it gets up to that
+//                   air_friction         how quickly it slows in the air with nothing held
+//                   gravity              how hard it falls, units a second every second
+//                   fall_speed           the fastest it falls, and fast_fall_speed the fastest with down pressed past the top of a jump
+//                   jump_height          how high a jump gets its feet, short_hop_height a tap of up, double_jump_height one in the air
+//                   double_jumps         how many jumps it has in the air
+//                   hitstun_gravity      how much of its gravity it falls with in hitstun, half to be juggled (Rivals of Aether has it the same)
 //   scale         how big the character is against the others, 1 if left out. Everything scales with it, the sprite, the body and the hitboxes
 //   stats         the bars on the fight setup screen, each from 0 to 100. They are only for show,
 //                 how a character really plays is up to its moves and the numbers above
@@ -21,7 +33,22 @@ let characters = {
             shared: "Assets/data/mannequin_moves.hor",
             own: "Assets/data/the_male_moves.hor"
         },
-        walk_speed: 1500,
+        movement: {
+            walk_speed: 320,
+            ground_acceleration: 4000,
+            traction: 2800,
+            air_speed: 255,
+            air_acceleration: 1600,
+            air_friction: 500,
+            gravity: 3000,
+            fall_speed: 620,
+            fast_fall_speed: 950,
+            jump_height: 134,
+            short_hop_height: 60,
+            double_jumps: 1,
+            double_jump_height: 100,
+            hitstun_gravity: 0.5
+        },
         frame_rate: 60,
         stats: {
             speed: 45,
@@ -38,7 +65,22 @@ let characters = {
             shared: "Assets/data/mannequin_moves.hor",
             own: "Assets/data/the_female_moves.hor"
         },
-        walk_speed: 1750,
+        movement: {
+            walk_speed: 375,
+            ground_acceleration: 4000,
+            traction: 2800,
+            air_speed: 300,
+            air_acceleration: 1600,
+            air_friction: 500,
+            gravity: 3000,
+            fall_speed: 620,
+            fast_fall_speed: 950,
+            jump_height: 134,
+            short_hop_height: 60,
+            double_jumps: 1,
+            double_jump_height: 100,
+            hitstun_gravity: 0.5
+        },
         frame_rate: 60,
         scale: 0.95,
         stats: {
@@ -57,7 +99,22 @@ let characters = {
             fighting: "Assets/data/fighting_moves.hor",
             own: "Assets/data/cammy_moves.hor"
         },
-        walk_speed: 2300,
+        movement: {
+            walk_speed: 490,
+            ground_acceleration: 4000,
+            traction: 2800,
+            air_speed: 390,
+            air_acceleration: 1600,
+            air_friction: 500,
+            gravity: 3000,
+            fall_speed: 620,
+            fast_fall_speed: 950,
+            jump_height: 134,
+            short_hop_height: 60,
+            double_jumps: 1,
+            double_jump_height: 100,
+            hitstun_gravity: 0.5
+        },
         frame_rate: 12,
         scale: 1.2,
         stats: {
@@ -77,7 +134,22 @@ let characters = {
         moves: {
             all: "Assets/data/blocky_moves.hor"
         },
-        walk_speed: 2000,
+        movement: {
+            walk_speed: 425,
+            ground_acceleration: 4000,
+            traction: 2800,
+            air_speed: 340,
+            air_acceleration: 1600,
+            air_friction: 500,
+            gravity: 3000,
+            fall_speed: 620,
+            fast_fall_speed: 950,
+            jump_height: 134,
+            short_hop_height: 60,
+            double_jumps: 1,
+            double_jump_height: 100,
+            hitstun_gravity: 0.5
+        },
         frame_rate: 12,
         stats: {
             speed: 55,
@@ -97,7 +169,22 @@ let characters = {
             fighting: "Assets/data/fighting_moves.hor",
             own: "Assets/data/the_man_moves.hor"
         },
-        walk_speed: 2000,
+        movement: {
+            walk_speed: 425,
+            ground_acceleration: 4000,
+            traction: 2800,
+            air_speed: 340,
+            air_acceleration: 1600,
+            air_friction: 500,
+            gravity: 3000,
+            fall_speed: 620,
+            fast_fall_speed: 950,
+            jump_height: 134,
+            short_hop_height: 60,
+            double_jumps: 1,
+            double_jump_height: 100,
+            hitstun_gravity: 0.5
+        },
         frame_rate: 24,
         stats: {
             speed: 50,

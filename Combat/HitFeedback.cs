@@ -35,8 +35,17 @@ internal static class HitFeedback
         if (result == HitResult.Blocked)
         {
             Fight.Effects.Block(impact, direction);
-            Freeze(attacker, victim, CombatRules.BLOCK_HITSTOP);
+            Freeze(attacker, victim, CombatRules.BlockHitstopOf(move));
             Flash(victim, BlockFlash, FLASH_TIME, BLOCK_FLASH_AMOUNT);
+            return;
+        }
+
+        // A parry flashes the one who got parried, they're the one in trouble
+        if (result == HitResult.Parried)
+        {
+            Fight.Effects.Block(impact, direction);
+            Freeze(attacker, victim, CombatRules.BlockHitstopOf(move));
+            Flash(attacker, CounterFlash, COUNTER_FLASH_TIME);
             return;
         }
 
@@ -52,14 +61,14 @@ internal static class HitFeedback
         if (result == HitResult.CounterHit)
         {
             Fight.Effects.Hit(impact, direction, heavy: true);
-            Freeze(attacker, victim, CombatRules.COUNTER_HITSTOP);
+            Freeze(attacker, victim, CombatRules.HitstopOf(move, move.Damage) + CombatRules.COUNTER_HITLAG_BONUS);
             Flash(victim, CounterFlash, COUNTER_FLASH_TIME);
             return;
         }
 
         // A plain hit and a punish feel the same, the punish only gets its name called out
-        Fight.Effects.Hit(impact, direction, heavy: move.HasKnockback);
-        Freeze(attacker, victim, move.HasKnockback ? CombatRules.HEAVY_HITSTOP : CombatRules.HITSTOP);
+        Fight.Effects.Hit(impact, direction, heavy: move.Launches);
+        Freeze(attacker, victim, CombatRules.HitstopOf(move, move.Damage));
         Flash(victim, HitFlash, FLASH_TIME);
     }
 

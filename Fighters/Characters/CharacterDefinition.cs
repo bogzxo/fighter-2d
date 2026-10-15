@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Horizon.HIDL.Runtime;
+using Horizon.Logging;
 
 namespace Fighter2D.Fighters;
 
@@ -12,7 +13,6 @@ namespace Fighter2D.Fighters;
 /// </summary>
 internal class CharacterDefinition
 {
-    private const float DEFAULT_WALK_SPEED = 2000f;
     private const float DEFAULT_FRAME_RATE = 24f;
     private const float DEFAULT_STAT = 0.5f;
 
@@ -25,8 +25,8 @@ internal class CharacterDefinition
     // The move files of the character, relative to the content. A later file can replace moves of an earlier one
     public string[] MoveFiles { get; private init; } = [];
 
-    // The speed the character walks up to
-    public float WalkSpeed { get; private init; } = DEFAULT_WALK_SPEED;
+    // How the character gets about, walking, drifting, jumping and falling, see CharacterMovement
+    public CharacterMovement Movement { get; private init; } = new();
 
     // How many frames of animation a second its moves play at
     public float FrameRate { get; private init; } = DEFAULT_FRAME_RATE;
@@ -82,13 +82,16 @@ internal class CharacterDefinition
         // Stats are out of 100 in the file
         float Stat(string key) => stats.TryGetValue(key, out var stat) && stat is NumberValue number ? Math.Clamp(number.Value / 100f, 0, 1) : DEFAULT_STAT;
 
+        CharacterMovement movement = CharacterMovement.Read(character, out string? warning);
+        if (warning is not null) Log.Warning($"The character '{id}': {warning}");
+
         return new CharacterDefinition
         {
             Id = id,
             PrettyName = HorReader.Text(character, "pretty_name", id),
             Sprites = HorReader.Text(character, "sprites"),
             MoveFiles = [.. moveFiles.Values.OfType<StringValue>().Select(moveFile => moveFile.Value)],
-            WalkSpeed = HorReader.Number(character, "walk_speed", DEFAULT_WALK_SPEED),
+            Movement = movement,
             FrameRate = MathF.Max(1, HorReader.Number(character, "frame_rate", DEFAULT_FRAME_RATE)),
             Scale = Math.Clamp(HorReader.Number(character, "scale", 1f), 0.25f, 4f),
             Speed = Stat("speed"),

@@ -18,10 +18,19 @@ public static class MoveIds
     // What a player is put in after a long fall, if the move list has it
     public const string HEAVY_LAND = "heavy_land";
 
+    // What a player who comes down in the middle of an aerial with landing_lag is stuck in for that long, if the move list
+    // has it (it loops while "landing"). Without one they carry on with the aerial on the ground
+    public const string LANDING = "landing";
+
     // What a player lies in after a knockdown (if the move list has it, hit_stun otherwise), and what they get back up with
     // once the knockdown is over (if the move list has it, idle otherwise). Nothing hits somebody who is down
     public const string KNOCKED_DOWN = "knocked_down";
     public const string GET_UP = "get_up";
+
+    // What a player who teches a knockdown does instead of lying there, on the spot or rolling the way they hold, if the
+    // move list has them (get_up for the first without one, the second needs one to happen at all). See TryTech
+    public const string TECH = "tech";
+    public const string TECH_ROLL = "tech_roll";
 
     // What the winner of a round plays over whoever they knocked out, if the move list has it (see VictoryTaunt),
     // and the move they walk over there with

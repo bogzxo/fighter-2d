@@ -3,7 +3,6 @@
 let moves = {
     idle: {
         stances: "standing",
-        cancellable: true,
         stance: "standing",
         phases: {
             stand: { animation: "idle", loop_while: "always", cancel: 0 }
@@ -15,8 +14,7 @@ let moves = {
         trigger: "held",
         priority: 60,
         stances: "crouching | standing",
-        cancellable: true,
-        steering: false,
+        walk: 0,
         stance: "crouching",
         stance_after: "standing",
         phases: {
@@ -32,8 +30,7 @@ let moves = {
         trigger: "held",
         priority: 61,
         stances: "crouching",
-        cancellable: true,
-        steering: false,
+        walk: 0,
         stance: "crouching",
         stance_after: "standing",
         phases: {
@@ -43,7 +40,6 @@ let moves = {
 
     fall: {
         stances: "falling",
-        cancellable: true,
         stance: "falling",
         stance_after: "standing",
         phases: {
@@ -56,7 +52,6 @@ let moves = {
         trigger: "held",
         priority: 70,
         stances: "standing",
-        cancellable: true,
         repeat: "held",
         finish_reroutes: {
             standing: "idle"
@@ -72,13 +67,37 @@ let moves = {
         trigger: "held",
         priority: 50,
         stances: "standing | crouching",
-        cancellable: true,
         finish_reroutes: {
             falling: "fall"
         },
         phases: {
-            launch: { animation: "jump", impulse: vec(0, 3500), effect: "jump" },
+            squat: { animation: "jump", frames: 3 },
+            launch: { jump: "hop", effect: "jump" },
             rise: { loop_while: "jumping", cancel: 0 }
+        }
+    },
+
+    // Up again in the air, as many times as the character's double_jumps says
+    double_jump: {
+        input: "DPadUp",
+        trigger: "pressed",
+        priority: 49,
+        stances: "jumping | falling",
+        finish_reroutes: {
+            falling: "fall"
+        },
+        phases: {
+            flip: { animation: "jump", jump: "double", effect: "jump" },
+            rise: { loop_while: "jumping", cancel: 0 }
+        }
+    },
+
+    // What an aerial with landing_lag lands in, for as long as it says
+    landing: {
+        stances: "standing | crouching | jumping | falling",
+        walk: 0,
+        phases: {
+            land: { animation: "hard_landing", loop_while: "landing" }
         }
     },
 
@@ -87,12 +106,11 @@ let moves = {
         trigger: "double_tap",
         priority: 10,
         stances: "standing | crouching",
-        cancellable: true,
-        steering: false,
+        walk: 0,
         status: "invulnerable",
         phases: {
-            dive: { animation: "roll", frames: 5, impulse: vec(3500, 0), effect: "roll", effect_frames: 5, cancel: 0 },
-            recover: { frames: 4, cancel: 0 }
+            dive: { animation: "roll", frames: 25, impulse: vec(1030, 0), effect: "roll", effect_frames: 25, cancel: 0 },
+            recover: { frames: 20, cancel: 0 }
         }
     }
 }

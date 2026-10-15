@@ -47,6 +47,11 @@ public class InputBuffer
     }
 
     /// <summary>
+    /// Everything that went down on the most recent tick.
+    /// </summary>
+    public InputFlags PressedNow => _count > 0 ? _ticks[_newest].Pressed : InputFlags.None;
+
+    /// <summary>
     /// Tests if every button of the signature is held down right now.
     /// </summary>
     public bool IsHeld(InputFlags signature) => (Held & signature) == signature;

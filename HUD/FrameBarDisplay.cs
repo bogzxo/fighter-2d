@@ -111,8 +111,7 @@ internal sealed class FrameBarDisplay : IHudDisplay
     private static void ShowAttack(Row row, PlayerController controller, FightingMove move)
     {
         MoveFrameData frames = move.FrameData;
-        float ticksPerFrame = FightTicks.TICK_RATE / MathF.Max(1.0f, controller.Player.Character.FrameRate);
-        int active = Math.Max(1, (int)MathF.Round(Math.Max(1, move.ActiveFrames) * ticksPerFrame));
+        int active = Math.Max(1, move.ActiveFrames);
 
         if (row.Showing != Showing.Attack || !ReferenceEquals(row.Attack, move))
         {
@@ -141,10 +140,10 @@ internal sealed class FrameBarDisplay : IHudDisplay
 
         for (int phase = 0; phase < playback.Phase && phase < move.Phases.Length; phase++)
         {
-            played += move.Phases[phase].LengthFor(controller.GetAnimationLength(move.Phases[phase].Animation));
+            played += move.Phases[phase].LengthFor(controller.GetAnimationLength(move.Phases[phase].Animation), controller.Player.Character.FrameRate);
         }
 
-        row.Bar.Marker = MathF.Min(played * ticksPerFrame, frames.Startup + active + frames.Recovery);
+        row.Bar.Marker = MathF.Min(played, frames.Startup + active + frames.Recovery);
         Wake(row);
     }
 

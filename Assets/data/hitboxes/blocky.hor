@@ -1,9 +1,12 @@
-// The hand drawn hitboxes of blocky, written by the hitbox editor (HitboxEditor/). A move that isn't here hits
-// with whatever limb its art has sticking out. min and max are a share of the frame from its middle, x the way the
-// character faces and y up, active is how many frames of the move the box stays out for from the hit frame. A move whose
-// box changes from one active frame to the next has frames, a box for every one of them from the hit frame on.
+// The hand drawn hitboxes of blocky, written by the move editor (Hex). A move that isn't here hits with whatever
+// limb its art has sticking out. min and max are a share of the frame from its middle, x the way the character
+// faces and y up, active is how many frames of the fight (60 a second) the box stays out for from the hit frame. A move whose box
+// changes from one active frame to the next has frames, a box for every one of them from the hit frame on.
 
 let hitboxes = {
-    spin_kick: { min: vec(0.0625, -0.1719), max: vec(0.3828, -0.0469), active: 1 },
-    uppercut: { min: vec(-0.0078, 0.0078), max: vec(0.1484, 0.2109), active: 1 }
+    dragon_punch: { min: vec(0.0625, -0.2422), max: vec(0.3047, 0.1719), active: 5 },
+    flurry: { min: vec(0.0781, -0.1172), max: vec(0.2656, 0.0547), active: 5 },
+    hook: { min: vec(0.0703, -0.1406), max: vec(0.2734, 0.0547), active: 5 },
+    spin_kick: { min: vec(0.0625, -0.1719), max: vec(0.3828, -0.0469), active: 5 },
+    uppercut: { min: vec(0.0391, -0.0234), max: vec(0.2422, 0.1875), active: 5 }
 };

@@ -2,10 +2,9 @@
 // same set of motions, so one move list does for both. What each of them does differently is in the_male_moves.hor and the_female_moves.hor,
 // and what every key in here means is written down at the top of fighting_moves.hor.
 //
-// They play at 45 frames a second (frame_rate in characters.hor), so a frame in here is a tick and a third of the fight.
-// Their art was rendered at 30. Attacks play it half as fast again (a punch that takes most of a second is no punch, one at
-// twice the speed was a blur), everything that is only stood around in holds every frame for 2 (hold: 2) and plays a little
-// slower than it was made. Want all of them quicker or slower? That one number in characters.hor does it.
+// Every frame in here is a frame of the fight, 60 a second. Their art plays at the frame_rate of characters.hor, attacks at
+// that and everything that is only stood around in at half of it (art_speed: 0.5), a little slower than it was made.
+// The art going quicker or slower doesn't move a hit any more, the frames in here are what they are.
 // The motions are long, most of an attack is somebody winding up and somebody putting their hands back. Nearly every phase says
 // where in the animation it starts and how many frames of it it plays, which cuts both ends off.
 //
@@ -29,10 +28,9 @@ let moves = {
 
     idle: {
         stances: "standing",
-        cancellable: true,
         stance: "standing",
         phases: {
-            stand: { animation: "idle", hold: 2, loop_while: "always", cancel: 0 }
+            stand: { animation: "idle", art_speed: 0.5, loop_while: "always", cancel: 0 }
         }
     },
 
@@ -41,13 +39,12 @@ let moves = {
         trigger: "held",
         priority: 60,
         stances: "crouching | standing",
-        cancellable: true,
-        steering: false,
+        walk: 0,
         stance: "crouching",
         stance_after: "standing",
         phases: {
             duck: { animation: "crouch_down", start: 7, cancel: 0 },
-            stay: { animation: "crouch_idle", hold: 2, loop_while: "held", cancel: 0 },
+            stay: { animation: "crouch_idle", art_speed: 0.5, loop_while: "held", cancel: 0 },
             rise: { animation: "crouch_to_stand", start: 5, frames: 10, cancel: 0 }
         }
     },
@@ -58,12 +55,11 @@ let moves = {
         trigger: "held",
         priority: 61,
         stances: "crouching",
-        cancellable: true,
-        steering: false,
+        walk: 0,
         stance: "crouching",
         stance_after: "standing",
         phases: {
-            stay: { animation: "crouch_idle", hold: 2, loop_while: "held", cancel: 0 },
+            stay: { animation: "crouch_idle", art_speed: 0.5, loop_while: "held", cancel: 0 },
             rise: { animation: "crouch_to_stand", start: 5, frames: 10, cancel: 0 }
         }
     },
@@ -73,8 +69,7 @@ let moves = {
         trigger: "held",
         priority: 55,
         stances: "crouching | standing",
-        cancellable: true,
-        walk_scale: 0.4,
+        walk: 0.4,
         stance: "crouching",
         finish_reroutes: {
             crouching: "crouch_hold",
@@ -82,24 +77,22 @@ let moves = {
         },
         phases: {
             // The motion this was rendered from is somebody backing away crouched, so going forwards is it played the other way round
-            creep: { animation: "crouch_walk_back", hold: 2, loop_while: "held", cancel: 0 }
+            creep: { animation: "crouch_walk_back", art_speed: 0.5, loop_while: "held", cancel: 0 }
         }
     },
 
     fall: {
         stances: "falling",
-        cancellable: true,
         stance: "falling",
         stance_after: "standing",
         phases: {
-            drop: { animation: "falling_idle", start: 1, hold: 2, loop_while: "falling", cancel: 0 }
+            drop: { animation: "falling_idle", start: 1, art_speed: 0.5, loop_while: "falling", cancel: 0 }
         }
     },
 
     heavy_land: {
         stances: "standing | crouching | falling",
-        cancellable: true,
-        steering: false,
+        walk: 0,
         phases: {
             land: { animation: "falling_landing", start: 10, cancel: 12 }
         }
@@ -110,12 +103,11 @@ let moves = {
         trigger: "held",
         priority: 70,
         stances: "standing",
-        cancellable: true,
         finish_reroutes: {
             standing: "idle"
         },
         phases: {
-            stride: { animation: "run", hold: 2, loop_while: "held", cancel: 0 }
+            stride: { animation: "run", art_speed: 0.5, loop_while: "held", cancel: 0 }
         }
     },
 
@@ -124,13 +116,37 @@ let moves = {
         trigger: "held",
         priority: 50,
         stances: "standing | crouching",
-        cancellable: true,
         finish_reroutes: {
             falling: "fall"
         },
         phases: {
-            launch: { animation: "run_jump", start: 3, frames: 6, impulse: vec(0, 3500), effect: "jump" },
-            rise: { animation: "run_jump", start: 9, frames: 6, hold: 2, loop_while: "jumping", cancel: 0 }
+            squat: { animation: "run_jump", start: 3, frames: 3 },
+            launch: { frames: 3, jump: "hop", effect: "jump" },
+            rise: { animation: "run_jump", start: 9, frames: 6, art_speed: 0.5, loop_while: "jumping", cancel: 0 }
+        }
+    },
+
+    // Up again in the air, as many times as the character's double_jumps says
+    double_jump: {
+        input: "DPadUp",
+        trigger: "pressed",
+        priority: 49,
+        stances: "jumping | falling",
+        finish_reroutes: {
+            falling: "fall"
+        },
+        phases: {
+            flip: { animation: "run_jump", start: 6, frames: 6, jump: "double", effect: "jump" },
+            rise: { animation: "run_jump", start: 9, frames: 6, art_speed: 0.5, loop_while: "jumping", cancel: 0 }
+        }
+    },
+
+    // What an aerial with landing_lag lands in, for as long as it says
+    landing: {
+        stances: "standing | crouching | jumping | falling",
+        walk: 0,
+        phases: {
+            land: { animation: "falling_landing", start: 10, loop_while: "landing" }
         }
     },
 
@@ -139,15 +155,14 @@ let moves = {
         trigger: "double_tap",
         priority: 10,
         stances: "standing | crouching",
-        cancellable: true,
-        steering: false,
+        walk: 0,
         status: "invulnerable",
         // The art takes a while to get to the floor and tumbles over the middle of it. One shove at the start would have them
         // across the stage before they had bent their knees, so the push comes in three goes, the biggest while they are upside down
         phases: {
-            dive: { animation: "roll", start: 14, frames: 9, impulse: vec(900, 0), effect: "roll", effect_frames: 9 },
-            tumble: { frames: 10, impulse: vec(1500, 0), effect: "roll", effect_frames: 10 },
-            over: { frames: 10, impulse: vec(1100, 0), effect: "roll", effect_frames: 6 },
+            dive: { animation: "roll", start: 14, frames: 9, impulse: vec(522, 0), effect: "roll", effect_frames: 9 },
+            tumble: { frames: 10, impulse: vec(675, 0), effect: "roll", effect_frames: 10 },
+            over: { frames: 10, impulse: vec(578, 0), effect: "roll", effect_frames: 6 },
             recover: { frames: 9, cancel: 3 }
         }
     },
@@ -159,19 +174,17 @@ let moves = {
         trigger: "held",
         priority: 40,
         stances: "standing | crouching",
-        cancellable: true,
-        steering: false,
+        walk: 0,
         phases: {
             raise: { animation: "pull_heavy", frames: 4, cancel: 0, commit: 3, status: "blocking", status_frame: 2 },
-            hold: { animation: "pull_heavy", start: 4, hold: 2, loop_while: "held", commit: 0 }
+            hold: { animation: "pull_heavy", start: 4, art_speed: 0.5, loop_while: "held", commit: 0 }
         }
     },
 
     // They have no animation for being hit. The start of falling over dead is somebody reeling with their arms out, which does
     hit_stun: {
         stances: "standing | crouching | jumping | falling",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         finish_reroutes: {
             jumping: "fall",
             falling: "fall"
@@ -183,8 +196,7 @@ let moves = {
 
     knocked_out: {
         stances: "standing | crouching | jumping | falling",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         phases: {
             drop: { animation: "death_2" },
             down: { frames: 1, loop_while: "always" }
@@ -193,8 +205,7 @@ let moves = {
 
     knocked_down: {
         stances: "standing | crouching | jumping | falling",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         finish_reroutes: {
             standing: "get_up",
             crouching: "get_up"
@@ -207,11 +218,30 @@ let moves = {
 
     get_up: {
         stances: "standing | crouching",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         status: "invulnerable",
         phases: {
             rise: { animation: "get_up" }
+        }
+    },
+
+    // Getting up out of a knockdown before it happens, block pressed just before landing. On the spot, or rolling the way
+    // held (tech_roll), both with i-frames
+    tech: {
+        stances: "standing | crouching",
+        walk: 0,
+        status: "invulnerable",
+        phases: {
+            rise: { animation: "get_up", frames: 20, stretch: true }
+        }
+    },
+
+    tech_roll: {
+        stances: "standing | crouching",
+        walk: 0,
+        status: "invulnerable",
+        phases: {
+            roll: { animation: "roll", start: 14, frames: 24, stretch: true, impulse: vec(675, 0), effect: "roll", effect_frames: 6 }
         }
     },
 
@@ -219,10 +249,9 @@ let moves = {
     // at them to standing back up straight. The round waits for it to finish
     victory: {
         stances: "standing | crouching",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         phases: {
-            gloat: { animation: "find_item", start: 198, frames: 164, hold: 2 }
+            gloat: { animation: "find_item", start: 198, frames: 164, art_speed: 0.5 }
         }
     },
 
@@ -234,14 +263,15 @@ let moves = {
         priority: 24,
         stances: "standing | crouching",
         damage: 4,
-        cancellable: false,
-        steering: false,
+        hitstun: 12,
+        blockstun: 8,
+        walk: 0,
         status: "attacking",
         stance_reroutes: {
             crouching: "body_blow"
         },
         phases: {
-            swing: { animation: "punch_1", start: 7, frames: 15, hit: 7 }
+            swing: { animation: "punch_1", start: 7, frames: 15, hit: 7, active: 2 }
         }
     },
 
@@ -251,15 +281,16 @@ let moves = {
         priority: 34,
         stances: "standing | crouching",
         damage: 9,
-        knockback: vec(450, 0),
-        cancellable: false,
-        steering: false,
+        hitstun: 24,
+        blockstun: 17,
+        push: 24,
+        walk: 0,
         status: "attacking",
         stance_reroutes: {
             crouching: "uppercut"
         },
         phases: {
-            swing: { animation: "punch_straight", start: 10, frames: 28, hit: 14 }
+            swing: { animation: "punch_straight", start: 10, frames: 28, hit: 14, active: 3 }
         }
     },
 
@@ -269,42 +300,46 @@ let moves = {
         priority: 36,
         stances: "standing",
         damage: 6,
-        cancellable: false,
-        steering: false,
+        hitstun: 18,
+        blockstun: 12,
+        walk: 0,
         status: "attacking",
         phases: {
-            swing: { animation: "punch_2", start: 6, frames: 20, hit: 8 }
+            swing: { animation: "punch_2", start: 6, frames: 20, hit: 8, active: 1 }
         }
     },
 
     body_blow: {
         stances: "crouching",
         damage: 5,
-        cancellable: false,
-        steering: false,
+        hitstun: 17,
+        blockstun: 12,
+        walk: 0,
         status: "attacking",
         stance: "crouching",
         finish_reroutes: {
             crouching: "crouch_hold"
         },
         phases: {
-            swing: { animation: "punch_quad", start: 4, frames: 20, hit: 7 }
+            swing: { animation: "punch_quad", start: 4, frames: 20, hit: 7, active: 1 }
         }
     },
 
     uppercut: {
         stances: "crouching",
         damage: 8,
-        knockback: vec(200, 2000),
-        cancellable: false,
-        steering: false,
+        hitstun: 38,
+        blockstun: 12,
+        launch: vec(9, 65),
+        hit_cancel: ["jump"],
+        walk: 0,
         status: "attacking",
         stance: "crouching",
         finish_reroutes: {
             crouching: "crouch_hold"
         },
         phases: {
-            swing: { animation: "punch_3", start: 7, frames: 19, hit: 9 }
+            swing: { animation: "punch_3", start: 7, frames: 19, hit: 9, active: 1 }
         }
     },
 
@@ -316,8 +351,9 @@ let moves = {
         priority: 20,
         stances: "standing | falling | jumping | crouching",
         damage: 6,
-        cancellable: false,
-        steering: false,
+        hitstun: 23,
+        blockstun: 16,
+        walk: 0,
         status: "attacking",
         stance_reroutes: {
             jumping: "jump_kick",
@@ -325,7 +361,7 @@ let moves = {
             crouching: "low_kick"
         },
         phases: {
-            swing: { animation: "kick_high", start: 4, frames: 26, hit: 10 }
+            swing: { animation: "kick_high", start: 4, frames: 26, hit: 10, active: 1 }
         }
     },
 
@@ -335,9 +371,10 @@ let moves = {
         priority: 30,
         stances: "standing | falling | jumping | crouching",
         damage: 10,
-        knockback: vec(520, 300),
-        cancellable: false,
-        steering: false,
+        hitstun: 31,
+        blockstun: 22,
+        push: 28,
+        walk: 0,
         status: "attacking",
         stance_reroutes: {
             jumping: "jump_kick",
@@ -345,41 +382,43 @@ let moves = {
             crouching: "sweep"
         },
         phases: {
-            swing: { animation: "kick_head", start: 6, frames: 32, hit: 11 }
+            swing: { animation: "kick_head", start: 6, frames: 32, hit: 11, active: 1 }
         }
     },
 
     low_kick: {
         stances: "crouching",
         damage: 5,
+        hitstun: 20,
+        blockstun: 14,
         level: "low",
-        cancellable: false,
-        steering: false,
+        walk: 0,
         status: "attacking",
         stance: "crouching",
         finish_reroutes: {
             crouching: "crouch_hold"
         },
         phases: {
-            swing: { animation: "kick_low", start: 7, frames: 24, hit: 10 }
+            swing: { animation: "kick_low", start: 7, frames: 24, hit: 10, active: 1 }
         }
     },
 
     sweep: {
         stances: "crouching",
         damage: 8,
-        knockback: vec(300, 1100),
+        hitstun: 31,
+        blockstun: 22,
+        launch: vec(11, 28),
         level: "low",
         knockdown: true,
-        cancellable: false,
-        steering: false,
+        walk: 0,
         status: "attacking",
         stance: "crouching",
         finish_reroutes: {
             crouching: "crouch_hold"
         },
         phases: {
-            swing: { animation: "kick_low", start: 3, frames: 34, hit: 14 }
+            swing: { animation: "kick_low", start: 3, frames: 34, hit: 14, active: 1 }
         }
     },
 
@@ -387,18 +426,20 @@ let moves = {
     jump_kick: {
         stances: "jumping | falling",
         damage: 8,
-        knockback: vec(600, 1300),
+        hitstun: 16,
+        blockstun: 11,
+        launch: vec(24, 35),
         level: "overhead",
         knockdown: true,
-        cancellable: false,
-        steering: false,
+        walk: 0,
+        landing_lag: 10,
         status: "attacking",
         finish_reroutes: {
             standing: "idle",
             falling: "fall"
         },
         phases: {
-            swing: { animation: "kick_high", start: 9, frames: 16, hit: 5 }
+            swing: { animation: "kick_high", start: 9, frames: 16, hit: 5, active: 1 }
         }
     },
 
@@ -410,14 +451,15 @@ let moves = {
         priority: 5,
         stances: "standing | crouching",
         damage: 14,
-        knockback: vec(800, 1500),
+        hitstun: 36,
+        blockstun: 25,
+        launch: vec(33, 44),
         knockdown: true,
         meter_cost: 25,
-        cancellable: false,
-        steering: false,
+        walk: 0,
         status: "attacking",
         phases: {
-            wheel: { animation: "kick_spin_high", start: 6, frames: 36, hit: 16, impulse: vec(900, 0) }
+            wheel: { animation: "kick_spin_high", start: 6, frames: 36, hit: 16, active: 1, impulse: vec(522, 0) }
         }
     },
 
@@ -428,15 +470,16 @@ let moves = {
         priority: 6,
         stances: "standing | crouching",
         damage: 6,
-        knockback: vec(280, 0),
+        hitstun: 42,
+        blockstun: 29,
+        push: 15,
         meter_cost: 25,
-        cancellable: false,
-        steering: false,
+        walk: 0,
         status: "attacking",
         phases: {
-            jab: { animation: "punch_1", start: 8, frames: 10, hit: 6, impulse: vec(500, 0) },
-            hook: { animation: "punch_2", start: 8, frames: 10, hit: 6, impulse: vec(500, 0) },
-            straight: { animation: "punch_straight", start: 14, frames: 24, hit: 10, impulse: vec(700, 0) }
+            jab: { animation: "punch_1", start: 8, frames: 10, hit: 6, active: 1, impulse: vec(389, 0) },
+            hook: { animation: "punch_2", start: 8, frames: 10, hit: 6, active: 1, impulse: vec(389, 0) },
+            straight: { animation: "punch_straight", start: 14, frames: 24, hit: 10, active: 1, impulse: vec(461, 0) }
         }
     }
 }

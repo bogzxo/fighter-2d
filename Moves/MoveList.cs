@@ -80,6 +80,10 @@ internal class MoveList
     {
         foreach (FightingMove move in Moves.Values)
         {
+            // The phase with the hit says how long its hitbox is out for, ahead of whatever the hand drawn boxes say
+            MovePhase? hit = Array.Find(move.Phases, phase => phase.HitFrame >= 0);
+            if (hit is { Active: > 0 }) move.ActiveFrames = hit.Active;
+
             move.FrameData = MoveFrameData.Of(move, animationLength, frameRate);
         }
     }
@@ -109,13 +113,17 @@ internal class MoveList
     /// Finds the move the player is asking for, going by priority.
     /// </summary>
     /// <param name="meter">How much meter the player has, a move that costs more than that is passed over for the next match.</param>
+    /// <param name="airJumps">How many jumps the player has left in the air, a double jump is passed over without one.</param>
+    /// <param name="allowed">Which of the moves can start right now, null for all of them (a hit cancel only lets some through).</param>
     /// <param name="signature">The input signature of the move which matched.</param>
-    public bool TryMatchInput(InputBuffer input, Stance stance, int meter, out FightingMove move, out InputFlags signature)
+    public bool TryMatchInput(InputBuffer input, Stance stance, int meter, int airJumps, Func<FightingMove, bool>? allowed, out FightingMove move, out InputFlags signature)
     {
         foreach (FightingMove candidate in _inputMoves)
         {
             // Reject all moves that are not allowed in our current stance, and the ones the player can't afford
             if ((candidate.Stances & stance) == 0 || candidate.MeterCost > meter) continue;
+            if (candidate.IsAirJump && airJumps <= 0) continue;
+            if (allowed is not null && !allowed(candidate)) continue;
 
             if (input.TryMatch(candidate, out signature))
             {

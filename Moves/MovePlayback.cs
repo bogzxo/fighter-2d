@@ -4,9 +4,11 @@ using System.Numerics;
 namespace Fighter2D.Moves;
 
 /// <summary>
-/// Plays a move frame by frame the way its file describes it, one phase after the other.
+/// Plays a move a frame of the fight at a time, the way its file describes it, one phase after the other.
 /// All it remembers is where it is in the move (which phase, which frame), so it can be dropped onto any frame of any move from outside.
 /// That is how a network player gets yanked back in step, see <see cref="Restore"/>.
+/// The art goes along at the character's own frame rate, or spread over a phase that says stretch, so a character
+/// drawn at 12 frames a second and one drawn at 60 play the same move in the same number of frames.
 /// </summary>
 internal sealed class MovePlayback(PlayerController controller)
 {
@@ -28,17 +30,16 @@ internal sealed class MovePlayback(PlayerController controller)
     // How many frames the phase lasts before it is over or loops
     private uint _frames;
 
-    // The frame of the animation the playing started on, how many frames of the move have been played of it since and how
-    // many of those every frame of the animation is held for. Which frame gets drawn next comes out of the three
-    private uint _shownStart, _shownSteps, _hold = 1;
+    // Where in the art we are, in frames of it with the part in between, and how far along it every frame of the fight goes
+    private float _art, _artRate;
 
     // How many frames of the phase have had their go at an effect
     private uint _effectFrame;
 
-    private uint NextShown => _shownStart + _shownSteps / _hold;
-
     // Whether a phase is playing, and whether any phase has spent a frame since the move last started over
     private bool _inPhase, _tookTime;
+
+    private float ArtPerFrame => controller.Player.Character.FrameRate / FightTicks.TICK_RATE;
 
     /// <summary>
     /// Starts a move and plays its first frame right away so there is no delay on the input.
@@ -47,8 +48,9 @@ internal sealed class MovePlayback(PlayerController controller)
     {
         Move = move;
         Phase = -1;
-        Frame = Shown = _frames = _shownStart = _shownSteps = _effectFrame = 0;
-        _hold = 1;
+        Frame = Shown = _frames = _effectFrame = 0;
+        _art = 0.0f;
+        _artRate = ArtPerFrame;
         _inPhase = _tookTime = IsFinished = false;
 
         var state = controller.State;
@@ -84,11 +86,11 @@ internal sealed class MovePlayback(PlayerController controller)
                         continue;
                     }
 
+                    Shown = (uint)_art;
                     PlayFrame(phase, (int)Frame);
 
                     Frame++;
-                    Shown = NextShown;
-                    _shownSteps++;
+                    _art += _artRate;
                     _tookTime = true;
                     return true;
                 }
@@ -160,9 +162,8 @@ internal sealed class MovePlayback(PlayerController controller)
         Shown = shown;
 
         // Carries on from the frame after, at the pace of the phase it was dropped into
-        _hold = _inPhase ? Math.Max(1, move.Phases[Phase].Hold) : 1;
-        _shownStart = shown + 1;
-        _shownSteps = 0;
+        _artRate = _inPhase ? RateOf(move.Phases[Phase], move.Phases[Phase].Start) : ArtPerFrame;
+        _art = shown + _artRate;
     }
 
     private bool ShouldLeave(MovePhase phase) =>
@@ -177,9 +178,12 @@ internal sealed class MovePlayback(PlayerController controller)
             // X is the way we are facing
             player.PhysicsBody.ApplyImpulse(new Vector2(player.Facing * phase.Impulse.X, phase.Impulse.Y));
 
-            // Going up is the start of a new fall
+            // Going up is the start of a new fall, and a shove downwards (a dive kick) is as fast as a fast fall goes
             if (phase.Impulse.Y > 0) controller.State.ResetFallDuration();
+            if (phase.Impulse.Y < 0) controller.State.FastFalling = true;
         }
+
+        if (phase.Jump != JumpKind.None) controller.Movement.Jump(phase.Jump == JumpKind.Hop ? (IsHeld() ? JumpKind.Full : JumpKind.Short) : phase.Jump);
 
         _inPhase = true;
         _effectFrame = 0;
@@ -191,23 +195,31 @@ internal sealed class MovePlayback(PlayerController controller)
         if (phase.Animation is not null)
         {
             controller.PlayAnimation(phase.Animation);
-            _shownStart = phase.Start;
-            _shownSteps = 0;
-            _hold = Math.Max(1, phase.Hold);
+            _art = phase.Start;
+            _artRate = RateOf(phase, phase.Start);
         }
-        else if (phase.Hold > 0 && phase.Hold != _hold)
+        else
         {
-            // The same animation carries on at another pace, from the frame it is on
-            _shownStart = NextShown;
-            _shownSteps = 0;
-            _hold = phase.Hold;
+            // The same animation carries on, at the pace of this phase or what is left of it spread over it
+            _artRate = RateOf(phase, _art);
         }
 
         _frames = LengthOf(phase);
         Frame = 0;
     }
 
-    private uint LengthOf(MovePhase phase) => phase.LengthFor(controller.GetAnimationLength(phase.Animation));
+    /// <summary>
+    /// Helper method for how far along its art a phase goes every frame, from a frame of the art on.
+    /// </summary>
+    private float RateOf(MovePhase phase, float from)
+    {
+        if (!phase.Stretch || phase.Frames == 0) return ArtPerFrame * phase.ArtSpeed;
+
+        float left = MathF.Max(1.0f, controller.GetAnimationLength(controller.ActiveAnimation) - from);
+        return left / phase.Frames;
+    }
+
+    private uint LengthOf(MovePhase phase) => phase.LengthFor(controller.GetAnimationLength(phase.Animation), controller.Player.Character.FrameRate);
 
     /// <summary>
     /// Helper method for everything a phase does on one of its frames.
@@ -220,8 +232,8 @@ internal sealed class MovePlayback(PlayerController controller)
 
         // The hitbox is read off the frame that is being drawn. It comes out on the hit frame and stays out for the
         // move's active frames, or until it lands
-        if (frame == phase.HitFrame) controller.ThrowHit(NextShown);
-        else controller.KeepHitting(NextShown);
+        if (frame == phase.HitFrame) controller.ThrowHit(Shown);
+        else controller.KeepHitting(Shown);
 
         if (phase.Effect is not null && (phase.EffectFrames == 0 || _effectFrame < phase.EffectFrames))
         {
@@ -236,6 +248,7 @@ internal sealed class MovePlayback(PlayerController controller)
         MoveCondition.Hitstun => controller.State.IsInHitstun,
         MoveCondition.Jumping => controller.State.CurrentStance == Stance.Jumping,
         MoveCondition.Falling => controller.State.FallDuration > 0,
+        MoveCondition.Landing => controller.State.LandingLagTicks > 0,
         MoveCondition.Always => true,
         _ => false
     };

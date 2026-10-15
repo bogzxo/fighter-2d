@@ -111,6 +111,7 @@ internal sealed class HitCalloutDisplay : IHudDisplay
         HitResult.CounterHit => (Localisation.Get("callouts.counter_hit"), CounterColor),
         HitResult.Punish => (Localisation.Get("callouts.punish"), PunishColor),
         HitResult.Blocked => (Localisation.Get("callouts.blocked"), BlockedColor),
+        HitResult.Parried => (Localisation.Get("callouts.parry"), CounterColor),
         HitResult.Whiff => (Localisation.Get("callouts.whiff"), WhiffColor),
         _ => (Localisation.Get("callouts.hit"), HitColor)
     };
@@ -123,10 +124,8 @@ internal sealed class HitCalloutDisplay : IHudDisplay
     {
         MoveFrameData frames = report.Move.FrameData;
 
-        // A counter hit stuns for longer, which is the whole point of landing one
-        int hitstun = report.Result == HitResult.CounterHit
-            ? (int)MathF.Round(frames.Hitstun * CombatRules.COUNTER_HITSTUN_SCALE)
-            : frames.Hitstun;
+        // A counter hit stuns for a few frames longer, which is the whole point of landing one
+        int hitstun = report.Result == HitResult.CounterHit ? frames.Hitstun + CombatRules.COUNTER_HITSTUN_BONUS : frames.Hitstun;
 
         // A whiff leaves the attacker stuck in the rest of the move with nobody stunned, which is as minus as it gets.
         // A block stuns for the blockstun, which is less than the hitstun, so most things are minus on block
@@ -134,13 +133,14 @@ internal sealed class HitCalloutDisplay : IHudDisplay
         {
             HitResult.Whiff => -frames.Recovery,
             HitResult.Blocked => frames.OnBlock,
+            HitResult.Parried => -CombatRules.PARRY_STUN,
             _ => hitstun - frames.Recovery
         };
 
         string outcome = report.Result switch
         {
             HitResult.Whiff => Localisation.Get("callouts.on_whiff"),
-            HitResult.Blocked => Localisation.Get("callouts.on_block"),
+            HitResult.Blocked or HitResult.Parried => Localisation.Get("callouts.on_block"),
             _ => Localisation.Get("callouts.on_hit")
         };
 

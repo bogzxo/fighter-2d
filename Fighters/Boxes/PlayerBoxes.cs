@@ -77,7 +77,9 @@ internal sealed class PlayerBoxes
         Box hitbox;
         if (_player.Controller.CurrentMove.CustomHitboxes is { Length: > 0 } custom)
         {
-            hitbox = ToWorld(custom[Math.Clamp(_player.Controller.ActiveFrame, 0, custom.Length - 1)], 0);
+            // The boxes are spread evenly over the active frames, however many of either there are
+            int active = Math.Max(1, _player.Controller.CurrentMove.ActiveFrames);
+            hitbox = ToWorld(custom[Math.Clamp(_player.Controller.ActiveFrame * custom.Length / active, 0, custom.Length - 1)], 0);
         }
         else
         {

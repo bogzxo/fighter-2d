@@ -48,6 +48,32 @@ internal class FighterState(Player player)
 
     public bool IsInHitstun => CurrentStatus == FighterStatus.Hitstun;
 
+    /// <summary>
+    /// How much of their gravity we fall with right now, 1 unless we are in hitstun, where the hit that put us there said
+    /// (or our character did) and every hit in the air after the first adds a bit, so a juggle comes down by itself.
+    /// </summary>
+    public float GravityShare { get; private set; } = 1.0f;
+
+    /// <summary>
+    /// How many hits have landed on us while we were already up in the air in hitstun, the juggle so far.
+    /// </summary>
+    public int JuggleHits { get; private set; }
+
+    /// <summary>
+    /// How many jumps we have left before we touch the ground again, see CharacterMovement.DoubleJumps.
+    /// </summary>
+    public int AirJumpsLeft { get; set; }
+
+    /// <summary>
+    /// Whether we are fast falling, down pressed past the top of a jump. Over when we land or go up again.
+    /// </summary>
+    public bool FastFalling { get; set; }
+
+    /// <summary>
+    /// How many more ticks we are stuck in the landing lag of an aerial we came down in the middle of.
+    /// </summary>
+    public int LandingLagTicks { get; private set; }
+
     public bool IsInBlockstun => BlockstunTicks > 0;
 
     /// <summary>
@@ -73,7 +99,32 @@ internal class FighterState(Player player)
         WasGrounded = IsGrounded;
         CheckGround();
         UpdateStance(dt);
+
+        if (IsGrounded)
+        {
+            AirJumpsLeft = Player.Character.Movement.DoubleJumps;
+            FastFalling = false;
+        }
+        else if (Player.PhysicsBody.Velocity.Y > AIR_SPEED_THRESHOLD) FastFalling = false;
     }
+
+    /// <summary>
+    /// Got up out of a knockdown before it happened, a tech. The hitstun is over and nothing is pending.
+    /// </summary>
+    public void Tech() => ClearHitstun();
+
+    /// <summary>
+    /// Counts one tick off the landing lag.
+    /// </summary>
+    public void TickLandingLag()
+    {
+        if (LandingLagTicks > 0) LandingLagTicks--;
+    }
+
+    /// <summary>
+    /// Sticks us in the landing lag of an aerial for a number of ticks.
+    /// </summary>
+    public void StartLandingLag(int ticks) => LandingLagTicks = Math.Max(0, ticks);
 
     /// <summary>
     /// Counts one tick off the hitstun. The other statuses are managed by the moves that set them.
@@ -98,10 +149,15 @@ internal class FighterState(Player player)
     /// </summary>
     /// <param name="damage">How much the hit that did it took off us, for the combo counter.</param>
     /// <param name="knockdown">Whether the hit puts us on the floor once we come down.</param>
-    public void ApplyHitstun(int ticks, int damage, bool knockdown = false)
+    /// <param name="gravityShare">How much of our gravity we fall with until it is over.</param>
+    /// <param name="juggle">Whether we were already up in the air in hitstun when it landed.</param>
+    public void ApplyHitstun(int ticks, int damage, bool knockdown = false, float gravityShare = 1.0f, bool juggle = false)
     {
         CurrentStatus = FighterStatus.Hitstun;
         HitstunTicks = Math.Max(1, ticks);
+        GravityShare = gravityShare;
+        if (juggle) JuggleHits++;
+        LandingLagTicks = 0;
         BlockstunTicks = 0;
         ComboCount++;
         ComboDamage += damage;
@@ -131,6 +187,7 @@ internal class FighterState(Player player)
         CurrentStatus = FighterStatus.Hitstun;
         HitstunTicks = Math.Max(1, ticks);
         BlockstunTicks = 0;
+        GravityShare = 1.0f;
         IsDowned = true;
         KnockdownPending = false;
     }
@@ -148,6 +205,8 @@ internal class FighterState(Player player)
         ComboCount = hitstun ? comboCount : 0;
         if (!hitstun)
         {
+            GravityShare = 1.0f;
+            JuggleHits = 0;
             ComboDamage = 0;
             IsDowned = false;
             KnockdownPending = false;
@@ -157,6 +216,8 @@ internal class FighterState(Player player)
     private void ClearHitstun()
     {
         CurrentStatus = FighterStatus.Normal;
+        GravityShare = 1.0f;
+        JuggleHits = 0;
         HitstunTicks = 0;
         ComboCount = 0;
         ComboDamage = 0;

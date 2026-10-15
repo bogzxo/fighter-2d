@@ -3,8 +3,7 @@ using System;
 namespace Fighter2D.Moves;
 
 /// <summary>
-/// The frame data of a move, in ticks of the fight (see FightTicks.TICK_RATE) and not in frames of its animation.
-/// Characters animate at different rates so animation frames can't be compared between them, ticks can.
+/// The frame data of a move, in frames of the fight (see FightTicks.TICK_RATE), the same frames the move file is written in.
 /// </summary>
 /// <param name="Startup">How long after the move starts its hit comes out, 0 for a move that doesn't hit.</param>
 /// <param name="Recovery">How long the move goes on for after its last active frame, see <see cref="FightingMove.ActiveFrames"/>.</param>
@@ -29,17 +28,15 @@ public readonly record struct MoveFrameData(int Startup, int Recovery, int Hitst
     /// <param name="frameRate">How many frames of animation a second the character plays at.</param>
     public static MoveFrameData Of(FightingMove move, Func<string?, uint> animationLength, float frameRate)
     {
-        float ticksPerFrame = FightTicks.TICK_RATE / MathF.Max(1.0f, frameRate);
-
         // A phase that loops counts once, nobody knows how often it comes round until it is played
-        uint total = 0;
+        int total = 0;
         int hitFrame = -1;
 
         foreach (MovePhase phase in move.Phases)
         {
-            uint frames = phase.LengthFor(animationLength(phase.Animation));
+            int frames = (int)phase.LengthFor(animationLength(phase.Animation), frameRate);
 
-            if (hitFrame < 0 && phase.HitFrame >= 0) hitFrame = (int)total + phase.HitFrame;
+            if (hitFrame < 0 && phase.HitFrame >= 0) hitFrame = total + phase.HitFrame;
             total += frames;
         }
 
@@ -48,27 +45,23 @@ public readonly record struct MoveFrameData(int Startup, int Recovery, int Hitst
 
         // Startup, then the active frames the hitbox is out for, then recovery, which is everything after the last of them
         int active = Math.Max(1, move.ActiveFrames);
-        float startup = hitFrame * ticksPerFrame;
-        float recovery = Math.Max(1, (int)total - hitFrame - (active - 1)) * ticksPerFrame;
+        int startup = hitFrame;
+        int recovery = Math.Max(1, total - hitFrame - (active - 1));
 
-        // A move that says its hitstun is taken at its word, in frames of its own animation.
-        // One that doesn't gets it from its startup, the longer the windup the more plus it is on hit
-        float hitstun = move.Hitstun >= 0
-            ? move.Hitstun * ticksPerFrame
-            : recovery + MathF.Min(CombatRules.MAX_ADVANTAGE, startup * CombatRules.STARTUP_REWARD - CombatRules.BASE_DISADVANTAGE)
-                + move.Damage * CombatRules.HITSTUN_PER_DAMAGE;
-        hitstun = MathF.Max(CombatRules.MIN_HITSTUN, hitstun);
+        // A move that says its hitstun gets exactly that. One that doesn't gets a guess out of its startup, the longer the
+        // windup the more plus it is on hit, which Hex shows so it can be written in
+        int hitstun = move.Hitstun >= 0
+            ? move.Hitstun
+            : (int)MathF.Round(MathF.Max(CombatRules.GUESSED_MIN_HITSTUN,
+                recovery + MathF.Min(CombatRules.MAX_ADVANTAGE, startup * CombatRules.STARTUP_REWARD - CombatRules.BASE_DISADVANTAGE)
+                + move.Damage * CombatRules.HITSTUN_PER_DAMAGE));
 
         // The same for the blockstun, which is a share of the hitstun unless the move says. Short enough that a blocked move
         // is a punish, long enough that mashing out of a block isn't free
-        float blockstun = move.Blockstun >= 0
-            ? move.Blockstun * ticksPerFrame
-            : hitstun * CombatRules.BLOCKSTUN_SCALE;
+        int blockstun = move.Blockstun >= 0
+            ? move.Blockstun
+            : Math.Max(CombatRules.GUESSED_MIN_BLOCKSTUN, (int)MathF.Round(hitstun * CombatRules.BLOCKSTUN_SCALE));
 
-        return new MoveFrameData(
-            (int)MathF.Round(startup),
-            (int)MathF.Round(recovery),
-            (int)MathF.Round(hitstun),
-            Math.Max(CombatRules.MIN_BLOCKSTUN, (int)MathF.Round(blockstun)));
+        return new MoveFrameData(startup, recovery, hitstun, blockstun);
     }
 }

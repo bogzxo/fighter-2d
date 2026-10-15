@@ -64,6 +64,11 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// </summary>
     public bool HitThrown { get; private set; }
 
+    /// <summary>
+    /// Whether the hit of the move we are in has landed (or been blocked), which opens its hit cancels.
+    /// </summary>
+    public bool HitLanded { get; private set; }
+
     // How many more active frames the hit of the move we are in has to land on, 0 once it landed or ran out
     private int _activeLeft;
 
@@ -98,13 +103,34 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// <summary>
     /// Whether a new move is allowed to start right now. Not in hitstop, not stuck in a block that just ate a hit, and in a move that lets go.
     /// </summary>
-    public bool CanStartMove => IsInControl && _hitstop == 0 && !State.IsInBlockstun && CurrentMove.Cancellable && CanCancel;
+    public bool CanStartMove => IsInControl && _hitstop == 0 && _whiffLeft == 0 && !State.IsInBlockstun && (CanCancel && !IsWhiffing || IsHitCancelOpen);
 
     /// <summary>
-    /// Whether the player can walk right now, and whether they can turn around. Both are up to the move they are in.
-    /// A block can't be turned around, you have to let go of it first.
+    /// Whether we are frozen in the hitlag of a hit, ours or one we took. The body doesn't move, see PlayerMovement.
     /// </summary>
-    public bool CanSteer => IsInControl && CurrentMove.AllowsSteering;
+    public bool IsFrozen => _hitstop > 0;
+
+    /// <summary>
+    /// Whether the move we are in threw its hit and missed, and says that costs (whiff_lag). Its cancel frames don't count.
+    /// </summary>
+    public bool IsWhiffing => _whiffed && CurrentMove.WhiffLag > 0;
+
+    /// <summary>
+    /// The tick our block last went up on, a hit that lands within a few ticks of it is parried.
+    /// </summary>
+    public uint BlockStartedAt { get; private set; }
+
+    /// <summary>
+    /// Whether the hit of the move we are in landed and it lets some moves cancel it from here, see <see cref="FightingMove.HitCancel"/>.
+    /// </summary>
+    public bool IsHitCancelOpen => HitLanded && CurrentMove.HitCancel is not null;
+
+    /// <summary>
+    /// Whether the player can steer right now, and whether they can turn around. How fast they go on the ground and in
+    /// the air is up to the move they are in (walk and drift), see PlayerMovement. A block can't be turned around, you
+    /// have to let go of it first.
+    /// </summary>
+    public bool CanSteer => IsInControl;
     public bool CanTurn => IsInControl && CurrentMove.AllowsTurning && !IsBlocking;
 
     // How much of the next tick of the fight has gone by, in thousandths of one. Counted in whole numbers rather than
@@ -113,17 +139,41 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     private const int TICK_PARTS = 1000;
     private long _tickParts;
 
-    // How far into the frame of animation that is showing we are, the next one is due at 1
-    private float _frameProgress;
-
     // How many more ticks a hit that just landed holds us frozen for
     private int _hitstop;
 
     // Whether the rounds had us held still on the last tick
     private bool _frozen;
 
-    // Whether the move is being stepped right now, a move that starts from in there keeps the rhythm going
-    private bool _stepping;
+    // What the body was doing when a hitlag froze it, and what it does once the hitlag is over instead (a launch, a shove),
+    // with whether the direction we hold then gets a say in it (DI). See ApplyHitstop and ReleaseHitstop
+    private Vector2 _resumeVelocity;
+    private Vector2? _pendingLaunch;
+    private bool _pendingInfluence;
+
+    // Where the directions pressed during a hitlag want to shove us (SDI), and how many ticks until the next one counts
+    private Vector2 _sdi;
+    private int _sdiCooldown;
+
+    // The tick block was last pressed on the way down from a knockdown, 0 for none, see TryTech
+    private uint _techAt;
+
+    // Whether the hit of the move we are in came out and missed, whether the whiff lag has been tacked on, and how much is left
+    private bool _whiffed, _whiffHeld;
+    private int _whiffLeft;
+
+    // Whether we were blocking on the tick before, for spotting the tick the block goes up on
+    private bool _wasBlocking;
+
+    // The moves of ours that landed lately, the newest at _staleNext - 1, for stale move negation (see StaleScale)
+    private readonly string?[] _stale = new string?[CombatRules.STALE_STEPS.Length];
+    private int _staleNext;
+
+    // The press that started the move we are in, when, and where that move is in the list, for turning it into a two
+    // button move if the other button comes down a moment later. None when a held input or the game started the move
+    private InputFlags _chordBy;
+    private uint _chordAt;
+    private int _chordPriority;
 
     // Whether we were knocked out on the last tick, for spotting the tick we go down on
     private bool _wasKnockedOut;
@@ -173,17 +223,21 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
 
         // Update the physics side of the state, crouching, falling and grounded
         State.UpdatePhysicsState(FightTicks.TICK_TIME);
+        WatchBlockAndTech();
 
         if (_hitstop > 0)
         {
-            // Hitstop freezes the move and the hitstun both
+            // Hitstop freezes the move and the hitstun both, and whoever got hit gets to wriggle
             _hitstop--;
+            TakeSdi();
+            if (_hitstop == 0) ReleaseHitstop();
         }
         else
         {
             // Somebody who is knocked out never gets out of hitstun, for everybody else the hitstun move (or lying on the floor)
             // lasts exactly as long as the hitstun does. The blockstun runs down alongside, the block move lets go when it is out
             State.TickBlockstun();
+            State.TickLandingLag();
 
             if (IsKnockedOut) StayDown();
             else if (State.TickHitstun() && CurrentMove.Id is MoveIds.HIT_STUN or MoveIds.KNOCKED_DOWN) FinishMove();
@@ -192,6 +246,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         }
 
         Movement.CheckLanding();
+        if (!frozen) Movement.CheckFastFall();
 
         if (frozen)
         {
@@ -209,6 +264,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         Movement.UpdateFacing();
 
         if (CanStartMove) TryStartMove();
+        else TryChord();
     }
 
     /// <summary>
@@ -244,19 +300,67 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// </summary>
     private void AdvanceMove()
     {
-        _frameProgress += Player.Character.FrameRate / FightTicks.TICK_RATE;
-        _stepping = true;
-
-        while (_frameProgress >= 1.0f)
+        // A move that missed and says it costs holds its last frame a while longer
+        if (_whiffLeft > 0)
         {
-            _frameProgress -= 1.0f;
-
-            // A move that is over hands its frame to whatever comes after it
-            if (!Playback.Step()) FinishMove();
+            if (--_whiffLeft == 0) FinishMove();
+            ShowFrame();
+            return;
         }
 
-        _stepping = false;
+        // A move that is over hands its frame to whatever comes after it
+        if (!Playback.Step())
+        {
+            if (IsWhiffing && !_whiffHeld)
+            {
+                _whiffHeld = true;
+                _whiffLeft = CurrentMove.WhiffLag;
+            }
+            else FinishMove();
+        }
+
         ShowFrame();
+    }
+
+    /// <summary>
+    /// Helper method to note the tick our block goes up on (for parries) and a press of block on the way down from a
+    /// knockdown (for teching).
+    /// </summary>
+    private void WatchBlockAndTech()
+    {
+        bool blocking = IsBlocking;
+        if (blocking && !_wasBlocking) BlockStartedAt = Tick;
+        _wasBlocking = blocking;
+
+        if (!State.IsInHitstun || !State.KnockdownPending || State.IsGrounded) return;
+        if ((Inputs.Buffer.PressedNow & InputFlags.RightBumper) == 0) return;
+
+        // Mashing it gets you nothing, a press that wasn't in time locks it out for a while
+        if (_techAt == 0 || Tick - _techAt > CombatRules.TECH_LOCKOUT) _techAt = Tick;
+    }
+
+    /// <summary>
+    /// Called as we land from a knockdown. If block was pressed in time we get up on the spot, or roll the way we hold,
+    /// instead of lying there.
+    /// </summary>
+    /// <returns>Whether we teched.</returns>
+    public bool TryTech()
+    {
+        if (_techAt == 0 || Tick - _techAt > CombatRules.TECH_WINDOW) return false;
+        _techAt = 0;
+
+        State.Tech();
+
+        float direction = Inputs.Steering;
+        if (direction != 0 && MoveList.Moves.ContainsKey(MoveIds.TECH_ROLL))
+        {
+            // The roll goes the way it is facing, so face the way it was asked for
+            Player.Flipped = direction < 0;
+            ChangeToMove(MoveIds.TECH_ROLL, forceRestart: true);
+        }
+        else ChangeToMove(MoveList.Moves.ContainsKey(MoveIds.TECH) ? MoveIds.TECH : MoveIds.GET_UP, forceRestart: true);
+
+        return true;
     }
 
     /// <summary>
@@ -308,15 +412,15 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         if (!MoveList.TryGetMove(newMoveId, out var newMove)) return;
 
         CanCancel = false;
-        HitThrown = false;
+        HitThrown = HitLanded = false;
+        _chordBy = InputFlags.None;
+        _whiffed = _whiffHeld = false;
+        _whiffLeft = 0;
         _activeLeft = 0;
         ActiveFrame = -1;
 
         // The statuses set by a move end with it, even when it was cancelled (rolling -> kick)
         if (IsInControl) State.CurrentStatus = FighterStatus.Normal;
-
-        // A move that was asked for gets the whole of its first frame, however far along the last one was
-        if (!_stepping) _frameProgress = 0.0f;
 
         // The move begins right now rather than on the next animation frame, so there is no delay on the input.
         Playback.Begin(newMove);
@@ -330,8 +434,47 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     {
         // Find a match as per the order of precedence defined in the movelist. A move we can't pay for is passed over, so A + B
         // without the meter for the special is a plain kick
-        if (!MoveList.TryMatchInput(Inputs.Buffer, State.CurrentStance, Player.Meter, out var move, out var signature)) return;
+        // Past the cancel frame anything goes, before it only what the move cancels into once its hit has landed
+        Func<FightingMove, bool>? allowed = CanCancel && !IsWhiffing ? null : CurrentMove.HitCancelsInto;
+        if (!MoveList.TryMatchInput(Inputs.Buffer, State.CurrentStance, Player.Meter, State.AirJumpsLeft, allowed, out var move, out var signature)) return;
 
+        StartMatched(move, signature);
+    }
+
+    /// <summary>
+    /// Helper method to turn the move a press just started into a two button move that press is half of, when the other
+    /// button comes down a moment later (A, then B, is A + B). Only for the first few ticks and only before anything came out.
+    /// </summary>
+    private void TryChord()
+    {
+        if (_chordBy == InputFlags.None || Tick - _chordAt > FightTicks.CHORD_TICKS || HitThrown || !IsInControl || _hitstop > 0) return;
+
+        if (!MoveList.TryMatchInput(Inputs.Buffer, State.CurrentStance, Player.Meter, State.AirJumpsLeft, IsChordOf, out var move, out var signature)) return;
+
+        StartMatched(move, signature);
+    }
+
+    /// <summary>
+    /// Helper method to test if a move has a two button input the press that started the move we are in is half of, and
+    /// comes before that move in the list.
+    /// </summary>
+    private bool IsChordOf(FightingMove move)
+    {
+        if (move.Priority >= _chordPriority) return false;
+
+        foreach (InputFlags signature in move.InputSignatures)
+        {
+            if (signature != _chordBy && (signature & _chordBy) == _chordBy) return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Helper method to start the move the buttons matched, paying for it and going wherever its stance sends it.
+    /// </summary>
+    private void StartMatched(FightingMove move, InputFlags signature)
+    {
         // A press only ever starts one move, held inputs (run, crouch, block) keep matching for as long as they are held
         if (move.Trigger != InputTrigger.Held)
         {
@@ -353,10 +496,17 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
             move.StanceReroutes.TryGetValue(State.CurrentStance, out string? rerouteId))
         {
             ChangeToMove(rerouteId);
-            return;
+        }
+        else
+        {
+            ChangeToMove(move.Id);
         }
 
-        ChangeToMove(move.Id);
+        // A press that started a move can still grow into a two button move for a moment, see TryChord
+        bool pressed = move.Trigger != InputTrigger.Held;
+        _chordBy = pressed ? signature : InputFlags.None;
+        _chordAt = Tick;
+        _chordPriority = move.Priority;
     }
 
     /* Animation */
@@ -404,7 +554,9 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         HitThrown = true;
         int active = Math.Max(1, CurrentMove.ActiveFrames);
         ActiveFrame = 0;
-        _activeLeft = HitResolver.TryLand(this, ClampFrame(frame), active <= 1) ? 0 : active - 1;
+        HitLanded = HitResolver.TryLand(this, ClampFrame(frame), active <= 1);
+        _activeLeft = HitLanded ? 0 : active - 1;
+        _whiffed = !HitLanded && active <= 1;
     }
 
     /// <summary>
@@ -417,7 +569,12 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         if (_activeLeft <= 0) return;
 
         _activeLeft--;
-        if (HitResolver.TryLand(this, ClampFrame(frame), _activeLeft == 0)) _activeLeft = 0;
+        if (HitResolver.TryLand(this, ClampFrame(frame), _activeLeft == 0))
+        {
+            HitLanded = true;
+            _activeLeft = 0;
+        }
+        else if (_activeLeft == 0) _whiffed = true;
     }
 
     /// <summary>
@@ -430,9 +587,12 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// </summary>
     /// <param name="damage">How much the hit that did it took off us, for the combo counter.</param>
     /// <param name="knockdown">Whether the hit puts us on the floor once we come down from it, see <see cref="KnockDown"/>.</param>
-    public void ApplyHitstun(int ticks, int damage = 0, bool knockdown = false)
+    /// <param name="gravityShare">How much of our gravity we fall with until it is over.</param>
+    /// <param name="juggle">Whether we were already up in the air in hitstun when it landed.</param>
+    public void ApplyHitstun(int ticks, int damage = 0, bool knockdown = false, float gravityShare = 1.0f, bool juggle = false)
     {
-        State.ApplyHitstun(ticks, damage, knockdown);
+        State.ApplyHitstun(ticks, damage, knockdown, gravityShare, juggle);
+        Movement.UpdateGravity();
 
         // Every hit restarts the move, so each hit of a combo is seen to land
         ChangeToMove(MoveIds.HIT_STUN, forceRestart: true);
@@ -456,9 +616,118 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     }
 
     /// <summary>
-    /// Freezes the player on the frame they are on for a number of ticks.
+    /// Freezes the player on the frame they are on, and where they are, for a number of ticks. Whatever they were doing
+    /// carries on once it is over, unless the hit queued a launch or a shove (QueueLaunch), which goes then.
     /// </summary>
-    public void ApplyHitstop(int ticks) => _hitstop = Math.Max(_hitstop, ticks);
+    public void ApplyHitstop(int ticks)
+    {
+        if (ticks <= 0)
+        {
+            if (_hitstop == 0) ReleaseHitstop();
+            return;
+        }
+
+        if (_hitstop == 0) _resumeVelocity = Player.PhysicsBody.Velocity;
+        _hitstop = Math.Max(_hitstop, ticks);
+    }
+
+    /// <summary>
+    /// What the body does once the hitlag is over, a launch or a shove. A launch (influenced) can be turned by the direction
+    /// held as the hitlag ends, which is DI.
+    /// </summary>
+    public void QueueLaunch(Vector2 velocity, bool influenced)
+    {
+        _pendingLaunch = velocity;
+        _pendingInfluence = influenced;
+    }
+
+    /// <summary>
+    /// Helper method for the end of a hitlag, the body goes again, with the launch it was queued if there is one.
+    /// </summary>
+    private void ReleaseHitstop()
+    {
+        Vector2 velocity = _pendingLaunch ?? _resumeVelocity;
+        if (_pendingLaunch is not null && _pendingInfluence && State.IsInHitstun) velocity = Influence(velocity);
+
+        _pendingLaunch = null;
+        _resumeVelocity = Vector2.Zero;
+        _sdi = Vector2.Zero;
+        Player.PhysicsBody.SetVelocity(velocity);
+        Movement.UpdateGravity();
+    }
+
+    /// <summary>
+    /// Helper method to turn a launch by the direction held, up to DI_MAX_ANGLE, most from a direction square on to it.
+    /// </summary>
+    private Vector2 Influence(Vector2 launch)
+    {
+        Vector2 held = HeldDirection();
+        float speed = launch.Length();
+        if (held == Vector2.Zero || speed < 1.0f) return launch;
+
+        Vector2 across = new Vector2(-launch.Y, launch.X) / speed;
+        float turn = Vector2.Dot(Vector2.Normalize(held), across) * CombatRules.DI_MAX_ANGLE;
+        float cos = MathF.Cos(turn), sin = MathF.Sin(turn);
+        return new Vector2(launch.X * cos - launch.Y * sin, launch.X * sin + launch.Y * cos);
+    }
+
+    /// <summary>
+    /// Helper method for SDI, every direction pressed during a hitlag we took shoves us that way, one every few ticks.
+    /// </summary>
+    private void TakeSdi()
+    {
+        if (!State.IsInHitstun) return;
+        if (_sdiCooldown > 0)
+        {
+            _sdiCooldown--;
+            return;
+        }
+
+        InputFlags pressed = Inputs.Buffer.PressedNow;
+        float x = ((pressed & InputFlags.DPadRight) != 0 ? 1 : 0) - ((pressed & InputFlags.DPadLeft) != 0 ? 1 : 0);
+        float y = ((pressed & InputFlags.DPadUp) != 0 ? 1 : 0) - (!State.IsGrounded && (pressed & InputFlags.DPadDown) != 0 ? 1 : 0);
+        if (x == 0 && y == 0) return;
+
+        _sdi += Vector2.Normalize(new Vector2(x, y)) * CombatRules.SDI_DISTANCE;
+        _sdiCooldown = CombatRules.SDI_INTERVAL;
+    }
+
+    /// <summary>
+    /// How far the SDI of this tick shoves us, taken by the physics once.
+    /// </summary>
+    public Vector2 TakeSdiShove()
+    {
+        Vector2 shove = _sdi;
+        _sdi = Vector2.Zero;
+        return shove;
+    }
+
+    private Vector2 HeldDirection() => new(
+        Inputs.Steering,
+        (Inputs.IsHeld(InputFlags.DPadUp) ? 1 : 0) - (Inputs.IsHeld(InputFlags.DPadDown) ? 1 : 0));
+
+    /// <summary>
+    /// How much of its damage a move of ours does, less for every time it landed lately (Smash's stale move negation).
+    /// </summary>
+    public float StaleScale(FightingMove move)
+    {
+        float scale = 1.0f;
+        int length = _stale.Length;
+        for (int place = 0; place < length; place++)
+        {
+            if (_stale[(_staleNext - 1 - place + length) % length] == move.Id) scale -= CombatRules.STALE_STEPS[place];
+        }
+        return scale;
+    }
+
+    /// <summary>
+    /// Remembers a move of ours that landed, for stale move negation.
+    /// </summary>
+    public void RememberLanded(FightingMove move)
+    {
+        _stale[_staleNext] = move.Id;
+        _staleNext = (_staleNext + 1) % _stale.Length;
+    }
 
     /* Rounds and the network */
 
@@ -472,8 +741,12 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         State = new FighterState(Player);
         CanCancel = false;
         _hitstop = 0;
-        _frameProgress = 0.0f;
         _wasKnockedOut = false;
+        _pendingLaunch = null;
+        _sdi = Vector2.Zero;
+        _techAt = 0;
+        Array.Clear(_stale);
+        _staleNext = 0;
         Movement.Reset();
         Taunt.Reset();
 
@@ -489,7 +762,6 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         Playback.Restore(move, phase, frame, animation, shown);
         CanCancel = canCancel;
         HitThrown = hitThrown;
-        _frameProgress = 0.0f;
         ShowFrame();
     }
 }

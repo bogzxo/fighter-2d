@@ -225,8 +225,12 @@ internal class Player() : Sprite(SIZE)
         Body = new PlayerBody(this, world);
 
         PhysicsBody.CollisionGroup = FIGHTER_GROUP;
-        PhysicsBody.LinearDrag = 16.0f;
+
+        // No drag, how a fighter speeds up, slows down and falls is all PlayerMovement, out of the numbers of their character
+        PhysicsBody.LinearDrag = 0.0f;
         PhysicsBody.Mass = 1.0f;
-        PhysicsBody.Restitution = 0.3f;
+
+        // A fighter lands, they don't bounce. The drag used to hide that it was 0.3, coming down at the fall speed it was a hop
+        PhysicsBody.Restitution = 0.0f;
     }
 }
