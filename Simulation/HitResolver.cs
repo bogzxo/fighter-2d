@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace Fighter2D.Combat;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// The one place that decides whether a hit lands and what it does.
@@ -23,7 +23,7 @@ internal static class HitResolver
         // A network player doesn't get to decide anything here, their hits and whiffs arrive as messages (see FightNetwork)
         if (attacker.IsRemote) return true;
 
-        Player player = attacker.Player, opponent = attacker.Opponent;
+        IFighter player = attacker.Player, opponent = attacker.Opponent;
         FightingMove move = attacker.CurrentMove;
 
         if (!TryConnect(player, opponent, frame, out Box hitbox))
@@ -32,18 +32,18 @@ internal static class HitResolver
 
             // Swung at nothing. The other machine can't see that for itself, so it gets told
             player.GainMeter(CombatRules.METER_ON_WHIFF);
-            Fight.CombatLog.Report(new AttackReport(player, move, HitResult.Whiff));
-            if (opponent.Controller.IsRemote) Fight.Network?.SendWhiff(move.Id);
+            attacker.Fight.CombatLog.Report(new AttackReport(player, move, HitResult.Whiff));
+            if (opponent.Controller.IsRemote) attacker.Fight.Network?.SendWhiff(move.Id);
             return false;
         }
 
         // Where the two boxes meet is where it landed
-        hitbox.Overlaps(opponent.Boxes.Hurtbox, out Vector2 impact);
-        float direction = opponent.Transform.Position.X < player.Transform.Position.X ? -1 : 1;
+        hitbox.Overlaps(opponent.Body.Hurtbox, out Vector2 impact);
+        float direction = opponent.Body.Position.X < player.Body.Position.X ? -1 : 1;
 
         // Online the machine of whoever got hit has the last word. Until it answers we go by what it looked like from here
         bool predicted = opponent.Controller.IsRemote;
-        if (predicted) Fight.Network?.SendHit(move.Id, direction, impact);
+        if (predicted) attacker.Fight.Network?.SendHit(move.Id, direction, impact);
 
         Resolve(attacker, opponent.Controller, move, direction, impact, predicted);
         return true;
@@ -83,7 +83,7 @@ internal static class HitResolver
 
         var state = victim.State;
         bool landed = result is not (HitResult.Whiff or HitResult.Blocked or HitResult.Parried);
-        Fight.CombatLog.Report(new AttackReport(attacker.Player, move, result, landed ? state.ComboCount : 0, landed ? state.ComboDamage : 0));
+        attacker.Fight.CombatLog.Report(new AttackReport(attacker.Player, move, result, landed ? state.ComboCount : 0, landed ? state.ComboDamage : 0));
 
         return result;
     }
@@ -112,7 +112,7 @@ internal static class HitResolver
         bool juggle = state.IsInHitstun && !state.IsGrounded;
         float gravityShare = GravityShareOf(victim, move, juggle);
 
-        Send(attacker, victim, move, direction, gravityShare, Player.MAX_HEALTH - healthAfter);
+        Send(attacker, victim, move, direction, gravityShare, CombatRules.MAX_HEALTH - healthAfter);
 
         // Exactly what the move says, a counter hit a few frames more
         int hitstun = move.FrameData.Hitstun + (counter ? CombatRules.COUNTER_HITSTUN_BONUS : 0);
@@ -155,7 +155,7 @@ internal static class HitResolver
         attacker.Player.GainMeter(CombatRules.METER_ON_BLOCKED);
         victim.Player.GainMeter(CombatRules.METER_ON_BLOCK);
 
-        var body = victim.Player.PhysicsBody;
+        IFighterBody body = victim.Body;
         victim.QueueLaunch(new Vector2(direction * victim.Player.Character.Movement.SpeedToSlide(CombatRules.BLOCK_PUSH), body.Velocity.Y), influenced: false);
         victim.ApplyBlockstun(move.FrameData.Blockstun);
     }
@@ -173,15 +173,15 @@ internal static class HitResolver
     /// <summary>
     /// Helper method to test if the attacker's hitbox touches the opponent's hurtbox on this frame.
     /// </summary>
-    private static bool TryConnect(Player attacker, Player opponent, uint frame, out Box hitbox)
+    private static bool TryConnect(IFighter attacker, IFighter opponent, uint frame, out Box hitbox)
     {
         hitbox = default;
 
         // You can't hit somebody with your back turned to them
-        if (!attacker.IsFacing(opponent)) return false;
+        if (!attacker.Body.IsFacing(opponent.Body)) return false;
 
-        hitbox = attacker.Boxes.Hitbox(frame);
-        return attacker.Boxes.HitboxFixture.TestIntersection(opponent.Boxes.HurtboxFixture, attacker.Transform.Position, opponent.Transform.Position);
+        hitbox = attacker.Body.Hitbox(frame);
+        return attacker.Body.HitboxTouches(frame, opponent.Body);
     }
 
     /// <summary>
@@ -201,7 +201,7 @@ internal static class HitResolver
 
         // Blocking only covers the front (a hit from behind travels the same way the victim is facing), and only the
         // level the block is held at: crouched for a low, standing for an overhead, either for a mid
-        if (victim.IsBlocking && direction * victim.Player.Facing < 0 && Covers(state.CurrentStance, move.Level))
+        if (victim.IsBlocking && direction * victim.Body.Facing < 0 && Covers(state.CurrentStance, move.Level))
         {
             // A block that only just went up is a parry
             return victim.Tick - victim.BlockStartedAt <= CombatRules.PARRY_TICKS ? HitResult.Parried : HitResult.Blocked;
@@ -252,7 +252,7 @@ internal static class HitResolver
     private static void Send(PlayerController attacker, PlayerController victim, FightingMove move, float direction, float gravityShare, int healthLost)
     {
         var numbers = victim.Player.Character.Movement;
-        var body = victim.Player.PhysicsBody;
+        IFighterBody body = victim.Body;
 
         if (move.Launches)
         {
@@ -277,7 +277,7 @@ internal static class HitResolver
         victim.QueueLaunch(new Vector2(direction * numbers.SpeedToSlide(push), body.Velocity.Y), influenced: false);
 
         // The attacker gives a little ground too, never off a launcher, they want to be under whoever they sent up
-        var attackerBody = attacker.Player.PhysicsBody;
+        IFighterBody attackerBody = attacker.Body;
         if (attacker.State.IsGrounded)
         {
             float recoil = attacker.Player.Character.Movement.SpeedToSlide(push * CombatRules.ATTACKER_RECOIL);

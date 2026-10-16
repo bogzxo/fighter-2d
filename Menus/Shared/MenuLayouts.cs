@@ -5,7 +5,7 @@ using Horizon.Core;
 using Horizon.Engine;
 using Horizon.UI;
 
-namespace Fighter2D.Scenes.Menus;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// Where the menus get their UI from. Every one of them is a layout file in Assets/ui/layouts, drawn up with Horizon.Hex.
@@ -20,6 +20,7 @@ internal static class MenuLayouts
     public const string OPTIONS = "options.hor";
     public const string FIGHT_HUD = "fight_overlay.hor";
     public const string PAUSE_MENU = "pause_menu.hor";
+    public const string TRAINING_DRAWER = "training_drawer.hor";
     public const string CONTENT_TRANSFER = "content_transfer.hor";
 
     private const string DIRECTORY = "Assets/ui/layouts";
@@ -35,7 +36,18 @@ internal static class MenuLayouts
     {
         var compositor = scene.AddComponent(CreateCompositor(camera));
 
-        return CreateModule(compositor).LoadLayout(Path.Combine(DIRECTORY, file));
+        return LoadTimed(CreateModule(compositor), file);
+    }
+
+    /// <summary>
+    /// Helper method to load a layout and say how long it took, a layout is a program and a slow one is a hitch.
+    /// </summary>
+    private static UILayout LoadTimed(UIModule module, string file)
+    {
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
+        UILayout layout = module.LoadLayout(Path.Combine(DIRECTORY, file));
+        Horizon.Logging.Log.Info($"[Layouts] Loaded '{file}' in {System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds:0} ms.");
+        return layout;
     }
 
     /// <summary>
@@ -46,7 +58,7 @@ internal static class MenuLayouts
     {
         var compositor = Configure(UICompositor.ForScreen());
 
-        return (CreateModule(compositor).LoadLayout(Path.Combine(DIRECTORY, file)), compositor);
+        return (LoadTimed(CreateModule(compositor), file), compositor);
     }
 
     /// <summary>

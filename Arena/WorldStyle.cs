@@ -1,7 +1,7 @@
 using Horizon.Rendering;
 using Horizon.Rendering.Tiling;
 
-namespace Fighter2D.App;
+namespace Fighter2D.Arena;
 
 /// <summary>
 /// How the world of a fight is shaded, every number of it that is a matter of taste, in one place so the look can
@@ -9,7 +9,7 @@ namespace Fighter2D.App;
 /// applied to is at the bottom. What a player gets to choose (the CRT, the fancy lighting) is in
 /// <see cref="GameOptions"/>, what a map says about itself (its ambient light, its lamps) is in the map.
 /// </summary>
-internal static class DeferedStyle
+internal static class WorldStyle
 {
     /* The lights */
 

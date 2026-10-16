@@ -1,7 +1,7 @@
 
 using Horizon.Input;
 
-namespace Fighter2D.Fighters.Inputs;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// Where the buttons of a <see cref="PlayerController"/> come from (a gamepad, the dummy, another machine etc.)

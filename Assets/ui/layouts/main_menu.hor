@@ -95,7 +95,7 @@ let description = compositor.label({
 let hint = compositor.label({
     parent: menu,
     size: vec(0, 30),
-    text: "@main_menu.hint",
+    text: "",
     text_scale: 0.25,
     color: vec(0.58, 0.6, 0.66, 1)
 });

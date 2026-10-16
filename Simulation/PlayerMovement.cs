@@ -1,9 +1,7 @@
 using System;
 using System.Numerics;
 
-using Horizon.Physics;
-
-namespace Fighter2D.Fighters.Control;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// Everything about where a player is and which way they face. That is turning around, walking, drifting in the air,
@@ -30,7 +28,8 @@ internal sealed class PlayerMovement(PlayerController controller)
     // How hard the world pulls, which the gravity of a character is a share of
     private float _worldGravity;
 
-    private Player Player => controller.Player;
+    private IFighter Player => controller.Player;
+    private IFighterBody Body => controller.Body;
     private CharacterMovement Numbers => Player.Character.Movement;
 
     /// <summary>
@@ -41,7 +40,7 @@ internal sealed class PlayerMovement(PlayerController controller)
         if (!controller.CanTurn) return;
 
         float direction = controller.Inputs.Steering;
-        if (direction != 0) Player.Flipped = direction < 0;
+        if (direction != 0) Body.Flipped = direction < 0;
     }
 
     /// <summary>
@@ -50,13 +49,14 @@ internal sealed class PlayerMovement(PlayerController controller)
     /// </summary>
     public void UpdatePhysics(float dt)
     {
-        if (Player?.PhysicsBody is not { } body) return;
+        if (Player is null) return;
+        IFighterBody body = Body;
 
         if (_positionError != Vector2.Zero)
         {
             // Eased over rather than teleported, a player that jumps about looks worse than one that is a little off
             Vector2 step = _positionError * MathF.Min(1.0f, dt * CORRECTION_EASE);
-            body.Position += step;
+            body.Nudge(step);
             _positionError -= step;
         }
 
@@ -83,9 +83,10 @@ internal sealed class PlayerMovement(PlayerController controller)
     /// </summary>
     public void UpdateGravity()
     {
-        if (Player?.PhysicsBody is not { } body || controller.State is not { } state) return;
+        if (Player is null || controller.State is not { } state) return;
+        IFighterBody body = Body;
 
-        if (_worldGravity <= 0.0f) _worldGravity = Player.Parent?.GetComponent<PhysicsWorld>()?.Gravity.Length() ?? 0.0f;
+        if (_worldGravity <= 0.0f) _worldGravity = body.WorldGravity;
         if (_worldGravity <= 0.0f) return;
 
         body.GravityScale = Numbers.Gravity * state.GravityShare / _worldGravity;
@@ -97,7 +98,7 @@ internal sealed class PlayerMovement(PlayerController controller)
     /// <summary>
     /// Helper method to work out the speed the player is heading for along the ground or the air, and how quickly.
     /// </summary>
-    private float Steer(PhysicsBodyComponent2D body, FighterState state, out float rate)
+    private float Steer(IFighterBody body, FighterState state, out float rate)
     {
         var numbers = Numbers;
         var move = controller.CurrentMove;
@@ -167,7 +168,7 @@ internal sealed class PlayerMovement(PlayerController controller)
             _ => numbers.JumpHeight
         };
 
-        var body = Player.PhysicsBody;
+        IFighterBody body = Body;
         body.SetVelocity(new Vector2(body.Velocity.X, numbers.SpeedToReach(height)));
 
         var state = controller.State;
@@ -188,7 +189,7 @@ internal sealed class PlayerMovement(PlayerController controller)
         var state = controller.State;
         if (state.IsGrounded || state.FastFalling || !controller.IsInControl) return;
 
-        var body = Player.PhysicsBody;
+        IFighterBody body = Body;
         if (body.Velocity.Y > 0.0f || !controller.Inputs.Buffer.WasPressed(InputFlags.DPadDown)) return;
 
         state.FastFalling = true;
@@ -207,7 +208,7 @@ internal sealed class PlayerMovement(PlayerController controller)
         // Even a short drop throws up a bit of dust
         if (state.FallDuration > DUST_FALL_TIME)
         {
-            Fight.Effects.Land(Player.FeetPosition, state.FallDuration);
+            controller.Fight.Effects.Land(Body.FeetPosition, state.FallDuration);
         }
 
         // Launched by something that knocks down, this is where they hit the floor and stay there for a bit. Hitting the deck
@@ -216,12 +217,12 @@ internal sealed class PlayerMovement(PlayerController controller)
         {
             if (controller.TryTech())
             {
-                Fight.Effects.Land(Player.FeetPosition, state.FallDuration);
+                controller.Fight.Effects.Land(Body.FeetPosition, state.FallDuration);
                 state.ResetFallDuration();
                 return;
             }
 
-            Fight.Effects.Land(Player.FeetPosition, MathF.Max(state.FallDuration, HEAVY_FALL_TIME));
+            controller.Fight.Effects.Land(Body.FeetPosition, MathF.Max(state.FallDuration, HEAVY_FALL_TIME));
             controller.KnockDown();
             state.ResetFallDuration();
             return;
@@ -252,18 +253,15 @@ internal sealed class PlayerMovement(PlayerController controller)
     /// </summary>
     public void CorrectPosition(Vector2 position, Vector2 velocity)
     {
-        var body = Player.PhysicsBody;
+        IFighterBody body = Body;
         Vector2 error = position - body.Position;
 
         if (error.LengthSquared() > CORRECTION_SNAP_DISTANCE * CORRECTION_SNAP_DISTANCE)
         {
             // Too far off to walk it back (lag spike, new round)
-            body.Position = position;
-            body.SetVelocity(velocity);
-            _positionError = Vector2.Zero;
-
             // ...and not shown getting there either
-            Player.Transform.Snap();
+            body.Teleport(position, velocity);
+            _positionError = Vector2.Zero;
             return;
         }
 

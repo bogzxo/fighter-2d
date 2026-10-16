@@ -8,7 +8,7 @@ using Horizon.HIDL;
 using Horizon.HIDL.Library;
 using Horizon.HIDL.Runtime;
 
-namespace Fighter2D.Fighters.Inputs.Dummy;
+namespace Fighter2D.Simulation.Dummy;
 
 /// <summary>
 /// A way for the dummy to behave that is written in HIDL rather than C#, out of Assets/data/dummy_behaviours.hor. Every function

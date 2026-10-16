@@ -16,7 +16,7 @@ internal static class PlayerReconciler
     /// </summary>
     public static void Apply(PlayerController controller, in PlayerSnapshot snapshot)
     {
-        controller.Player.Flipped = snapshot.Flipped;
+        controller.Body.Flipped = snapshot.Flipped;
         controller.Player.Meter = snapshot.Meter;
         controller.State.Restore(snapshot.Status, snapshot.HitstunTicks, snapshot.ComboCount, snapshot.BlockstunTicks);
 

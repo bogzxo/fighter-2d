@@ -1,4 +1,4 @@
-namespace Fighter2D.Fighters.Inputs.Dummy;
+namespace Fighter2D.Simulation.Dummy;
 
 /// <summary>
 /// Every number that decides how good the dummy is at the game. Times are in seconds, distances in world units and chances from 0 to 1.

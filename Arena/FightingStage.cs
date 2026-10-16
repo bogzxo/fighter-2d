@@ -9,13 +9,13 @@ using Horizon.Rendering;
 using Horizon.Rendering.Lighting;
 using Horizon.Rendering.Tiling;
 
-namespace Fighter2D.Map;
+namespace Fighter2D.Arena;
 
 /// <summary>
 /// The stage a fight happens on. Loads the tile map and turns it into everything a fight needs from it.
 /// That is the collision, the shadows, where the players spawn, and the emitters and lights somebody placed in Tiled.
 /// </summary>
-internal sealed class FightingStage : IDisposable
+internal sealed class FightingStage : IDisposable, IArena
 {
     // How far apart the players start on a map that only says where the first one does
     private const float SPAWN_GAP = 256;
@@ -50,7 +50,7 @@ internal sealed class FightingStage : IDisposable
     /// Finds the way from one spot of the stage to another around its solid tiles, for anybody who walks somewhere without
     /// a player steering them (see StageRoute). Null for a stage nobody stands on.
     /// </summary>
-    public TileMapPathfinder? Paths { get; }
+    public TileMapPathfinder? Paths { get; private set; }
 
     private readonly OcclusionMap2D _occlusion;
 
@@ -70,21 +70,36 @@ internal sealed class FightingStage : IDisposable
     private sealed record AnimatedLight(Light2D Light, float Rest, float Sway, float SwayRate, float Spin, float Phase);
     private readonly Vector2?[] _spawns = new Vector2?[2];
 
+    /// <summary>
+    /// Loads a stage and gets it ready to be put in a renderer, everything that is read and worked out on the CPU (the map
+    /// and its objects, what blocks light, the corners of the geometry, the layers it is drawn from, the paths if anybody
+    /// is going to walk it). Any thread, which is the point, a map that is loaded on a worker swaps in without a hitch
+    /// (see MapPreview). Then <see cref="Attach"/> on the render thread. Throws for a map that can't be read.
+    /// </summary>
+    /// <param name="walked">Whether anybody stands on it, which wants the paths across it (the fight does, the preview doesn't).</param>
+    public static FightingStage Load(MapDefinition definition, bool walked) => new(definition, walked);
+
     /// <param name="world">The physics world the collision of the map goes into, null for a stage nobody is going to stand on (the map preview).</param>
-    public FightingStage(MapDefinition definition, DeferredRenderer2D renderer, PhysicsWorld? world)
+    public FightingStage(MapDefinition definition, DeferredRenderer2D renderer, PhysicsWorld? world) : this(definition, walked: world is not null)
+    {
+        Attach(renderer, world);
+    }
+
+    private FightingStage(MapDefinition definition, bool walked)
     {
         string path = GameContent.PathOf(GameContent.MAPS_DIRECTORY + "/" + definition.FileName);
 
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
         if (!TileMap.TryLoad(path, out var map) || map is null)
         {
             throw new Exception("Failed to load map file... fucked up Tiled XML or missing file.");
         }
+        double readMs = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
 
         Map = map;
 
         // The middle of the bottom left tile sits at zero, spawn_pos of maps.hor counts on that
         Map.Origin = -Map.TileSize / 2;
-        renderer.AddEntity(Map);
 
         // Everything that was placed in the map rather than painted, sorted by what it is.
         // The templates in Assets/maps/objects put these together in Tiled, an object with the same properties and no template works too
@@ -93,13 +108,25 @@ internal sealed class FightingStage : IDisposable
             .WithProperty("emitter_type", ReadEmitter)
             .WithProperty("light_radius", ReadLight));
 
-        if (world is not null)
-        {
-            BuildColliders(world);
-            Paths = Map.CreatePathfinder();
-        }
-        renderer.Occlusion = _occlusion = BuildOcclusion();
+        if (walked) Paths = Map.CreatePathfinder();
+
+        // How much its corners darken, out of what was painted and out of how it is shaped, see WorldStyle. Before
+        // the map is prepared, the geometry occlusion is worked out with what this says
+        WorldStyle.Apply(Map);
+
+        long occluding = System.Diagnostics.Stopwatch.GetTimestamp();
+        _occlusion = BuildOcclusion();
+        // Its distance field as well, the GPU makes it by brute force and that was a frame of a fifth of a second
+        long field = System.Diagnostics.Stopwatch.GetTimestamp();
+        _occlusion.Prepare();
+        double fieldMs = System.Diagnostics.Stopwatch.GetElapsedTime(field).TotalMilliseconds;
         MeasureBounds();
+
+        // Whatever the map would work out on the frame it is first drawn, worked out here. The same file's work is kept,
+        // so a fight on the map the preview showed has it already
+        Map.Prepare();
+        Log.Info($"[Stage] Loaded '{definition.FileName}' in {System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds:0} ms, " +
+            $"{readMs:0} of them reading the map and {System.Diagnostics.Stopwatch.GetElapsedTime(occluding).TotalMilliseconds:0} on its occlusion and the rest, {fieldMs:0} of those on its distance field.");
 
         // The map has the last word on where the players start, maps.hor is for the maps that don't say
         LeftSpawn = _spawns[0] ?? new Vector2(
@@ -109,9 +136,19 @@ internal sealed class FightingStage : IDisposable
 
         // The parallax layers line up the way they were drawn when the camera is between the two spawns
         Map.ParallaxOrigin = (LeftSpawn + RightSpawn) / 2.0f;
+    }
 
-        // How much its corners darken, out of what was painted and out of how it is shaped, see DeferedStyle
-        DeferedStyle.Apply(Map);
+    /// <summary>
+    /// Puts a loaded stage in a renderer, the map drawn there, what blocks light handed to the lighting, and the
+    /// collision in the world if there is one. Render thread (or the game standing still), quick, the work was done in
+    /// <see cref="Load"/>.
+    /// </summary>
+    /// <param name="world">The physics world the collision of the map goes into, null for a stage nobody is going to stand on.</param>
+    public void Attach(DeferredRenderer2D renderer, PhysicsWorld? world)
+    {
+        renderer.AddEntity(Map);
+        if (world is not null) BuildColliders(world);
+        renderer.Occlusion = _occlusion;
     }
 
     /// <summary>
@@ -282,6 +319,32 @@ internal sealed class FightingStage : IDisposable
         }
 
         _lights.Clear();
+    }
+
+    /* The stage as the simulation walks it, see IArena */
+
+    public bool HasPaths => Paths is not null;
+    public float TileWidth => Map.TileSize.X;
+    public float OriginX => Map.Origin.X;
+
+    // The engine's steps, turned into the simulation's every time a way is found
+    private readonly List<TileMapPathStep> _found = [];
+
+    public bool TryFindPath(Vector2 from, Vector2 to, Vector2 bodySize, float jumpHeight, float jumpDistance, List<RouteStep> steps)
+    {
+        if (Paths is null) return false;
+
+        var walker = new TileMapAgent(bodySize, Walks: true, JumpHeight: jumpHeight, JumpDistance: jumpDistance);
+        _found.Clear();
+        if (!Paths.TryFindPath(from, to, walker, _found)) return false;
+
+        steps.Clear();
+        foreach (TileMapPathStep step in _found)
+        {
+            steps.Add(new RouteStep(step.Position, step.Move == TileMapMove.Jump));
+        }
+
+        return true;
     }
 
     public void Dispose() => _occlusion.Dispose();

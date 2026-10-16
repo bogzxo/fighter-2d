@@ -1,6 +1,6 @@
 using System;
 
-namespace Fighter2D.Input;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// Helper class which remembers the last few ticks of player input.

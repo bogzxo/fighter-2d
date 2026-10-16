@@ -557,6 +557,14 @@ let btn_bindings = compositor.button({
     lbl_scale: 0.3
 });
 
+let btn_defaults = compositor.button({
+    parent: actions,
+    size: vec(330, 0),
+    label: "@options.defaults",
+    lbl_scale: 0.3,
+    style: "button_flat"
+});
+
 let btn_back = compositor.button({
     parent: actions,
     size: vec(180, 0),
@@ -570,7 +578,7 @@ let hint = compositor.label({
     size: vec(1500, 30),
     anchor: "bottom",
     pivot: "bottom",
-    text: "@options.hint",
+    text: "",
     text_scale: 0.5,
     color: vec(1, 1, 1, 1)
 });

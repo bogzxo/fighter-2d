@@ -12,7 +12,7 @@ using Horizon.UI.Components;
 using Button = Horizon.UI.Components.Button;
 using Horizon.Graphics;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// The first scene of the game, where the kind of fight is picked (or the options).
@@ -22,9 +22,6 @@ namespace Fighter2D.Scenes;
 /// </summary>
 internal class MainMenuScene : MenuScene
 {
-    // Which buttons do what, out of the language that is loaded like every other text of the game
-    private static string Hint => Localisation.Get("main_menu.hint");
-
     // Where the fighters of the background meet and the ground they stand on, in pixels of the window
     private static readonly Vector2 DuelCenter = new(330, -330);
 
@@ -35,13 +32,10 @@ internal class MainMenuScene : MenuScene
     private UILayout _layout = null!;
     private UINavigator _nav = null!;
     private MenuDuel? _duel;
-    private Label _hint = null!, _description = null!;
+    private Label _description = null!;
 
     // What every button has to say for itself, by the button
     private readonly Dictionary<UIComponent, string> _descriptions = [];
-
-    // Whether the hint is busy saying something else than which buttons to press
-    private bool _hintIsMessage;
 
     // The gamepad that pressed the button being acted on, null for a click of the mouse
     private int? _pressedBy;
@@ -82,7 +76,6 @@ internal class MainMenuScene : MenuScene
         AddButton(layout, "btn_options", () => Open(new OptionsScene { OverScene = true }, Screen.BetweenMenus, Horizon.Engine.Components.SceneBelow.Running), "main_menu.about_options");
         AddButton(layout, "btn_quit", AskToQuit, "main_menu.about_quit");
 
-        _hint = layout.Get<Label>("hint");
         _description = layout.Get<Label>("description");
         layout.Get<Label>("version").Text = Constants.VERSION_LABEL;
 
@@ -132,44 +125,21 @@ internal class MainMenuScene : MenuScene
             new DialogChoice(Localisation.Get("common.stay")));
     }
 
-    private void ShowMessage(string message)
+    private void ShowMessage(string message) => Hint?.Say(message);
+
+    protected override void BuildActions()
     {
-        _hintIsMessage = true;
-        _hint.Text = message;
-        _hint.Shake(6.0f);
+        // Up and down walk the menu, A is whatever the gamepad is on. Whoever presses it is player one of the fight it starts
+        Actions.Directions("hints.choose", (_, _, down) => _nav.Move(0, down));
+        Actions.Add(GamepadInput.A, "hints.pick", Pick);
     }
 
-    protected override void UpdateMenu(float dt)
+    private void Pick(Gamepad gamepad)
     {
-        // The hint shows the buttons of whichever gamepad was touched last
-        if (!_hintIsMessage) _hint.Text = ButtonGlyphs.Localize(Hint, GameInput.Manager.LastUsed);
-
-        if (!InputReady) return;
-
-        // Nobody has picked a gamepad yet, so the menu listens to all of them
-        foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
-        {
-            if (!gamepad.IsConnected) continue;
-
-            // A question that is up takes the gamepad, B is the answer that changes nothing
-            if (_layout.Module.Dialog is { } dialog && gamepad.WasPressed(GamepadInput.B))
-            {
-                dialog.Cancel();
-                return;
-            }
-
-            // Up and down walk the menu, left and right walk a question's buttons, which sit side by side
-            int across = MenuInput.Horizontal(gamepad);
-            if (across != 0) _nav.Move(across, 0);
-            else _nav.Move(0, MenuInput.Vertical(gamepad));
-
-            if (MenuInput.ConfirmPressed(gamepad))
-            {
-                _pressedBy = gamepad.Slot;
-                _nav.Activate();
-                _pressedBy = null;
-                return;
-            }
-        }
+        _pressedBy = gamepad.Slot;
+        _nav.Activate();
+        _pressedBy = null;
     }
+
+    protected override void UpdateMenu(float dt) { }
 }

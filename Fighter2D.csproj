@@ -110,4 +110,11 @@
     <Folder Include="Assets\ui\localisation\" />
   </ItemGroup>
 
+  <!-- The tests next door see everything, the game is one assembly and most of it is internal. They are a project of their own, not part of this one -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Fighter2D.Tests" />
+    <Compile Remove="Fighter2D.Tests\**" />
+    <None Remove="Fighter2D.Tests\**" />
+  </ItemGroup>
+
 </Project>

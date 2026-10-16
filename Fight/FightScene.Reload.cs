@@ -68,9 +68,7 @@ internal partial class FightScene
     /// </summary>
     private void ChangeOpponent(string characterId)
     {
-        if (OpponentChanged is null) return;
-
-        OpponentChanged(characterId);
+        _setup.DummyCharacter = characterId;
         ReloadNow();
     }
 
@@ -79,12 +77,13 @@ internal partial class FightScene
     /// </summary>
     private void ReloadNow()
     {
-        if (Reload is null || _handedOver) return;
+        if (_handedOver) return;
 
         Log.Info("[Fight] Reading the data again.");
 
         // What was worked out from the old files is no good for the new ones
         CharacterArt.Forget();
+        CombatRules.TryLoad();
 
         var resume = new FightResume(_round.TakeSnapshot(), FighterResume.Of(_one), FighterResume.Of(_two));
 
@@ -92,7 +91,8 @@ internal partial class FightScene
         _network?.Detach();
         _handedOver = true;
 
-        Engine.SceneManager.ResetTo(Reload(resume), null);
+        // The same fight from where it was, with everything read from disk again. The map as well, by the file it is in
+        Engine.SceneManager.ResetTo(_setup.CreateFight(MapLoader.TryFind(_map.FileName, out MapDefinition fresh) ? fresh : _map, resume), null);
     }
 
     /// <summary>
@@ -101,16 +101,13 @@ internal partial class FightScene
     /// </summary>
     private void ResumeMatch()
     {
-        if (Resume is not { } resume) return;
+        if (_resume is not { } resume) return;
 
         _round.Restore(resume.Round);
         _resumePending = true;
 
-        if (resume.Round.Phase != RoundPhase.Versus)
-        {
-            _backdropBlur.Radius = 0.0f;
-            _backdropBlur.Enabled = false;
-        }
+        // Straight into focus when it isn't the versus screen it comes back to
+        SnapBackdropBlur();
 
         // The host doesn't get a head start, it holds still until the other machine is back in the fight too
         _awaitingPeer = Session is { IsHost: true };
@@ -156,7 +153,7 @@ internal partial class FightScene
     /// </summary>
     private void ResumeFighters()
     {
-        if (Resume is not { } resume || _one.PhysicsBody is null || _two.PhysicsBody is null) return;
+        if (_resume is not { } resume || _one.PhysicsBody is null || _two.PhysicsBody is null) return;
         _resumePending = false;
 
         Place(_one, resume.One);

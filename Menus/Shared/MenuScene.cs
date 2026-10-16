@@ -2,11 +2,13 @@ using System.Numerics;
 
 using Horizon.Engine;
 using Horizon.Graphics;
+using Horizon.Input;
 using Horizon.Rendering;
 using Horizon.Rendering.Spriting;
 using Horizon.UI;
+using Horizon.UI.Components;
 
-namespace Fighter2D.Scenes.Menus;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// Base class for every menu of the game. It sets up the camera, the CRT renderer, the backdrop and the layout, which every menu used to copy paste.
@@ -50,7 +52,10 @@ internal abstract class MenuScene : Scene
 
         UILayout layout = MenuLayouts.Load(this, Camera, LayoutFile);
         _ui = layout.Module.Compositor;
+        _module = layout.Module;
+        if (layout.TryGet<Label>("hint", out Label? hintLabel)) Hint = new HintBar(hintLabel, Actions);
         BuildUi(layout);
+        BuildActions();
 
         base.Initialize();
     }
@@ -61,6 +66,18 @@ internal abstract class MenuScene : Scene
     private const float UNDERNEATH_BLUR_TIME = 0.16f;
 
     private UICompositor _ui = null!;
+    private UIModule _module = null!;
+
+    /// <summary>
+    /// What the buttons of a gamepad do on this screen, in the order they are tried in. A screen fills it in
+    /// <see cref="BuildActions"/>, the base reads the gamepads and the hint writes itself out of it.
+    /// </summary>
+    protected MenuActions Actions { get; } = new();
+
+    /// <summary>
+    /// The line under the screen that says which buttons do what, null for a layout without a "hint" label.
+    /// </summary>
+    protected HintBar? Hint { get; private set; }
 
     /// <summary>
     /// Another screen was put on top of this one (the options over the main menu). What is behind the buttons
@@ -114,7 +131,12 @@ internal abstract class MenuScene : Scene
     protected abstract void BuildUi(UILayout layout);
 
     /// <summary>
-    /// Called every update until the menu leaves for another scene.
+    /// Called after the layout is wired, this is where a menu says what the buttons of a gamepad do (see <see cref="Actions"/>).
+    /// </summary>
+    protected virtual void BuildActions() { }
+
+    /// <summary>
+    /// Called every update until the menu leaves for another scene, for what a menu shows. The gamepads are read after it, see <see cref="Actions"/>.
     /// </summary>
     protected abstract void UpdateMenu(float dt);
 
@@ -124,7 +146,22 @@ internal abstract class MenuScene : Scene
 
         // A menu that has left for another scene (see GoTo) stays on screen until the engine has covered it up, and stays quiet for as long as that takes.
         // So does one that is underneath another scene (the main menu behind the options), it keeps moving and keeps its hands off the gamepads
-        if (!IsLeaving && !IsSuspended) UpdateMenu(dt);
+        if (IsLeaving || IsSuspended) return;
+
+        UpdateMenu(dt);
+        if (IsLeaving) return;
+
+        Hint?.Update(dt);
+        if (!InputReady) return;
+
+        // A question that is up takes every gamepad, the rest of the screen waits for the answer
+        if (_module.Dialog is { } dialog)
+        {
+            MenuActions.DriveDialog(dialog, _module.Navigation);
+            return;
+        }
+
+        Actions.Update();
     }
 
     /// <summary>

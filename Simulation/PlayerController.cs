@@ -1,18 +1,14 @@
 using System;
 using System.Numerics;
 
-using Horizon.Core;
-using Horizon.Core.Components;
-using Horizon.Rendering.Spriting;
-
-namespace Fighter2D.Fighters.Control;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// The brain of a player. It reads the buttons of its input, matches them against the move list and plays the move they start.
 /// There is one of these per player and they are all the same, who presses the buttons is up to the <see cref="IPlayerInput"/> it is given.
 /// Everything runs on fixed ticks (see FightTicks.TICK_RATE) no matter how fast the game is drawn.
 /// </summary>
-internal sealed class PlayerController(IPlayerInput input) : GameComponent
+internal sealed class PlayerController(IPlayerInput input)
 {
     // The most ticks one update catches up on. After a hitch the fight carries on from where it is rather than fast forwarding
     private const int MAX_TICKS_PER_UPDATE = 8;
@@ -25,7 +21,12 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
 
     public IPlayerInput Input { get; } = input;
     public PlayerInputs Inputs { get; } = new();
-    public Player Player { get; private set; } = null!;
+    public IFighter Player { get; private set; } = null!;
+
+    /// <summary>
+    /// The player's body in the world, what the moves push about and what shows the frames.
+    /// </summary>
+    public IFighterBody Body => Player.Body;
     public MoveList MoveList { get; private set; } = null!;
     public FighterState State { get; private set; } = null!;
     public MovePlayback Playback { get; private set; } = null!;
@@ -40,9 +41,14 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     public string ActiveAnimation { get; private set; } = "idle";
 
     /// <summary>
+    /// The fight we are in, the player's, see <see cref="FightContext"/>.
+    /// </summary>
+    public FightContext Fight => Player.Fight;
+
+    /// <summary>
     /// The player we are fighting against.
     /// </summary>
-    public Player Opponent => Fight.OpponentOf(Player);
+    public IFighter Opponent => Fight.OpponentOf(Player);
 
     /// <summary>
     /// How many ticks of the fight this player has been through. Inputs and snapshots that go over the network are stamped with it.
@@ -71,6 +77,14 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
 
     // How many more active frames the hit of the move we are in has to land on, 0 once it landed or ran out
     private int _activeLeft;
+
+    // How many frames of recovery the move we are in has played since its last active frame, see IsMovementCancelOpen
+    private int _recoveryFrames;
+
+    // What may start while the move we are in is still going, made once in Attach rather than a delegate a tick, and the
+    // same two with only the presses in them, see TryMatch
+    private Func<FightingMove, bool> _allowedAfterHit = null!, _pressedAfterHit = null!;
+    private static readonly Func<FightingMove, bool> PressedOnly = IsPressed;
 
     /// <summary>
     /// Which active frame of its move the hitbox is on, 0 on the hit frame, -1 when there's no hitbox out. It stays out
@@ -103,7 +117,23 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// <summary>
     /// Whether a new move is allowed to start right now. Not in hitstop, not stuck in a block that just ate a hit, and in a move that lets go.
     /// </summary>
-    public bool CanStartMove => IsInControl && _hitstop == 0 && _whiffLeft == 0 && !State.IsInBlockstun && (CanCancel && !IsWhiffing || IsHitCancelOpen);
+    public bool CanStartMove => IsInControl && _hitstop == 0 && _whiffLeft == 0 && !State.IsInBlockstun && (CanCancel && !IsWhiffing || IsHitCancelOpen || IsMovementCancelOpen);
+
+    /// <summary>
+    /// Whether the hit of the move we are in landed (or was blocked) and enough of its recovery has gone by to leave it for a
+    /// move that doesn't attack, a jump after whoever we just launched, a step in, the block. See CombatRules.HIT_MOVEMENT_CANCEL.
+    /// A whiff gets none of this, it plays out.
+    /// </summary>
+    public bool IsMovementCancelOpen => HitLanded && ActiveFrame < 0 && _recoveryFrames >= CombatRules.HIT_MOVEMENT_CANCEL;
+
+    /// <summary>
+    /// The stance a press is matched in. On the ground the direction held with the button decides, down and a kick is the
+    /// crouching kick whether or not we were crouching already and nothing held is the standing one, so a crouching move is
+    /// one input and not a stance to get into first. In the air it is wherever we are. A block that ate a hit keeps its stance.
+    /// </summary>
+    private Stance MatchStance => State.IsGrounded && !State.IsInBlockstun
+        ? (Inputs.IsHeld(InputFlags.DPadDown) ? Stance.Crouching : Stance.Standing)
+        : State.CurrentStance;
 
     /// <summary>
     /// Whether we are frozen in the hitlag of a hit, ours or one we took. The body doesn't move, see PlayerMovement.
@@ -178,20 +208,28 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     // Whether we were knocked out on the last tick, for spotting the tick we go down on
     private bool _wasKnockedOut;
 
-    public override void Initialize()
+    /// <summary>
+    /// Called by the player once it has its body and its moves, this is where the controller comes to life.
+    /// </summary>
+    public void Attach(IFighter player)
     {
-        Player = (Parent as Player)!;
+        Player = player;
         MoveList = Player.MoveList;
         State = new FighterState(Player);
         Playback = new MovePlayback(this);
         Movement = new PlayerMovement(this);
         Taunt = new VictoryTaunt(this);
+        _allowedAfterHit = AllowedAfterHit;
+        _pressedAfterHit = IsPressedAfterHit;
 
         Input.Attach(this);
         ChangeToMove(MoveIds.IDLE, forceRestart: true);
     }
 
-    public override void UpdateState(float dt)
+    /// <summary>
+    /// Called every update by the player, plays the ticks of the fight that are due.
+    /// </summary>
+    public void Update(float dt)
     {
         _tickParts += (long)Math.Round(dt * FightTicks.TICK_RATE * TICK_PARTS);
 
@@ -208,7 +246,10 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         }
     }
 
-    public override void UpdatePhysics(float dt) => Movement?.UpdatePhysics(dt);
+    /// <summary>
+    /// Called every physics step by the player, see <see cref="PlayerMovement.UpdatePhysics"/>.
+    /// </summary>
+    public void UpdatePhysics(float dt) => Movement?.UpdatePhysics(dt);
 
     /// <summary>
     /// One tick of the fight for this player.
@@ -290,7 +331,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         if (_wasKnockedOut) return;
         _wasKnockedOut = true;
 
-        Player.TweenTint(KnockedOutTint, KNOCKED_OUT_FADE);
+        Body.TintTo(KnockedOutTint, KNOCKED_OUT_FADE);
     }
 
     /* Moves */
@@ -355,7 +396,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         if (direction != 0 && MoveList.Moves.ContainsKey(MoveIds.TECH_ROLL))
         {
             // The roll goes the way it is facing, so face the way it was asked for
-            Player.Flipped = direction < 0;
+            Body.Flipped = direction < 0;
             ChangeToMove(MoveIds.TECH_ROLL, forceRestart: true);
         }
         else ChangeToMove(MoveList.Moves.ContainsKey(MoveIds.TECH) ? MoveIds.TECH : MoveIds.GET_UP, forceRestart: true);
@@ -417,6 +458,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         _whiffed = _whiffHeld = false;
         _whiffLeft = 0;
         _activeLeft = 0;
+        _recoveryFrames = 0;
         ActiveFrame = -1;
 
         // The statuses set by a move end with it, even when it was cancelled (rolling -> kick)
@@ -435,11 +477,21 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         // Find a match as per the order of precedence defined in the movelist. A move we can't pay for is passed over, so A + B
         // without the meter for the special is a plain kick
         // Past the cancel frame anything goes, before it only what the move cancels into once its hit has landed
-        Func<FightingMove, bool>? allowed = CanCancel && !IsWhiffing ? null : CurrentMove.HitCancelsInto;
-        if (!MoveList.TryMatchInput(Inputs.Buffer, State.CurrentStance, Player.Meter, State.AirJumpsLeft, allowed, out var move, out var signature)) return;
+        Func<FightingMove, bool>? allowed = CanCancel && !IsWhiffing ? null : _allowedAfterHit;
+        if (!TryMatch(allowed, out var move, out var signature, out Stance stance)) return;
 
-        StartMatched(move, signature);
+        StartMatched(move, signature, stance);
     }
+
+    /// <summary>
+    /// Helper method for what may start while the move we are in is still going. What it says it cancels into once its hit
+    /// landed (hit_cancel), and a bit later a move that doesn't attack (see IsMovementCancelOpen).
+    /// </summary>
+    private bool AllowedAfterHit(FightingMove move) =>
+        (IsHitCancelOpen && CurrentMove.HitCancelsInto(move)) || (IsMovementCancelOpen && move.IsMovement);
+
+    private static bool IsPressed(FightingMove move) => move.Trigger != InputTrigger.Held;
+    private bool IsPressedAfterHit(FightingMove move) => IsPressed(move) && AllowedAfterHit(move);
 
     /// <summary>
     /// Helper method to turn the move a press just started into a two button move that press is half of, when the other
@@ -447,11 +499,37 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// </summary>
     private void TryChord()
     {
-        if (_chordBy == InputFlags.None || Tick - _chordAt > FightTicks.CHORD_TICKS || HitThrown || !IsInControl || _hitstop > 0) return;
+        if (_chordBy == InputFlags.None || Tick - _chordAt > CombatRules.CHORD_TICKS || HitThrown || !IsInControl || _hitstop > 0) return;
 
-        if (!MoveList.TryMatchInput(Inputs.Buffer, State.CurrentStance, Player.Meter, State.AirJumpsLeft, IsChordOf, out var move, out var signature)) return;
+        if (!TryMatch(IsChordOf, out var move, out var signature, out Stance stance)) return;
 
-        StartMatched(move, signature);
+        StartMatched(move, signature, stance);
+    }
+
+    /// <summary>
+    /// Helper method to find the move the buttons are asking for. A press is matched in the stance the direction held with it
+    /// asks for (see <see cref="MatchStance"/>), a held input (the crouch, the run, the block) in the stance the body is in.
+    /// Down and a button that has no crouching version comes out standing, over the crouch the direction alone would be, so
+    /// every button does something whatever is held with it.
+    /// </summary>
+    /// <param name="stance">The stance the move was matched in, which is the one its reroutes go by.</param>
+    private bool TryMatch(Func<FightingMove, bool>? allowed, out FightingMove move, out InputFlags signature, out Stance stance)
+    {
+        stance = MatchStance;
+        Stance body = State.CurrentStance;
+        bool matched = MoveList.TryMatchInput(Inputs.Buffer, stance, body, Player.Meter, State.AirJumpsLeft, allowed, out move, out signature);
+
+        // Only on the ground with down held, and only when what was found is the direction itself (or nothing), a press wins
+        if (stance != Stance.Crouching || !State.IsGrounded || (matched && IsPressed(move))) return matched;
+
+        Func<FightingMove, bool>? pressed = allowed is null ? PressedOnly : ReferenceEquals(allowed, _allowedAfterHit) ? _pressedAfterHit : null;
+        if (pressed is null || !MoveList.TryMatchInput(Inputs.Buffer, Stance.Standing, body, Player.Meter, State.AirJumpsLeft, pressed, out FightingMove standing, out InputFlags pressedWith))
+            return matched;
+
+        move = standing;
+        signature = pressedWith;
+        stance = Stance.Standing;
+        return true;
     }
 
     /// <summary>
@@ -473,7 +551,8 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     /// <summary>
     /// Helper method to start the move the buttons matched, paying for it and going wherever its stance sends it.
     /// </summary>
-    private void StartMatched(FightingMove move, InputFlags signature)
+    /// <param name="stance">The stance the move was matched in, which decides its reroute (kick with down held is the low kick).</param>
+    private void StartMatched(FightingMove move, InputFlags signature, Stance stance)
     {
         // A press only ever starts one move, held inputs (run, crouch, block) keep matching for as long as they are held
         if (move.Trigger != InputTrigger.Held)
@@ -491,9 +570,9 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         // The meter is spent the moment the move is asked for, a reroute doesn't change what it cost
         Player.SpendMeter(move.MeterCost);
 
-        // Check stance reroutes (hitting kick while in the air -> jumpkick)
+        // Check stance reroutes (hitting kick while in the air -> jumpkick, kick with down held -> low kick)
         if (move.StanceReroutes != null &&
-            move.StanceReroutes.TryGetValue(State.CurrentStance, out string? rerouteId))
+            move.StanceReroutes.TryGetValue(stance, out string? rerouteId))
         {
             ChangeToMove(rerouteId);
         }
@@ -517,7 +596,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     public void PlayAnimation(string animName)
     {
         ActiveAnimation = animName;
-        Player.SetAnimation(ActiveAnimation);
+        Body.PlayAnimation(ActiveAnimation);
     }
 
     /// <summary>
@@ -527,7 +606,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     {
         if (animName is null) return 1;
 
-        return (uint)Math.Max(1, Player.GetFrameCount(animName));
+        return (uint)Math.Max(1, Body.FrameCount(animName));
     }
 
     /// <summary>
@@ -536,9 +615,9 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     private void ShowFrame()
     {
         // The sprite is on the animation the move last asked for, unless the character doesn't have it
-        if (Player.FrameName != ActiveAnimation) return;
+        if (Body.ShownAnimation != ActiveAnimation) return;
 
-        Player.Frame = (int)ClampFrame(Playback.Shown);
+        Body.ShowFrame((int)ClampFrame(Playback.Shown));
     }
 
     private uint ClampFrame(uint frame) => Math.Min(frame, GetAnimationLength(ActiveAnimation) - 1);
@@ -566,6 +645,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
     public void KeepHitting(uint frame)
     {
         if (ActiveFrame >= 0) ActiveFrame = ActiveFrame + 1 < Math.Max(1, CurrentMove.ActiveFrames) ? ActiveFrame + 1 : -1;
+        if (HitThrown && ActiveFrame < 0) _recoveryFrames++;
         if (_activeLeft <= 0) return;
 
         _activeLeft--;
@@ -627,7 +707,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
             return;
         }
 
-        if (_hitstop == 0) _resumeVelocity = Player.PhysicsBody.Velocity;
+        if (_hitstop == 0) _resumeVelocity = Body.Velocity;
         _hitstop = Math.Max(_hitstop, ticks);
     }
 
@@ -652,7 +732,7 @@ internal sealed class PlayerController(IPlayerInput input) : GameComponent
         _pendingLaunch = null;
         _resumeVelocity = Vector2.Zero;
         _sdi = Vector2.Zero;
-        Player.PhysicsBody.SetVelocity(velocity);
+        Body.SetVelocity(velocity);
         Movement.UpdateGravity();
     }
 

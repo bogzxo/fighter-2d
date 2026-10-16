@@ -1,5 +1,5 @@
 
-namespace Fighter2D.Moves;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// The eye candy a phase of a move can ask for by name. None of it changes the fight, it only looks nice.
@@ -16,24 +16,24 @@ internal static class MoveEffects
     /// </summary>
     public static bool Exists(string effect) => effect is JUMP or ROLL or HAZE;
 
-    public static void Play(string effect, Player player)
+    public static void Play(string effect, IFighter player)
     {
         switch (effect)
         {
             case JUMP:
-                Fight.Effects.Dust(player.FeetPosition, 0);
-                Fight.Effects.Shockwave(player.FeetPosition, 40, 45);
+                player.Fight.Effects.Dust(player.Body.FeetPosition, 0);
+                player.Fight.Effects.Shockwave(player.Body.FeetPosition, 40, 45);
                 break;
 
             case ROLL:
                 // A trail of dust behind us. This comes every frame of the roll so each puff has to be a small one
-                Fight.Effects.Dust(player.FeetPosition, -player.Facing, 3);
-                Fight.Effects.Shockwave(player.FeetPosition, 60, 30);
+                player.Fight.Effects.Dust(player.Body.FeetPosition, -player.Body.Facing, 3);
+                player.Fight.Effects.Shockwave(player.Body.FeetPosition, 60, 30);
                 break;
 
             case HAZE:
                 // The little cloud around the head of somebody who just got their bell rung
-                Fight.Effects.Haze(player.HeadPosition, player.Character.FrameRate);
+                player.Fight.Effects.Haze(player.Body.HeadPosition, player.Character.FrameRate);
                 break;
         }
     }

@@ -1,0 +1,126 @@
+// Every number that decides what a hit is worth that a move doesn't say for itself, and how a fighter gets about when
+// characters.hor doesn't say. This is the file to mess with when the game feels off. The game reads it at start and
+// again when the data is reloaded from the pause menu (or saved from Hex), Hex's move editor reads the same file out
+// of the game it is editing the moves of, and online the host's goes to whoever joins with the rest of the data. There
+// is no other copy, Simulation/CombatRules.cs only reads it, and it wants every key, a missing one says so.
+//
+// All times are frames of the fight, 60 a second, and distances world units (a fighter is about 30 wide and 73 tall).
+// A move that says its hitstun gets exactly that, nothing in here scales it behind its back.
+
+let rules = {
+    // The guess at the hitstun of a move that doesn't say its own (see Data/MoveFrameData.cs). Write the number into the
+    // move instead, Hex shows what this comes to. A move starts out base_disadvantage frames minus on hit and earns
+    // startup_reward frames back for every frame of startup, so jabs are a bit minus and slow moves plus enough to link off
+    base_disadvantage: 4,
+    startup_reward: 0.75,
+    max_advantage: 24,
+    hitstun_per_damage: 0.6,
+    guessed_min_hitstun: 12,
+
+    // Blocking. A blocked hit still costs something, the blocker is stuck in their block for a share of the hitstun
+    // (unless the move says its blockstun), gets shoved back block_push, and takes a sliver of the damage as chip. Chip
+    // never finishes anybody off
+    blockstun_scale: 0.7,
+    guessed_min_blockstun: 7,
+    chip_damage_scale: 0.12,
+    block_push: 23,
+
+    // How far a hit that doesn't launch slides whoever it lands on along the ground, for a move that doesn't say (push).
+    // The attacker slides back attacker_recoil of that, so a flurry of jabs doesn't end up inside of them
+    push: 16,
+    attacker_recoil: 0.5,
+
+    // A hit in the air that doesn't launch still pops whoever it lands on up this high, so aerials can be strung together
+    air_hit_pop: 14,
+
+    // Combos. Every hit after the first does combo_damage_scale of the one before, never less than min_combo_damage_scale
+    // of what it says, so a long combo isn't a round by itself
+    combo_damage_scale: 0.88,
+    min_combo_damage_scale: 0.35,
+
+    // A counter hit catches somebody in the startup of their own attack, which is on them. A few frames more hitstun on top
+    // of what the move says, never a share of it, and a bit more damage
+    counter_hitstun_bonus: 4,
+    counter_damage_scale: 1.25,
+
+    // Landing something buys room. A move whose hit landed (or was blocked) can be left for a move that doesn't attack, a
+    // jump after whoever was just launched, a run in, a crouch, the block, this many frames after its last active frame,
+    // whatever its cancel frames say. A whiff plays out. The roll isn't movement for this, i-frames aren't free
+    hit_movement_cancel: 4,
+
+    // Juggles. Every hit that lands on somebody already up in the air in hitstun makes them this much heavier (of their
+    // gravity), so a juggle comes down by itself rather than going on forever. Guilty Gear does it this way
+    juggle_gravity_step: 0.1,
+
+    // How long somebody lies on the floor after a knockdown before they get up, nothing hits them down there
+    knockdown_ticks: 55,
+
+    // Hitlag, how long both of them freeze when a hit lands, for a move that doesn't say (hitstop). Smash Ultimate's,
+    // damage * hitlag_per_damage + hitlag_base and never more than max_hitlag, a block block_hitlag_scale of that and a
+    // counter hit counter_hitlag_bonus more. The victim is launched when it ends. The hit that ends the round holds ko_hitstop
+    hitlag_per_damage: 0.65,
+    hitlag_base: 6,
+    max_hitlag: 30,
+    block_hitlag_scale: 0.67,
+    counter_hitlag_bonus: 4,
+    ko_hitstop: 36,
+
+    // DI. Whoever gets launched turns the launch by holding a direction as the hitlag ends, up to this many radians (9.74
+    // degrees, Smash 4 and Ultimate) one way or the other, most from a direction square on to it
+    di_max_angle: 0.17,
+
+    // SDI. Every direction pressed during the hitlag shoves the victim sdi_distance that way, one press every sdi_interval
+    // frames at most. Smash's is 2 units, a fighter here is about twice the size
+    sdi_distance: 4,
+    sdi_interval: 4,
+
+    // Teching. Block pressed in the last tech_window frames before somebody knocked down lands has them get up on the spot
+    // (or roll, holding a direction). A press that wasn't in time locks teching out for tech_lockout frames
+    tech_window: 11,
+    tech_lockout: 40,
+
+    // The input windows. How long a press stays good for (input_buffer), so a button pressed a little early still comes
+    // out, the longest gap between the two presses of a double tap (double_tap), and how long after a press started a
+    // move the second button of a two button move still turns it into that one (chord_window), nobody presses A and B on
+    // the same sixtieth of a second. Seen by the next fight after a reload, a fighter takes them as it is made
+    input_buffer: 8,
+    double_tap: 18,
+    chord_window: 4,
+
+    // Stale moves. The last moves of a player that landed are remembered, the newest first, and every copy of this one in
+    // there takes its step off the damage. As many steps as there are, as many moves remembered. Smash's queue
+    stale_steps: [0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01],
+
+    // Parry. A block that went up parry_ticks frames before the hit (or fewer) is a parry, no chip, no blockstun, no
+    // shove, and the attacker is the one stuck for parry_stun frames. Rivals and Street Fighter's perfect parry
+    parry_ticks: 5,
+    parry_stun: 20,
+
+    // Meter, out of 100. Landing hits builds it fastest, eating them builds it too, so does blocking and even swinging at
+    // nothing. The moves that cost meter say so themselves (meter_cost)
+    meter_per_damage_dealt: 1.0,
+    meter_per_damage_taken: 0.6,
+    meter_on_block: 3,
+    meter_on_blocked: 2,
+    meter_on_whiff: 1,
+
+    // How a fighter gets about when its movement block in characters.hor leaves something out (see the top of that file
+    // for what each one is). Every number is what it really does, there is no drag
+    movement: {
+        walk_speed: 420,
+        ground_acceleration: 4000,
+        traction: 2800,
+        air_speed: 330,
+        air_acceleration: 1600,
+        air_friction: 500,
+        gravity: 3000,
+        fall_speed: 620,
+        fast_fall_speed: 950,
+        jump_height: 134,
+        short_hop_height: 60,
+        double_jumps: 1,
+        double_jump_height: 100,
+        hitstun_gravity: 0.5,
+        weight: 100
+    }
+}

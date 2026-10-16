@@ -8,7 +8,7 @@ using System.Text;
 
 using Horizon.HIDL.Runtime;
 
-namespace Fighter2D.Fighters;
+namespace Fighter2D.Data;
 
 /// <summary>
 /// The hitbox somebody drew by hand for a move, in place of the one traced off the art. A box for every active frame of
@@ -117,7 +117,7 @@ internal static class CustomHitboxes
     }
 
     /// <summary>Gives the moves of a list their hand drawn hitboxes, before their frame data is worked out.</summary>
-    public static void Apply(Moves.MoveList moves, string characterId)
+    public static void Apply(MoveList moves, string characterId)
     {
         foreach (var (id, hitbox) in Load(characterId))
         {

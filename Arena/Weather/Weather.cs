@@ -7,7 +7,7 @@ using Horizon.Physics.Simulation;
 using Horizon.Rendering;
 using Horizon.Rendering.Particles;
 
-namespace Fighter2D.Effects;
+namespace Fighter2D.Arena;
 
 /// <summary>
 /// Whatever is in the air of a map, going by its definition in maps.hor. That is the rain, petals or embers, and the thunderstorm if it has one.

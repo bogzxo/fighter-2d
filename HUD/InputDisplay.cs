@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 
+using Horizon.Input;
 using Horizon.UI;
 using Horizon.UI.Components;
 
@@ -48,14 +49,15 @@ internal sealed class InputDisplay : IHudDisplay
             _shown[i] = newest;
 
             // The icons are the ones of the gamepad the player is holding, if they are holding one
-            _lists[i].Text = ButtonGlyphs.Localize(Write(log, mirrored: i == 1), player.Controller.Input.Gamepad);
+            Gamepad? gamepad = player.Controller.Input.Gamepad;
+            _lists[i].Text = ButtonGlyphs.Localize(Write(log, mirrored: i == 1, gamepad), gamepad);
         }
     }
 
     /// <summary>
     /// Helper method to write a log out as lines of text, with the tick count on the outside of the screen and the buttons towards the middle.
     /// </summary>
-    private string Write(IReadOnlyList<InputLogEntry> log, bool mirrored)
+    private string Write(IReadOnlyList<InputLogEntry> log, bool mirrored, Gamepad? gamepad)
     {
         _text.Clear();
 
@@ -63,7 +65,7 @@ internal sealed class InputDisplay : IHudDisplay
         {
             if (i > 0) _text.Append('\n');
 
-            string buttons = ButtonGlyphs.Describe(log[i].Held);
+            string buttons = ButtonGlyphs.Describe(log[i].Held, gamepad);
             if (buttons.Length == 0) buttons = NEUTRAL;
 
             if (mirrored) _text.Append(buttons).Append("  ").Append(log[i].Ticks);

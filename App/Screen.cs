@@ -108,15 +108,15 @@ internal static class Screen
     /// <summary>
     /// Helper method to put the bloom on a renderer of the world, a glow round the lanterns and whatever else the
     /// light drives past white. Before the CRT, the glow goes through the tube with the rest of the picture. The
-    /// numbers are <see cref="DeferedStyle"/>'s, whether it is on is the player's.
+    /// numbers are <see cref="WorldStyle"/>'s, whether it is on is the player's.
     /// </summary>
     public static void AddBloom(Renderer2D renderer)
     {
         renderer.PostProcessing.Add(new BloomEffect
         {
             Enabled = GameOptions.Bloom,
-            Threshold = DeferedStyle.BLOOM_THRESHOLD,
-            Intensity = DeferedStyle.BLOOM_INTENSITY
+            Threshold = WorldStyle.BLOOM_THRESHOLD,
+            Intensity = WorldStyle.BLOOM_INTENSITY
         });
     }
 

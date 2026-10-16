@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using Button = Horizon.UI.Components.Button;
 
-namespace Fighter2D.Scenes.Menus;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// A list of buttons a gamepad can walk up and down, one of them is always the selected one.

@@ -4,7 +4,7 @@ using System.Numerics;
 
 using Horizon.HIDL.Runtime;
 
-namespace Fighter2D.Moves;
+namespace Fighter2D.Data;
 
 /// <summary>
 /// Turns a move file (.hor) into moves. What every key means is written down at the top of Assets/data/fighting_moves.hor.

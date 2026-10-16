@@ -1,4 +1,4 @@
-namespace Fighter2D.Moves;
+namespace Fighter2D.Data;
 
 /// <summary>
 /// Where a hit comes in, which decides what kind of block stops it. A low has to be blocked crouching, an overhead standing,

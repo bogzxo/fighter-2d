@@ -19,26 +19,34 @@ namespace Fighter2D.Fight;
 internal partial class FightScene
 {
     /// <summary>
-    /// Helper method to smear the arena for as long as there is a pause on screen, ours or the other machine's.
+    /// Helper method to smear the arena as much as the fight wants it, the most behind the versus screen, a bit behind a
+    /// pause (ours or the other machine's), not at all otherwise. Worked out every update from where the fight is and
+    /// tweened to when that changes, the one place the blur is set. It was two, the versus clearing it in a phase
+    /// change and the pause in here, each going by what the radius happened to be.
     /// </summary>
-    private void UpdatePauseBlur()
+    private void UpdateBackdropBlur()
     {
-        bool paused = _pause is { IsShowing: true } || _awaitingPeer;
-        if (paused == _pauseBlurred) return;
+        float wanted = _round.Phase == RoundPhase.Versus ? VERSUS_BLUR
+            : _pause is { IsShowing: true } || _awaitingPeer ? PAUSE_BLUR
+            : 0.0f;
+        if (wanted == _blurWanted) return;
 
-        _pauseBlurred = paused;
+        // Out from behind the versus screen slowly, everything else quickly
+        if (_blurWanted == VERSUS_BLUR && wanted == 0.0f) _backdropBlur.BlurTo(0.0f, VERSUS_CLEAR_TIME, Easing.InOutSine);
+        else _backdropBlur.BlurTo(wanted, wanted > _blurWanted ? PAUSE_BLUR_TIME : PAUSE_CLEAR_TIME);
 
-        if (paused) _backdropBlur.BlurTo(PAUSE_BLUR, PAUSE_BLUR_TIME);
-        else _backdropBlur.BlurTo(0.0f, PAUSE_CLEAR_TIME);
+        _blurWanted = wanted;
     }
 
-    private void OnPhaseChanged(RoundPhase phase)
+    /// <summary>
+    /// Helper method to put the blur where the fight wants it there and then, no tween, for a fight that starts out
+    /// somewhere else than behind the versus screen (one that is resumed after a reload).
+    /// </summary>
+    private void SnapBackdropBlur()
     {
-        // The versus screen is gone, the arena comes into focus. It only ever leaves that phase the once
-        if (phase != RoundPhase.Versus && _backdropBlur.Radius >= VERSUS_BLUR)
-        {
-            _backdropBlur.BlurTo(0.0f, VERSUS_CLEAR_TIME, Easing.InOutSine);
-        }
+        _blurWanted = _round.Phase == RoundPhase.Versus ? VERSUS_BLUR : 0.0f;
+        _backdropBlur.Radius = _blurWanted;
+        _backdropBlur.Enabled = _blurWanted > 0.0f;
     }
 
     /// <summary>

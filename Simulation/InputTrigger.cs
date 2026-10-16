@@ -1,4 +1,4 @@
-namespace Fighter2D.Input;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// How the input of a move has to be entered for the move to come out.

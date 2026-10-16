@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Fighter2D.Scenes.Menus;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// The text colours the menus share.

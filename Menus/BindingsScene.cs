@@ -8,18 +8,17 @@ using Horizon.UI.Components;
 
 using Button = Horizon.UI.Components.Button;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Menus;
 
 /// <summary>
-/// Scene where the bindings of one gamepad can be changed. It is got to from the fight setup screen and from the
-/// options, and goes back to whichever it was.
+/// Scene where the bindings of one gamepad can be changed. It is opened over the fight setup screen or the options
+/// (<see cref="Horizon.Engine.Scene.Open"/>) and goes back to whichever it was, which is underneath exactly as it
+/// was left, nobody's pick and no row forgotten. It used to be handed a way to build that screen all over again.
 /// Leaving the scene saves the bindings of every gamepad, see <see cref="GameInput.Save"/>.
 /// </summary>
 /// <param name="title">What the screen is called, whose bindings these are.</param>
-/// <param name="back">Makes the scene to go back to.</param>
-internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> back) : MenuScene
+internal class BindingsScene(int slot, string title) : MenuScene
 {
-    private static string HintBrowse => Localisation.Get("bindings.hint");
     private static string TextListening => Localisation.Get("bindings.listening");
 
     protected override string LayoutFile => MenuLayouts.BINDINGS;
@@ -27,7 +26,6 @@ internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> 
     // The rows of the actions come first, the two buttons underneath them (defaults and done) come last
     private readonly ButtonList _entries = new();
     private readonly BindingCapture _capture = new();
-    private Label _hint = null!;
     private Gamepad? _gamepad;
 
     // The actions are spread over the columns of the layout, the next column starts where the one before it is full
@@ -54,7 +52,6 @@ internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> 
         AddEntry(layout.Get<Button>("btn_defaults"), DefaultsIndex);
         AddEntry(layout.Get<Button>("btn_done"), DoneIndex);
 
-        _hint = layout.Get<Label>("hint");
 
         Refresh();
         _entries.Select(0);
@@ -105,37 +102,44 @@ internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> 
             return;
         }
 
-        if (!InputReady) return;
+        // While a button is being listened for the buttons are its, not the screen's
+        Actions.Enabled = !_capture.IsListening;
+        if (_capture.IsListening && InputReady) UpdateCapture(dt);
+    }
 
-        if (_capture.IsListening)
+    protected override void BuildActions()
+    {
+        // These are one gamepad's bindings, only it gets a say
+        Actions.Listens = gamepad => gamepad == _gamepad;
+
+        Actions.Directions("hints.choose", (_, right, down) =>
         {
-            UpdateCapture(dt);
-            return;
-        }
-
-        _entries.Move(MenuInput.Vertical(_gamepad));
-
-        int across = MenuInput.Horizontal(_gamepad);
-        if (across != 0) SelectAcross(across);
-
-        if (_gamepad.WasPressed(GamepadInput.A)) Activate(_entries.Selected, adding: false);
-        else if (_gamepad.WasPressed(GamepadInput.X)) Activate(_entries.Selected, adding: true);
-        else if (_gamepad.WasPressed(GamepadInput.Y)) Clear(_entries.Selected);
-        else if (_gamepad.WasPressed(GamepadInput.B)) Leave();
+            _entries.Move(down);
+            if (right != 0) SelectAcross(right);
+        });
+        Actions.Add(GamepadInput.A, "hints.change", () => Activate(_entries.Selected, adding: false));
+        Actions.Add(GamepadInput.X, "hints.add_another", () => Activate(_entries.Selected, adding: true));
+        Actions.Add(GamepadInput.Y, "hints.clear", () => Clear(_entries.Selected));
+        Actions.Add(GamepadInput.B, "hints.done", Leave);
     }
 
     private void UpdateCapture(float dt)
     {
         int row = _capture.Row;
 
-        switch (_capture.Update(dt, _gamepad!.HeldMask))
+        // A keyboard is bound by its keys, a gamepad by its buttons
+        Keyboard? keyboard = _gamepad!.Keyboard;
+        CaptureState state = keyboard is not null ? _capture.Update(dt, keyboard) : _capture.Update(dt, _gamepad.HeldMask);
+
+        switch (state)
         {
             case CaptureState.Changed:
-                _entries[row].Label = ButtonGlyphs.Describe(_gamepad, _capture.Buttons);
+                _entries[row].Label = keyboard is not null ? ButtonGlyphs.Describe(_capture.Keys) : ButtonGlyphs.Describe(_gamepad, _capture.Buttons);
                 break;
 
             case CaptureState.Captured:
-                Bind(GameInput.Actions[row].Name, _capture.Buttons, _capture.Adding);
+                if (keyboard is not null) BindKeys(GameInput.Actions[row].Name, _capture.Adding);
+                else Bind(GameInput.Actions[row].Name, _capture.Buttons, _capture.Adding);
                 _entries[row].Punch(0.06f, 0.3f);
                 StopCapture();
 
@@ -147,6 +151,15 @@ internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> 
                 StopCapture();
                 break;
         }
+    }
+
+    private void BindKeys(string action, bool adding)
+    {
+        Silk.NET.Input.Key[] keys = [.. _capture.Keys];
+        if (adding) _gamepad!.Bindings.AddKeyCombination(action, keys);
+
+        // Whatever else was on exactly these keys loses them
+        else _gamepad!.Bindings.RebindKeys(action, keys);
     }
 
     private void Bind(string action, uint buttons, bool adding)
@@ -169,6 +182,7 @@ internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> 
         if (index >= ActionCount) return;
 
         _gamepad!.Bindings.Bind(GameInput.Actions[index].Name);
+        _gamepad.Bindings.BindKeys(GameInput.Actions[index].Name);
         _entries[index].Shake(5.0f, 0.2f);
         Refresh();
     }
@@ -195,7 +209,7 @@ internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> 
         _capture.Start(index, adding);
 
         _entries[index].Label = TextListening;
-        _hint.Text = ButtonGlyphs.Localize(Localisation.Format("bindings.press_for", ("action", GameInput.Actions[index].Label.ToLowerInvariant())), _gamepad);
+        Hint?.Hold(Localisation.Format("bindings.press_for", ("action", GameInput.Actions[index].Label.ToLowerInvariant())));
     }
 
     private void StopCapture()
@@ -206,7 +220,7 @@ internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> 
 
     private void ResetToDefaults()
     {
-        _gamepad!.Bindings.CopyFrom(GameInput.CreateDefaultBindings());
+        _gamepad!.Bindings.CopyFrom(GameInput.DefaultsFor(_gamepad));
         Refresh();
 
         // Every row gives a nod one after the other, they have all just changed
@@ -219,7 +233,9 @@ internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> 
     private void Leave()
     {
         GameInput.Save();
-        GoTo(back());
+
+        // Back to whatever it was opened over. Nothing underneath only happens if somebody set this scene on its own
+        if (!Return(Screen.BetweenMenus)) GoTo(new MainMenuScene());
     }
 
     /// <summary>
@@ -249,6 +265,6 @@ internal class BindingsScene(int slot, string title, Func<Horizon.Engine.Scene> 
             _entries[i].Label = ButtonGlyphs.Describe(_gamepad, GameInput.Actions[i].Name);
         }
 
-        _hint.Text = ButtonGlyphs.Localize(HintBrowse, _gamepad);
+        Hint?.Release();
     }
 }

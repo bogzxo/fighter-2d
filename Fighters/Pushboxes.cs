@@ -3,7 +3,7 @@ using System.Numerics;
 
 using Horizon.Physics;
 
-namespace Fighter2D.Combat;
+namespace Fighter2D.Fighters;
 
 /// <summary>
 /// Keeps the two fighters from standing in (or on) each other. Their bodies don't collide, they are in the same collision group

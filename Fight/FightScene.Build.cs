@@ -19,19 +19,28 @@ namespace Fighter2D.Fight;
 // FightScene.cs, reloading the data in FightScene.Reload.cs and the pause in FightScene.Pause.cs
 internal partial class FightScene
 {
-    /// <param name="opponent">Whoever player two is, null to fight the dummy.</param>
-    public FightScene(MapDefinition mapDefinition, int gamepadIndex, Player? opponent = null)
+    /// <param name="setup">Everything the menus settled, see <see cref="MatchSetup.CreateFight"/>, which is the way to make one of these.</param>
+    /// <param name="resume">Where the fight this one takes the place of was, null for one that starts from the top.</param>
+    public FightScene(MatchSetup setup, MapDefinition map, FightResume? resume = null)
     {
-        _mapDefinition = mapDefinition;
-        _gamepadIndex = gamepadIndex;
-        _opponent = opponent;
+        _setup = setup;
+        _map = map;
+        _resume = resume;
+        _opponent = setup.CreateOpponent();
+
+        // The rules get a say in what the map is like (its weather) before anything is made out of it
+        _mapDefinition = Rules.Apply(map);
+
+        // The stage loads on a worker from the moment the fight is asked for, while the screen is being covered, and
+        // the scene is set up once it is all the way covered. That frame was the stage and the rest of the set up both
+        _stageLoading = LoadStage(_mapDefinition);
     }
+
+    // A method of its own, the lambda over a parameter of the constructor would be made whatever the constructor did
+    private static Task<FightingStage> LoadStage(MapDefinition map) => Task.Run(() => FightingStage.Load(map, walked: true));
 
     public override void Initialize()
     {
-        // The rules get a say in what the map is like (its weather) before anything is made out of it
-        _mapDefinition = Rules.Apply(_mapDefinition);
-
         // Made before anything that is part of it, the players are handed it as they are made
         _fight = new FightContext();
 
@@ -46,7 +55,9 @@ internal partial class FightScene
 
         CreateRenderer(viewport);
 
-        _fight.Stage = _stage = new FightingStage(_mapDefinition, _renderer, _world);
+        // Loaded by now nearly always (see the constructor), waited for if not, and a map that couldn't be read throws here as it always did
+        _fight.Stage = _stage = _stageLoading.GetAwaiter().GetResult();
+        _stage.Attach(_renderer, _world);
         Vector2 ourSpawn = StartsOnTheRight ? _stage.RightSpawn : _stage.LeftSpawn;
         Vector2 theirSpawn = StartsOnTheRight ? _stage.LeftSpawn : _stage.RightSpawn;
 
@@ -75,8 +86,8 @@ internal partial class FightScene
             Lighting = Screen.WorldLighting
         });
 
-        // How it shades, the highlights, the shadows, how dark the corners go, is all in DeferedStyle
-        DeferedStyle.Apply(_renderer);
+        // How it shades, the highlights, the shadows, how dark the corners go, is all in WorldStyle
+        WorldStyle.Apply(_renderer);
 
         // The glow round the lanterns first, then the CRT last, on top of everything the others did to the picture.
         // The fight starts out behind the versus screen, so the arena starts out as a smear
@@ -90,7 +101,7 @@ internal partial class FightScene
         _one = new Player()
         {
             Fight = _fight,
-            Controller = new PlayerController(new GamepadPlayerInput(_gamepadIndex)),
+            Controller = new PlayerController(new GamepadPlayerInput(_setup.MenuSlot) { Muted = () => _drawer is { IsOpen: true } }),
             SpawnPosition = TestPositions is { } placed ? spawn with { X = placed.One } : spawn,
             StartFacing = TestPositions is { } facing ? MathF.Sign(facing.Two - facing.One) : null,
             CharacterId = CharacterId
@@ -111,7 +122,7 @@ internal partial class FightScene
             _training = new TrainingMode(dummy, _one, _opponent)
             {
                 // Swapping the dummy for another character is a reload with a different player two
-                ChangeOpponent = OpponentChanged is null || Reload is null ? null : ChangeOpponent
+                ChangeOpponent = _setup.Mode == MatchMode.Practice ? ChangeOpponent : null
             };
         }
 
@@ -153,12 +164,10 @@ internal partial class FightScene
             Finished = LeaveFight,
 
             // With a rematch on offer A is for going again and B for leaving, without one A just moves things along
-            Rematch = Rematch is null ? null : StartRematch,
-            RematchRequested = ConfirmPressed,
-            SkipRequested = Rematch is null ? ConfirmPressed : BackPressed
+            Rematch = _setup.IsOnline ? null : StartRematch,
+            // The result card asks, see ResultCard. Online the match moves on by itself after a while as well
         });
 
-        _round.PhaseChanged += OnPhaseChanged;
 
         _fight.Network = null;
         if (Session is not null)
@@ -172,11 +181,38 @@ internal partial class FightScene
         }
 
         // The calls across the screen make way for the pause countdown, which lands in the same spot
-        _hud = AddComponent(new HUDManager { Fight = _fight, Round = _round, BannerHidden = () => _pause is { HoldsFight: true } });
+        _hud = AddComponent(new HUDManager
+        {
+            Fight = _fight,
+            Round = _round,
+            Stats = new MatchStats(_fight, _round),
+            ChangeFighters = _setup.IsOnline ? null : ChangeFighters,
+            BannerHidden = () => _pause is { HoldsFight: true }
+        });
+        AddTrainingDrawer();
         AddPauseMenu();
 
         if (Content is not null) _transfer = AddComponent(new ContentTransferDisplay(Content, Session is { IsHost: true }));
         if (_network is not null) _network.ReloadRequested = ReloadNow;
+    }
+
+    /// <summary>
+    /// Helper method to give a practice fight its lab, the drawer that slides out over the fight while it goes on. Under
+    /// the pause menu, which is drawn over it and takes the gamepads from it.
+    /// </summary>
+    private void AddTrainingDrawer()
+    {
+        if (_training is null) return;
+
+        _drawer = AddComponent(new TrainingDrawer(_training)
+        {
+            CanOpen = () => _round.Phase is RoundPhase.Ready or RoundPhase.Fight or RoundPhase.RoundOver,
+            Held = () => _pause is { HoldsFight: true },
+            ToggleHitboxes = () => _world.RenderDebug = !_world.RenderDebug,
+            HitboxesShown = () => _world.RenderDebug,
+            FrameDataShown = () => _hud.FrameData,
+            ShowFrameData = shown => _hud.FrameData = shown
+        });
     }
 
     /// <summary>
@@ -195,16 +231,16 @@ internal partial class FightScene
             HeldByOther = _network is { } network ? () => network.RemotePaused : null,
 
             // Starting over is for fights on one machine, the other one would have to want it as well
-            Rematch = Rematch is null || Session is not null ? null : StartRematch,
+            Rematch = _setup.IsOnline ? null : StartRematch,
             Quit = LeaveFight,
 
             Options = OpenOptions,
 
             // The tools are the host's. On one machine that is whoever is playing
-            ReloadData = IsHost && Reload is not null ? ReloadData : null,
+            ReloadData = IsHost ? ReloadData : null,
             ToggleHitboxes = IsHost ? () => _world.RenderDebug = !_world.RenderDebug : null,
+            HitboxesShown = () => _world.RenderDebug,
 
-            Training = _training
         });
     }
 

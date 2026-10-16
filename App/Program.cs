@@ -38,6 +38,9 @@ internal class Program
         if (!Localisation.Load(Constants.LOCALISATION_DIRECTORY, GameOptions.Language))
             Localisation.Load(Constants.LOCALISATION_DIRECTORY, Localisation.DEFAULT_LANGUAGE);
 
+        // The combat rules of the content the game came with, read again below if it was told to use other content
+        CombatRules.Load();
+
         if (TryGetArgument(args, ARGUMENT_CONTENT, out string content))
         {
             if (Directory.Exists(Path.Combine(content, GameContent.MAPS_DIRECTORY)))
@@ -91,19 +94,16 @@ internal class Program
             // --dummy stand (or crouch, block, crouchblock) has the dummy do that from the first tick, the AI switched off
             DummyMode? dummyMode = TryGetArgument(args, ARGUMENT_DUMMY, out string mode) && Enum.TryParse(mode, ignoreCase: true, out DummyMode parsed) ? parsed : null;
 
-            FightScene CreateFight(FightResume? resume = null) => new(MapLoader.TryFind(map.FileName, out MapDefinition fresh) ? fresh : map, 0)
-            {
-                TestPositions = positions,
-                StartingDummyMode = dummyMode,
-                CharacterId = character.Length > 0 ? character : null,
-                OpponentCharacterId = dummy.Length > 0 ? dummy : null,
-                OpponentChanged = id => dummy = id,
-                Resume = resume,
-                Rematch = () => CreateFight(),
-                Reload = CreateFight
-            };
+            // A practice fight set up the way the setup screen would have, player one on the first gamepad
+            var setup = new MatchSetup(MatchMode.Practice) { TestPositions = positions, StartingDummyMode = dummyMode, DummyCharacter = dummy };
+            setup.Slots.Add(0);
+            if (character.Length > 0) setup.SetCharacter(0, character);
 
-            engine.Run(CreateFight(), Screen.IntoFight);
+            // Both got ready on workers while the fight is made, the way the setup screen does it, which halves the wait
+            CharacterArt.PrepareAhead(CharacterDefinition.Load(character));
+            CharacterArt.PrepareAhead(CharacterDefinition.Load(dummy));
+
+            engine.Run(setup.CreateFight(map), Screen.IntoFight);
         }
         else
         {

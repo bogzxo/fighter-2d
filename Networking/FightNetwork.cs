@@ -16,7 +16,7 @@ namespace Fighter2D.Networking;
 /// A few times a second each side also sends a snapshot of how its player is really doing, and whatever drifted gets fixed (see PlayerReconciler).
 /// It isn't rollback, but it isn't the old "send everything 60 times a second and pray" either.
 /// </summary>
-internal sealed class FightNetwork(NetSession session, RoundDirector round) : GameComponent, IDisposable
+internal sealed class FightNetwork(NetSession session, RoundDirector round) : GameComponent, IHitReporter, IDisposable
 {
     // How many ticks go by between two snapshots of our player, the inputs go out on every single one
     private const uint SNAPSHOT_INTERVAL = 6;
@@ -307,7 +307,7 @@ internal sealed class FightNetwork(NetSession session, RoundDirector round) : Ga
     {
         if (Remote is { } attacker && attacker.MoveList.TryGetMove(moveId, out var move))
         {
-            Fight.CombatLog.Report(new AttackReport(RemotePlayer, move, HitResult.Whiff));
+            RemotePlayer.Fight.CombatLog.Report(new AttackReport(RemotePlayer, move, HitResult.Whiff));
         }
     }
 

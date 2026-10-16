@@ -2,14 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-using Horizon.Rendering.Tiling;
-
-namespace Fighter2D.Fighters.Control;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// The way across the stage for a fighter who walks somewhere without a thumb steering them. The dummy going after the player
 /// and the winner of a round going over to gloat both use one of these. It finds the way on the tiles of the map (see
-/// <see cref="TileMapPathfinder"/>) and then follows it stop by stop, saying which way to walk and when to jump.
+/// <see cref="IArena"/>) and then follows it stop by stop, saying which way to walk and when to jump.
 /// Finding the way is one thing, actually getting there is another. So it also notices when it has landed somewhere else than
 /// it meant to or when it isn't getting anywhere, and works the way out again from wherever it ended up.
 /// </summary>
@@ -37,7 +35,7 @@ internal sealed class StageRoute(PlayerController controller)
     private const float STALLED = 0.05f;
     private const int STALL_TICKS = 20;
 
-    private readonly List<TileMapPathStep> _path = [];
+    private readonly List<RouteStep> _path = [];
     private int _stop;
 
     private Vector2 _goal;
@@ -50,12 +48,12 @@ internal sealed class StageRoute(PlayerController controller)
     private float _lastX = float.NaN;
     private int _stalled;
 
-    private Player Player => controller.Player;
+    private IFighterBody Body => controller.Body;
 
     /// <summary>
     /// Whether there is a map to find a way on at all.
     /// </summary>
-    public static bool Available => Fight.Stage?.Paths is not null;
+    public bool Available => controller.Fight.Stage is { HasPaths: true };
 
     /// <summary>
     /// Whether we are going straight at the goal because no way could be found.
@@ -75,7 +73,7 @@ internal sealed class StageRoute(PlayerController controller)
     /// <summary>
     /// The stop we are on our way to, null without one.
     /// </summary>
-    public TileMapPathStep? Next => Found ? _path[_stop] : null;
+    public RouteStep? Next => Found ? _path[_stop] : null;
 
     /// <summary>
     /// Where the way ends, which is as near the goal as anybody can stand.
@@ -111,15 +109,13 @@ internal sealed class StageRoute(PlayerController controller)
         _direct = false;
         Restart();
 
-        if (Fight.Stage?.Paths is not { } paths) return false;
+        if (controller.Fight.Stage is not { HasPaths: true } stage) return false;
 
         // The numbers of the character say how high a jump goes and for how long, drifting all the way at the pace we walk
-        var numbers = Player.Character.Movement;
+        var numbers = controller.Player.Character.Movement;
         float height = numbers.JumpHeight * JUMP_MARGIN;
         float distance = numbers.AirSpeed * pace * numbers.AirTime(numbers.JumpHeight) * JUMP_MARGIN;
-        var walker = new TileMapAgent(BODY * Player.Scale, Walks: true, JumpHeight: height, JumpDistance: distance);
-
-        return paths.TryFindPath(Player.FeetPosition, to, walker, _path);
+        return stage.TryFindPath(Body.FeetPosition, to, BODY * Body.Scale, height, distance, _path);
     }
 
     /// <summary>
@@ -131,7 +127,7 @@ internal sealed class StageRoute(PlayerController controller)
         _direct = true;
         Restart();
 
-        _path.Add(new TileMapPathStep(to, 0, 0, TileMapMove.Walk));
+        _path.Add(new RouteStep(to, Jump: false));
     }
 
     /// <summary>
@@ -141,7 +137,7 @@ internal sealed class StageRoute(PlayerController controller)
     {
         if (_path.Count == 0) return;
 
-        TileMapPathStep last = _path[^1];
+        RouteStep last = _path[^1];
         _path[^1] = last with { Position = new Vector2(x, last.Position.Y) };
     }
 
@@ -179,10 +175,10 @@ internal sealed class StageRoute(PlayerController controller)
 
         CheckStall(grounded);
 
-        TileMapPathStep stop = _path[_stop];
-        float x = Player.Transform.Position.X;
+        RouteStep stop = _path[_stop];
+        float x = Body.Position.X;
         float distance = stop.Position.X - x;
-        bool level = _direct || MathF.Abs(stop.Position.Y - Player.FeetPosition.Y) <= LEVEL;
+        bool level = _direct || MathF.Abs(stop.Position.Y - Body.FeetPosition.Y) <= LEVEL;
 
         if (grounded && level && MathF.Abs(distance) <= ARRIVED)
         {
@@ -196,7 +192,7 @@ internal sealed class StageRoute(PlayerController controller)
         float reach = grounded ? 1.0f : AIR_AIM;
         Steering = MathF.Abs(distance) > reach ? MathF.Sign(distance) : 0.0f;
 
-        if (!grounded || stop.Move != TileMapMove.Jump || _jumped) return;
+        if (!grounded || !stop.Jump || _jumped) return;
 
         // How far into the take off tile we are, from its edge behind us to the one in front
         float into = AlongTile(x);
@@ -210,7 +206,7 @@ internal sealed class StageRoute(PlayerController controller)
     /// </summary>
     private void CheckStall(bool grounded)
     {
-        float x = Player.Transform.Position.X;
+        float x = Body.Position.X;
 
         if (grounded && MathF.Abs(x - _lastX) < STALLED) _stalled++;
         else _stalled = 0;
@@ -221,7 +217,7 @@ internal sealed class StageRoute(PlayerController controller)
         Stalled = true;
 
         // Stuck at the foot of a jump is for the jump to sort out, anything else gets looked at again from here
-        if (_direct || _path[_stop].Move == TileMapMove.Jump) return;
+        if (_direct || _path[_stop].Jump) return;
 
         _stalled = 0;
         Replan();
@@ -247,11 +243,11 @@ internal sealed class StageRoute(PlayerController controller)
     /// <summary>
     /// Helper method for how far along its tile a spot of the stage is, from 0 at the left edge of the tile to 1 at its right one.
     /// </summary>
-    private static float AlongTile(float x)
+    private float AlongTile(float x)
     {
-        if (Fight.Stage?.Paths is not { } paths) return 0.5f;
+        if (controller.Fight.Stage is not { HasPaths: true } stage) return 0.5f;
 
-        float tiles = (x - paths.Map.Origin.X) / paths.Map.TileSize.X;
+        float tiles = (x - stage.OriginX) / stage.TileWidth;
         return tiles - MathF.Floor(tiles);
     }
 }

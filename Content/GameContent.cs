@@ -49,7 +49,11 @@ internal static class GameContent
     public static void UseLocal()
     {
         if (Root != Home) Log.Info("[Content] Back to our own content.");
+        bool changed = Root != Home;
         Root = Home;
+
+        // The rules are content as well, ours again
+        if (changed) CombatRules.TryLoad();
     }
 
     /// <summary>
@@ -59,6 +63,7 @@ internal static class GameContent
     {
         Log.Info($"[Content] Our own content is in '{home}'.");
         Home = Root = home;
+        CombatRules.Load();
     }
 
     /// <summary>
@@ -68,6 +73,9 @@ internal static class GameContent
     {
         Log.Info($"[Content] Using the content in '{root}'.");
         Root = root;
+
+        // The host's rules, the fight is played by those
+        CombatRules.TryLoad();
     }
 
     /// <summary>

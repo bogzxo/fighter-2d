@@ -1,6 +1,6 @@
 using Horizon.Input;
 
-namespace Fighter2D.Scenes.Flows;
+namespace Fighter2D.Menus;
 
 internal enum CaptureState
 {
@@ -51,11 +51,61 @@ internal sealed class BindingCapture
 
     public bool IsListening => Row >= 0;
 
+    /// <summary>
+    /// Every key that has been held since we started listening, for a keyboard, in the order they went down.
+    /// </summary>
+    public List<Silk.NET.Input.Key> Keys { get; } = [];
+
+    // The keys held right now, filled every update, and the ones that are never an answer (escape is the pause and the
+    // menus' no, enter is start, backspace the lab), in here they are how you change your mind
+    private readonly List<Silk.NET.Input.Key> _down = [];
+    private static readonly Silk.NET.Input.Key[] ReservedKeys = [Silk.NET.Input.Key.Escape, Silk.NET.Input.Key.Enter, Silk.NET.Input.Key.Backspace];
+
+    /// <summary>
+    /// The same as <see cref="Update(float, uint)"/>, for the keys of a keyboard. Keys add up for as long as any is held,
+    /// letting go of all of them is the answer, in <see cref="Keys"/>.
+    /// </summary>
+    public CaptureState Update(float dt, Keyboard keyboard)
+    {
+        _timer -= dt;
+        keyboard.CopyDown(_down);
+
+        if (!_armed)
+        {
+            _armed = _down.Count == 0;
+            return CaptureState.Listening;
+        }
+
+        if (_down.Count > 0)
+        {
+            bool grew = false;
+            foreach (var key in _down)
+            {
+                if (Keys.Contains(key)) continue;
+                Keys.Add(key);
+                grew = true;
+            }
+            return grew ? CaptureState.Changed : CaptureState.Listening;
+        }
+
+        if (Keys.Count > 0)
+        {
+            foreach (var key in ReservedKeys)
+            {
+                if (Keys.Contains(key)) return CaptureState.Cancelled;
+            }
+            return CaptureState.Captured;
+        }
+
+        return _timer <= 0 ? CaptureState.Cancelled : CaptureState.Listening;
+    }
+
     public void Start(int row, bool adding)
     {
         Row = row;
         Adding = adding;
         Buttons = 0;
+        Keys.Clear();
         _timer = LISTEN_TIME;
         _armed = false;
     }

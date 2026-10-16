@@ -1,9 +1,7 @@
 using System;
 using System.Numerics;
 
-using Horizon.Rendering.Tiling;
-
-namespace Fighter2D.Fighters.Control;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// What the winner of a round does while the loser lies there. They make their way over to the head of whoever they knocked out
@@ -110,7 +108,7 @@ internal sealed class VictoryTaunt(PlayerController controller)
     {
         // A network player taunts on their own machine, here they are only shown doing it
         if (controller.IsRemote || !controller.MoveList.Moves.ContainsKey(MoveIds.VICTORY)) return false;
-        if (Fight.Round is not { Phase: RoundPhase.RoundOver or RoundPhase.MatchOver }) return false;
+        if (controller.Fight.Round is not { Phase: RoundPhase.RoundOver or RoundPhase.MatchOver }) return false;
 
         return !controller.IsKnockedOut && controller.IsInControl && controller.Opponent.Controller.IsKnockedOut;
     }
@@ -133,10 +131,10 @@ internal sealed class VictoryTaunt(PlayerController controller)
     /// </summary>
     private (float Head, float Away) FindHead()
     {
-        Player loser = controller.Opponent;
-        Box body = loser.Boxes.Hurtbox;
+        IFighter loser = controller.Opponent;
+        Box body = loser.Body.Hurtbox;
 
-        return loser.Flipped ? (body.Max.X, 1.0f) : (body.Min.X, -1.0f);
+        return loser.Body.Flipped ? (body.Max.X, 1.0f) : (body.Min.X, -1.0f);
     }
 
     private void BeginWalk()
@@ -153,13 +151,13 @@ internal sealed class VictoryTaunt(PlayerController controller)
     /// </summary>
     private void FindWay()
     {
-        Player player = controller.Player, loser = controller.Opponent;
+        IFighter player = controller.Player, loser = controller.Opponent;
         var (head, away) = FindHead();
 
-        float floor = loser.FeetPosition.Y;
-        float tile = Fight.Stage?.Paths?.Map.TileSize.X ?? 0.0f;
+        float floor = loser.Body.FeetPosition.Y;
+        float tile = controller.Fight.Stage?.TileWidth ?? 0.0f;
 
-        Span<float> spots = [head + away * STAND_OFF * player.Scale, head - away * STAND_OFF * player.Scale];
+        Span<float> spots = [head + away * STAND_OFF * player.Body.Scale, head - away * STAND_OFF * player.Body.Scale];
         foreach (float spot in spots)
         {
             if (!_route.TryFind(new Vector2(spot, floor), JUMP_PACE)) continue;
@@ -183,7 +181,7 @@ internal sealed class VictoryTaunt(PlayerController controller)
     /// </summary>
     private void Walk()
     {
-        Player player = controller.Player;
+        IFighter player = controller.Player;
         bool grounded = controller.State.IsGrounded;
 
         _route.Update();
@@ -199,8 +197,8 @@ internal sealed class VictoryTaunt(PlayerController controller)
         }
 
         Steering = _route.Steering;
-        WalkScale = _route.Next is { Move: TileMapMove.Jump } ? JUMP_PACE : STROLL;
-        if (Steering != 0.0f) player.Flipped = Steering < 0.0f;
+        WalkScale = _route.Next is { Jump: true } ? JUMP_PACE : STROLL;
+        if (Steering != 0.0f) player.Body.Flipped = Steering < 0.0f;
 
         if (!grounded) return;
 
@@ -216,12 +214,12 @@ internal sealed class VictoryTaunt(PlayerController controller)
 
     private void Taunt()
     {
-        Player player = controller.Player;
+        IFighter player = controller.Player;
         var (head, _) = FindHead();
 
         // Turn to the head before bending down over it, from whichever side of it we ended up on
         Steering = 0.0f;
-        player.Flipped = head < player.Transform.Position.X;
+        player.Body.Flipped = head < player.Body.Position.X;
 
         _step = Step.Taunting;
         controller.ChangeToMove(MoveIds.VICTORY, forceRestart: true);

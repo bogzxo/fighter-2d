@@ -18,7 +18,9 @@ namespace Fighter2D.Fight;
 /// <summary>
 /// Main arena scene where two absolute units crash out against each other.
 /// The scene only wires things together. The map is the <see cref="FightingStage"/>, the camera the <see cref="FightCamera"/>,
-/// the rounds are run by the <see cref="RoundDirector"/> and everything else finds the fight through <see cref="Fight"/>.
+/// the rounds are run by the <see cref="RoundDirector"/> and everything under the scene finds the fight through its
+/// <see cref="FightContext"/>. Everything about the fight that was settled before it (who, where, by what rules, online or
+/// not) is the <see cref="MatchSetup"/> it was made from, which is also what makes it again for a rematch or a reload.
 /// </summary>
 internal partial class FightScene : Scene
 {
@@ -42,73 +44,28 @@ internal partial class FightScene : Scene
 
     public override Camera ActiveCamera { get; protected set; } = null!;
 
-    /// <summary>
-    /// The rules the match is played by, the defaults if nobody set any.
-    /// </summary>
-    public MatchRules Rules { get; init; } = new();
+    /* What the setup settled, read off it. The rules the match is played by (online the host's, which came along with the
+       map), the connection to the other machine, what gets the game files across, which corner is ours, who we play and
+       who the dummy is, and the two knobs a test turns */
 
-    /// <summary>
-    /// The connection to the other machine, for an online fight.
-    /// </summary>
-    public NetSession? Session { get; init; }
+    private MatchRules Rules => _setup.Lobby?.StartedRules ?? _setup.Rules;
+    private NetSession? Session => _setup.Session;
+    private ContentSync? Content => _setup.Lobby?.Content;
+    private bool StartsOnTheRight => _setup.Lobby is { LocalSide: 1 };
+    private string? CharacterId => _setup.GetCharacter(0);
+    private string? OpponentCharacterId => _setup.Mode == MatchMode.Practice && _setup.DummyCharacter.Length > 0 ? _setup.DummyCharacter : null;
+    private (float One, float Two)? TestPositions => _setup.TestPositions;
+    private DummyMode? StartingDummyMode => _setup.StartingDummyMode;
 
-    /// <summary>
-    /// Whether our player starts in the right corner instead of the left.
-    /// </summary>
-    public bool StartsOnTheRight { get; init; }
-
-    /// <summary>
-    /// The character our player picked, null for the first one there is.
-    /// </summary>
-    public string? CharacterId { get; init; }
-
-    /// <summary>
-    /// Which character the dummy is, for a practice fight. Null for the first one there is, and nothing at all when player two is a person.
-    /// </summary>
-    public string? OpponentCharacterId { get; init; }
-
-    /// <summary>
-    /// Where the two players stand at the start of every round, in units of the world across the stage, each facing
-    /// the other. Null for the spawn of the map (both on it, pushed apart by their bodies, which lands them somewhere a
-    /// little different every time). For tests that have to start from the same place every time (--positions).
-    /// </summary>
-    public (float One, float Two)? TestPositions { get; init; }
-
-    /// <summary>
-    /// What the dummy does from the very first tick, rather than fighting until somebody changes it in the pause menu
-    /// (by which time it has dashed off somewhere). For tests (--dummy stand). Null for the usual, it fights.
-    /// </summary>
-    public DummyMode? StartingDummyMode { get; init; }
-
-    /// <summary>
-    /// Called with the id of the character the dummy should be from now on, when the training menu changes it. Whoever makes the fight
-    /// keeps the choice, the fight itself is built again from where it was (the way a reload does it) with the new dummy in it.
-    /// </summary>
-    public Action<string>? OpponentChanged { get; init; }
-
-    /// <summary>
-    /// Makes this same fight all over again, for a rematch. Null if there is none to be had, which also means no pause menu (its restart needs this).
-    /// A fight can't just start itself over, its players and everything else in it belong to this scene and go when it does.
-    /// </summary>
-    public Func<FightScene>? Rematch { get; init; }
-
-    /// <summary>
-    /// Makes this same fight again from where it was, with everything read from disk again. For the host tools of the pause menu.
-    /// </summary>
-    public Func<FightResume, FightScene>? Reload { get; init; }
-
-    /// <summary>
-    /// Where the fight this one takes the place of was, null for a fight that starts from the top.
-    /// </summary>
-    public FightResume? Resume { get; init; }
-
-    /// <summary>
-    /// What gets the game files from the host to the other machine, for an online fight.
-    /// </summary>
-    public ContentSync? Content { get; init; }
-
+    // What the fight was set up as, the map it was asked for and the map as the rules have it (the weather), and where
+    // the fight this one takes the place of was, null for one that starts from the top
+    private readonly MatchSetup _setup;
+    private readonly MapDefinition _map;
     private MapDefinition _mapDefinition;
-    private readonly int _gamepadIndex;
+
+    // The stage, loading on a worker since the fight was asked for, see the constructor
+    private readonly Task<FightingStage> _stageLoading;
+    private readonly FightResume? _resume;
     private Player? _opponent;
 
     private PhysicsWorld _world = null!;
@@ -125,10 +82,12 @@ internal partial class FightScene : Scene
     private BlurEffect _backdropBlur = null!;
     private HUDManager _hud = null!;
     private PauseMenu? _pause;
-    private bool _pauseBlurred;
+    // The radius the arena was last told to blur to, see UpdateBackdropBlur. It starts out behind the versus screen
+    private float _blurWanted = VERSUS_BLUR;
 
     // The lab, only for a fight against the dummy
     private TrainingMode? _training;
+    private TrainingDrawer? _drawer;
 
     // Reloading the data. How long the host still waits for the other machine to have it, the panel that shows the files going across,
     // whether the fighters still have to be put back where they were, and whether the connection went on to the fight that replaces this one
@@ -154,11 +113,11 @@ internal partial class FightScene : Scene
         if (_resumePending) ResumeFighters();
         if (_awaitingPeer) AwaitPeer(dt);
 
-        UpdatePauseBlur();
+        UpdateBackdropBlur();
         UpdateReload(dt);
 
         // Our own content changed on the disk (saved in Hex), read again the way the pause menu's reload does it
-        if (ContentWatcher.TakeSettled() && IsHost && Reload is not null) ReloadData();
+        if (ContentWatcher.TakeSettled() && IsHost) ReloadData();
 
         // Held for the other machine to catch up after a reload, which is a pause nobody asked for.
         // The HUD is kept going through every kind of hold. A fight that comes back from a reload is held from its first update,
@@ -223,33 +182,16 @@ internal partial class FightScene : Scene
     /// </summary>
     private void StartRematch()
     {
-        if (Rematch is not null) Engine.SceneManager.ResetTo(Rematch(), Screen.IntoFight);
+        if (!_setup.IsOnline) Engine.SceneManager.ResetTo(_setup.CreateFight(_map), Screen.IntoFight);
     }
 
     /// <summary>
-    /// Helper method to test whether anybody has pressed a button that says yes.
+    /// Called from the result card, back to the fight setup screen with the same setup (who has which gamepad, the
+    /// fighters they had, the map and the rules), to pick again.
     /// </summary>
-    private static bool ConfirmPressed()
+    private void ChangeFighters()
     {
-        foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
-        {
-            if (gamepad.IsConnected && MenuInput.ConfirmPressed(gamepad)) return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Helper method to test whether anybody has pressed the button that says no.
-    /// </summary>
-    private static bool BackPressed()
-    {
-        foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
-        {
-            if (gamepad.IsConnected && gamepad.WasPressed(GamepadInput.B)) return true;
-        }
-
-        return false;
+        Engine.SceneManager.ResetTo(new FightSetupScene(_setup), Screen.IntoFight);
     }
 
     protected override void DisposeOther()
@@ -258,6 +200,14 @@ internal partial class FightScene : Scene
         if (!_handedOver) _network?.Dispose();
 
         _stage?.Dispose();
+
+        // Never set up (another scene was asked for before this one was shown), the stage it loaded was never put anywhere
+        if (_stage is null && _stageLoading.IsCompletedSuccessfully)
+        {
+            _stageLoading.Result.Map.Dispose();
+            _stageLoading.Result.Dispose();
+        }
+
         base.DisposeOther();
     }
 }

@@ -1,6 +1,6 @@
 using System;
 
-namespace Fighter2D.Fighters.Inputs.Dummy;
+namespace Fighter2D.Simulation.Dummy;
 
 /// <summary>
 /// The legs of the dummy. Walks up to the other player, jumps whatever is in the way, rolls in from far away and hops over rolls coming at it.
@@ -114,7 +114,7 @@ internal sealed class DummyFootwork(PlayerController controller, DummyHands hand
         if (view.Grounded && _routeAge >= DummyConfig.ROUTE_TIME)
         {
             _routeAge = 0.0f;
-            _route.TryFind(controller.Opponent.FeetPosition, DummyConfig.WALK_SPEED_SCALE);
+            _route.TryFind(controller.Opponent.Body.FeetPosition, DummyConfig.WALK_SPEED_SCALE);
         }
 
         _route.Update();
@@ -140,7 +140,7 @@ internal sealed class DummyFootwork(PlayerController controller, DummyHands hand
         if (!justStarted || view.Distance > DummyConfig.ROLL_DANGER_RANGE) return;
 
         // Test if they are rolling towards us (they are on our right and facing left, or the other way around)
-        bool towardsUs = view.Them.Player.Flipped == (view.ToOpponent.X > 0);
+        bool towardsUs = view.Them.Body.Flipped == (view.ToOpponent.X > 0);
         if (towardsUs && Random.Shared.NextSingle() < DummyConfig.DODGE_JUMP_CHANCE) hands.JumpNow();
     }
 
@@ -172,7 +172,7 @@ internal sealed class DummyFootwork(PlayerController controller, DummyHands hand
             _rollTap = -1;
             _walkPause = 0;
             _stuckTimer = 0;
-            _stuckX = controller.Player.Transform.Position.X;
+            _stuckX = controller.Body.Position.X;
         }
 
         return pressed ? view.Towards : InputFlags.None;
@@ -183,7 +183,7 @@ internal sealed class DummyFootwork(PlayerController controller, DummyHands hand
     /// </summary>
     private void JumpIfStuck(bool walking)
     {
-        float x = controller.Player.Transform.Position.X;
+        float x = controller.Body.Position.X;
 
         // Only a move that can be walked in counts, standing still in an attack isn't being stuck
         if (!walking || !controller.CanSteer || !controller.State.IsGrounded)

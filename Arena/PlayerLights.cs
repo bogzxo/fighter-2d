@@ -4,7 +4,7 @@ using System.Numerics;
 using Horizon.Rendering;
 using Horizon.Rendering.Lighting;
 
-namespace Fighter2D.Effects;
+namespace Fighter2D.Arena;
 
 /// <summary>
 /// A little light that follows each player around, so they can still be made out on a map that is dark as fuck.

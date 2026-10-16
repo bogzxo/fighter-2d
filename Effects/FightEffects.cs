@@ -14,7 +14,7 @@ namespace Fighter2D.Effects;
 /// The rest of the game only says what happened (a hit, a landing etc.), how that looks is decided here.
 /// What is in the air of the map by itself (rain, a storm) is the <see cref="Weather"/>.
 /// </summary>
-internal class FightEffects : GameObject
+internal class FightEffects : GameObject, IFightEffects
 {
     // How hard each kind of hit shakes the screen, in pixels of the art
     private const float HIT_SHAKE = 2.5f;

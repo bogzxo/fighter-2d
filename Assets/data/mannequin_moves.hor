@@ -38,7 +38,7 @@ let moves = {
         input: "DPadDown",
         trigger: "held",
         priority: 60,
-        stances: "crouching | standing",
+        stances: "standing",
         walk: 0,
         stance: "crouching",
         stance_after: "standing",

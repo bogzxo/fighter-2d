@@ -71,16 +71,18 @@ internal sealed class CharacterBoxes(SpriteSheetDefinition sprites)
         }
     }
 
-    private static FrameBoxes[] TraceFrames(in SpriteSource source)
+    private static readonly ParallelOptions Spare = new() { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount - 3) };
+
+    private static FrameBoxes[] TraceFrames(SpriteSource source)
     {
         var frames = new FrameBoxes[Math.Max(1, source.Frames)];
 
-        for (int i = 0; i < frames.Length; i++)
-        {
-            frames[i] = source.ReadFrame(i) is { } pixels
-                ? SpriteBoxTracer.Trace(pixels.Data, pixels.Width, pixels.Height)
-                : NoBoxes;
-        }
+        // Every frame on its own core, they don't care about each other. The Male is 1600 frames and that was over a
+        // second of the fight being set up, one after the other. Not on every core though, this mostly runs while the
+        // game is up (the fight setup gets them ready ahead) and the render thread and the simulation want theirs
+        Parallel.For(0, frames.Length, Spare, i => frames[i] = source.ReadFrame(i) is { } pixels
+            ? SpriteBoxTracer.Trace(pixels.Data, pixels.Width, pixels.Height)
+            : NoBoxes);
 
         return frames;
     }

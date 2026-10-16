@@ -1,20 +1,18 @@
 using System;
 
-using Horizon.Physics.Fixtures;
-
-namespace Fighter2D.Fighters;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// Where a fighter stands in the fight, apart from the move they are in. On the ground or in the air and in which stance,
 /// what they are busy with (attacking, blocking, eating a hit), and the clocks that take the controls away: hitstun, blockstun
 /// and lying on the floor after a knockdown. The controller ticks these once per tick of the fight, the HitResolver sets them.
 /// </summary>
-internal class FighterState(Player player)
+internal class FighterState(IFighter player)
 {
     // How fast (up or down) a player has to be going in the air for it to count as jumping or falling
     private const float AIR_SPEED_THRESHOLD = 0.1f;
 
-    public Player Player { get; } = player;
+    public IFighter Player { get; } = player;
     public bool IsGrounded { get; private set; }
 
     // Whether we were on the ground on the tick before, for spotting the tick we land on
@@ -91,9 +89,6 @@ internal class FighterState(Player player)
     /// </summary>
     public bool JustLanded => IsGrounded && !WasGrounded;
 
-    // Looked up once rather than on every update
-    private IPhysicsFixture? _feetFixture;
-
     public void UpdatePhysicsState(float dt)
     {
         WasGrounded = IsGrounded;
@@ -105,7 +100,7 @@ internal class FighterState(Player player)
             AirJumpsLeft = Player.Character.Movement.DoubleJumps;
             FastFalling = false;
         }
-        else if (Player.PhysicsBody.Velocity.Y > AIR_SPEED_THRESHOLD) FastFalling = false;
+        else if (Player.Body.Velocity.Y > AIR_SPEED_THRESHOLD) FastFalling = false;
     }
 
     /// <summary>
@@ -229,8 +224,7 @@ internal class FighterState(Player player)
 
     private void CheckGround()
     {
-        _feetFixture ??= Player.PhysicsBody.KinematicFixtures.Find(f => f.Tag == Player.FEET_TAG);
-        IsGrounded = _feetFixture?.IsTouching ?? false;
+        IsGrounded = Player.Body.IsGrounded;
     }
 
     private void UpdateStance(float dt)
@@ -249,7 +243,7 @@ internal class FighterState(Player player)
             return;
         }
 
-        float verticalVelocity = Player.PhysicsBody.Velocity.Y;
+        float verticalVelocity = Player.Body.Velocity.Y;
 
         if (verticalVelocity > AIR_SPEED_THRESHOLD)
         {

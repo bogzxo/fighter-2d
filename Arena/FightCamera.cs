@@ -3,7 +3,7 @@ using System.Numerics;
 
 using Horizon.Engine;
 
-namespace Fighter2D.Map;
+namespace Fighter2D.Arena;
 
 /// <summary>
 /// The camera of a fight. It frames both fighters, follows them smoothly, stays inside the map and gets rattled about by hits and thunder.

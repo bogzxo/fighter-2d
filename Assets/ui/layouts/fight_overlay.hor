@@ -413,3 +413,347 @@ let versus_p2_name = compositor.label({
     text: "Fighter",
     text_scale: 0.42
 });
+
+// The result card, on a layer of its own that the match comes up with once it is decided (HUD/ResultCard.cs). Who won,
+// the score and how every round went, what both of them did, and the three ways on
+let result = compositor.stack({
+    layer: "result",
+    padding: vec(52, 36, 52, 36),
+    intro: "pop",
+    intro_time: 0.25,
+    background: "panel",
+    stagger: 0.03,
+    spacing: 12
+});
+
+let result_title = compositor.label({
+    parent: result,
+    text: "",
+    text_scale: 0.9
+});
+
+let result_score = compositor.label({
+    parent: result,
+    text: "",
+    text_scale: 0.55
+});
+
+let result_rounds = compositor.label({
+    parent: result,
+    size: vec(760, 0),
+    text: "",
+    text_scale: 0.24,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+
+let result_rule = compositor.divider({
+    parent: result,
+    fill: "horizontal",
+    color: vec(0.58, 0.6, 0.66, 0.35)
+});
+
+let result_names_row = compositor.stack({
+    parent: result,
+    spacing: 18,
+    direction: "horizontal"
+});
+
+let result_name_one = compositor.label({
+    parent: result_names_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.3,
+    align: "right"
+});
+
+let result_name_gap = compositor.label({
+    parent: result_names_row,
+    size: vec(260, 0),
+    text: "",
+    text_scale: 0.24
+});
+
+let result_name_two = compositor.label({
+    parent: result_names_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.3,
+    align: "left"
+});
+
+let stat_damage_row = compositor.stack({
+    parent: result,
+    spacing: 18,
+    direction: "horizontal"
+});
+
+let stat_damage_one = compositor.label({
+    parent: stat_damage_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "right"
+});
+
+let stat_damage_label = compositor.label({
+    parent: stat_damage_row,
+    size: vec(260, 0),
+    text: "",
+    text_scale: 0.24,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+
+let stat_damage_two = compositor.label({
+    parent: stat_damage_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "left"
+});
+
+let stat_combo_row = compositor.stack({
+    parent: result,
+    spacing: 18,
+    direction: "horizontal"
+});
+
+let stat_combo_one = compositor.label({
+    parent: stat_combo_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "right"
+});
+
+let stat_combo_label = compositor.label({
+    parent: stat_combo_row,
+    size: vec(260, 0),
+    text: "",
+    text_scale: 0.24,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+
+let stat_combo_two = compositor.label({
+    parent: stat_combo_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "left"
+});
+
+let stat_hits_row = compositor.stack({
+    parent: result,
+    spacing: 18,
+    direction: "horizontal"
+});
+
+let stat_hits_one = compositor.label({
+    parent: stat_hits_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "right"
+});
+
+let stat_hits_label = compositor.label({
+    parent: stat_hits_row,
+    size: vec(260, 0),
+    text: "",
+    text_scale: 0.24,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+
+let stat_hits_two = compositor.label({
+    parent: stat_hits_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "left"
+});
+
+let stat_counters_row = compositor.stack({
+    parent: result,
+    spacing: 18,
+    direction: "horizontal"
+});
+
+let stat_counters_one = compositor.label({
+    parent: stat_counters_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "right"
+});
+
+let stat_counters_label = compositor.label({
+    parent: stat_counters_row,
+    size: vec(260, 0),
+    text: "",
+    text_scale: 0.24,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+
+let stat_counters_two = compositor.label({
+    parent: stat_counters_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "left"
+});
+
+let stat_punishes_row = compositor.stack({
+    parent: result,
+    spacing: 18,
+    direction: "horizontal"
+});
+
+let stat_punishes_one = compositor.label({
+    parent: stat_punishes_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "right"
+});
+
+let stat_punishes_label = compositor.label({
+    parent: stat_punishes_row,
+    size: vec(260, 0),
+    text: "",
+    text_scale: 0.24,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+
+let stat_punishes_two = compositor.label({
+    parent: stat_punishes_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "left"
+});
+
+let stat_blocked_row = compositor.stack({
+    parent: result,
+    spacing: 18,
+    direction: "horizontal"
+});
+
+let stat_blocked_one = compositor.label({
+    parent: stat_blocked_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "right"
+});
+
+let stat_blocked_label = compositor.label({
+    parent: stat_blocked_row,
+    size: vec(260, 0),
+    text: "",
+    text_scale: 0.24,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+
+let stat_blocked_two = compositor.label({
+    parent: stat_blocked_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "left"
+});
+
+let stat_parried_row = compositor.stack({
+    parent: result,
+    spacing: 18,
+    direction: "horizontal"
+});
+
+let stat_parried_one = compositor.label({
+    parent: stat_parried_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "right"
+});
+
+let stat_parried_label = compositor.label({
+    parent: stat_parried_row,
+    size: vec(260, 0),
+    text: "",
+    text_scale: 0.24,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+
+let stat_parried_two = compositor.label({
+    parent: stat_parried_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "left"
+});
+
+let stat_whiffs_row = compositor.stack({
+    parent: result,
+    spacing: 18,
+    direction: "horizontal"
+});
+
+let stat_whiffs_one = compositor.label({
+    parent: stat_whiffs_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "right"
+});
+
+let stat_whiffs_label = compositor.label({
+    parent: stat_whiffs_row,
+    size: vec(260, 0),
+    text: "",
+    text_scale: 0.24,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+
+let stat_whiffs_two = compositor.label({
+    parent: stat_whiffs_row,
+    size: vec(220, 0),
+    text: "",
+    text_scale: 0.26,
+    align: "left"
+});
+
+let result_buttons = compositor.stack({
+    parent: result,
+    spacing: 16,
+    direction: "horizontal"
+});
+
+let btn_result_rematch = compositor.button({
+    parent: result_buttons,
+    size: vec(240, 0),
+    label: "@result.rematch",
+    lbl_scale: 0.3
+});
+
+let btn_result_fighters = compositor.button({
+    parent: result_buttons,
+    size: vec(240, 0),
+    label: "@result.change_fighters",
+    lbl_scale: 0.3,
+    style: "button_flat"
+});
+
+let btn_result_menu = compositor.button({
+    parent: result_buttons,
+    size: vec(240, 0),
+    label: "@result.main_menu",
+    lbl_scale: 0.3,
+    style: "button_flat"
+});
+
+let result_hint = compositor.label({
+    parent: result,
+    size: vec(760, 30),
+    text: "",
+    text_scale: 0.22,
+    color: vec(0.86, 0.88, 0.92, 1)
+});

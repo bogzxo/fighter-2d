@@ -5,7 +5,7 @@ using System.Linq;
 using Horizon.HIDL.Runtime;
 using Horizon.Logging;
 
-namespace Fighter2D.Fighters;
+namespace Fighter2D.Data;
 
 /// <summary>
 /// What a character is made of, which is its sprites, its moves and how it handles.

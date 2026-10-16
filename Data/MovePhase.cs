@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace Fighter2D.Moves;
+namespace Fighter2D.Data;
 
 /// <summary>
 /// The jump a phase does as it starts, see <see cref="MovePhase.Jump"/>.

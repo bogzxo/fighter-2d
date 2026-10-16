@@ -13,7 +13,7 @@ namespace Fighter2D.HUD;
 
 /// <summary>
 /// The menu that comes up when somebody presses start in the middle of a fight. Carry on, start the match over or sod off to the main menu.
-/// A practice fight gets the training options under that (see <see cref="TrainingMode"/>).
+/// The training options of a practice fight are a drawer of their own that the fight goes on under, see <see cref="TrainingDrawer"/>.
 /// This only is the menu. Holding the fight still while it is up is the job of the scene, which asks <see cref="HoldsFight"/>.
 /// Online a pause is a pause for both machines. Whoever didn't press start gets told who did and waits for them to carry on,
 /// only the one who paused can unpause (see <see cref="HeldByOther"/>).
@@ -21,12 +21,10 @@ namespace Fighter2D.HUD;
 /// down from three first, and the fight stays held until it gets to the end of that.
 /// The gamepad walks the menu through the engine's navigator, which is what lets it step the selectors as well as press the buttons.
 /// It comes up on whatever it was left on the last time, so going back and forth between the fight and one of the
-/// training options isn't a walk down the menu every time (see <see cref="lastSelected"/>).
+/// host's tools isn't a walk down the menu every time (see <see cref="lastSelected"/>).
 /// </summary>
 internal sealed class PauseMenu : GameComponent
 {
-    private static string Hint => Localisation.Get("pause.hint");
-    private static string TrainingHint => Localisation.Get("pause.training_hint");
 
     // What the menu was left on the last time it was up, by the name it has in the layout, null for the top of it. It
     // outlives the menu on purpose. A fight that is built again (another dummy, the data read again) has a
@@ -34,10 +32,9 @@ internal sealed class PauseMenu : GameComponent
     // pause to come up with the thumb already on Start over
     private static string? lastSelected;
 
-    // The layout is four layers. The menu of whoever paused, the training options under it (practice only), what the other
-    // machine shows while it waits for them, and the countdown both of them get before the fight is back on
+    // The layout is three layers. The menu of whoever paused, what the other machine shows while it waits for them, and
+    // the countdown both of them get before the fight is back on
     private const string MENU_LAYER = "menu";
-    private const string TRAINING_LAYER = "training";
     private const string WAITING_LAYER = "waiting";
     private const string COUNTDOWN_LAYER = "countdown";
 
@@ -49,6 +46,10 @@ internal sealed class PauseMenu : GameComponent
     private UINavigator _nav = null!;
     private Button _resume = null!;
     private Label _hint = null!;
+
+    // What the buttons do while the menu is up, and the line that says so
+    private readonly MenuActions _actions = new();
+    private HintBar _hintBar = null!;
     private Readout _count = null!;
 
     // How much of the countdown is left in seconds, and the number of it that is on screen
@@ -132,10 +133,8 @@ internal sealed class PauseMenu : GameComponent
     public Action? ReloadData { get; init; }
     public Func<bool>? ToggleHitboxes { get; init; }
 
-    /// <summary>
-    /// The training options of a practice fight, null for a real one (which doesn't get them).
-    /// </summary>
-    public TrainingMode? Training { get; init; }
+    /// <summary>Whether the boxes are being drawn, for what the button says before anybody has pressed it.</summary>
+    public Func<bool>? HitboxesShown { get; init; }
 
     public override void Initialize()
     {
@@ -150,9 +149,17 @@ internal sealed class PauseMenu : GameComponent
         WireButton("btn_quit", AskToQuit);
         WireButton("btn_options", OpenOptions);
         WireHostTools();
-        WireTraining();
 
         _hint = _layout.Get<Label>("hint");
+        _hintBar = new HintBar(_hint, _actions);
+
+        // B and start put the menu away. Before A, which is also start on a pad, so start closes rather than picks
+        _actions.Add(GamepadInput.B, "hints.carry_on", _ => Close());
+        _actions.Add(new MenuAction { Button = GamepadInput.Start, Shown = false, Pressed = _ => Close() });
+
+        // Up and down walk the menu, left and right go across to the host's tools
+        _actions.Directions("hints.choose", Walk);
+        _actions.Add(GamepadInput.A, "hints.pick", _ => _nav.Activate());
         _count = _layout.Get<Readout>("count");
 
         // The gamepad walks whatever is on the menu layer, the hidden layers are skipped by themselves
@@ -161,7 +168,6 @@ internal sealed class PauseMenu : GameComponent
 
         // None of it is up until somebody pauses
         _layout.Module.SetLayerVisible(MENU_LAYER, false);
-        _layout.Module.SetLayerVisible(TRAINING_LAYER, false);
         _layout.Module.SetLayerVisible(WAITING_LAYER, false);
         _layout.Module.SetLayerVisible(COUNTDOWN_LAYER, false);
     }
@@ -179,55 +185,18 @@ internal sealed class PauseMenu : GameComponent
             _layout.Get<Label>("tools_title").Visible = false;
             reload.Visible = hitboxes.Visible = false;
 
-            // Without the tools the panel they are in only has the training options, and without those nothing at all
-            if (Training is null) _layout.Get<StackPanel>("side").Visible = false;
-            else _layout.Get<Divider>("training_rule").Visible = false;
+            // Without the tools the panel they are in has nothing in it
+            _layout.Get<StackPanel>("side").Visible = false;
             return;
         }
 
         // The menu stays up while the data is read again, the fight that comes back from it has no pause on
         WireButton("btn_reload", ReloadData);
+        // It used to say off whatever the options had, the boxes on and the button saying they weren't
+        hitboxes.Label = Localisation.Get(HitboxesShown?.Invoke() == true ? "pause.hitboxes_on" : "pause.hitboxes_off");
         WireButton("btn_hitboxes", () => hitboxes.Label = Localisation.Get(ToggleHitboxes() ? "pause.hitboxes_on" : "pause.hitboxes_off"));
     }
 
-    /// <summary>
-    /// Helper method to set up the training options. What the dummy does, whether health comes back, and a reset of the positions.
-    /// A fight without training mode never shows the layer they are on.
-    /// </summary>
-    private void WireTraining()
-    {
-        if (Training is not { } training) return;
-
-        // The built in modes and whatever behaviours the scripts of the content have to offer
-        var dummy = _layout.Get<Selector>("dummy");
-        dummy.Options = training.DummyChoices;
-        dummy.Index = training.DummyChoice;
-        dummy.OnChanged = _ => training.DummyChoice = dummy.Index;
-
-        // Which character the dummy is. Picking another one builds the fight again around it, so the menu goes with the fight
-        var opponent = _layout.Get<Selector>("opponent");
-        if (training.CanChangeOpponent)
-        {
-            opponent.Options = training.OpponentChoices;
-            opponent.Index = training.OpponentChoice;
-            opponent.OnChanged = _ => training.OpponentChoice = opponent.Index;
-        }
-        else
-        {
-            _layout.Get<StackPanel>("opponent_row").Visible = false;
-        }
-
-        var refill = _layout.Get<Selector>("refill");
-        refill.Options = [Localisation.Get("common.off"), Localisation.Get("common.on")];
-        refill.Index = training.RefillHealth ? 1 : 0;
-        refill.OnChanged = _ => training.RefillHealth = refill.Index == 1;
-
-        WireButton("btn_reset", () =>
-        {
-            training.ResetPositions();
-            Close();
-        });
-    }
     /// <summary>
     /// Helper method to open the options menu up.
     /// </summary>
@@ -307,7 +276,6 @@ internal sealed class PauseMenu : GameComponent
     private void ShowLayers()
     {
         _layout.Module.SetLayerVisible(MENU_LAYER, IsOpen);
-        _layout.Module.SetLayerVisible(TRAINING_LAYER, IsOpen && Training is not null);
         _layout.Module.SetLayerVisible(WAITING_LAYER, !IsOpen && Waiting);
         _layout.Module.SetLayerVisible(COUNTDOWN_LAYER, !IsShowing && _countdown > 0.0f);
     }
@@ -345,41 +313,24 @@ internal sealed class PauseMenu : GameComponent
             return;
         }
 
-        _hint.Text = ButtonGlyphs.Localize(Training is null ? Hint : TrainingHint, GameInput.Manager.LastUsed);
+        _hintBar.Update(dt);
         _compositor.UpdateState(dt);
 
-        // Whoever has a gamepad gets a say, it is not just player one who needs a piss
-        foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
+        // A question that is up takes the gamepad, B is the answer that changes nothing. Whoever has a gamepad gets a
+        // say otherwise, it is not just player one who needs a piss
+        if (_layout.Module.Dialog is { } dialog)
         {
-            if (!gamepad.IsConnected) continue;
-
-            // A question that is up takes the gamepad, B is the answer that changes nothing
-            if (_layout.Module.Dialog is { } dialog)
-            {
-                if (gamepad.WasPressed(GamepadInput.B)) dialog.Cancel();
-                else if (gamepad.WasPressed(GamepadInput.A)) _nav.Activate();
-                else _nav.Move(MenuInput.Horizontal(gamepad), MenuInput.Vertical(gamepad));
-                return;
-            }
-
-            if (gamepad.WasPressed(GamepadInput.B) || gamepad.WasPressed(GamepadInput.Start))
-            {
-                Close();
-                return;
-            }
-
-            _nav.Move(0, MenuInput.Vertical(gamepad));
-
-            // Left and right step a selector (the training options), and anywhere else go across to the other panel
-            int horizontal = MenuInput.Horizontal(gamepad);
-            if (horizontal != 0 && !_nav.Adjust(horizontal)) _nav.Move(horizontal, 0);
-
-            if (gamepad.WasPressed(GamepadInput.A))
-            {
-                _nav.Activate();
-                return;
-            }
+            MenuActions.DriveDialog(dialog, _nav);
+            return;
         }
+
+        _actions.Update();
+    }
+
+    private void Walk(Gamepad gamepad, int right, int down)
+    {
+        _nav.Move(0, down);
+        if (right != 0 && !_nav.Adjust(right)) _nav.Move(right, 0);
     }
 
     /// <summary>
@@ -410,7 +361,10 @@ internal sealed class PauseMenu : GameComponent
     {
         foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
         {
-            if (gamepad.IsConnected && gamepad.WasPressed(GamepadInput.Start)) return true;
+            if (!gamepad.IsConnected) continue;
+
+            // Escape on a keyboard (its B, which a fight has no other use for) as well, the way every game on a PC has it
+            if (gamepad.WasPressed(GamepadInput.Start) || (gamepad.Kind == GamepadKind.Keyboard && gamepad.WasPressed(GamepadInput.B))) return true;
         }
 
         return false;

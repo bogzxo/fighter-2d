@@ -29,6 +29,26 @@ internal class HUDManager : GameComponent
     /// </summary>
     public Func<bool>? BannerHidden { get; init; }
 
+    /// <summary>
+    /// The fight the HUD is over, for its rounds and its combat log.
+    /// </summary>
+    public FightContext Fight { get; init; } = null!;
+
+    /// <summary>
+    /// The rounds of that fight, which every display goes by.
+    /// </summary>
+    public RoundDirector Round { get; init; } = null!;
+
+    /// <summary>
+    /// What the players did over the match, for the result card.
+    /// </summary>
+    public MatchStats Stats { get; init; } = null!;
+
+    /// <summary>
+    /// Back to the fight setup screen with the same setup, for the result card. Null where there is no such thing (online).
+    /// </summary>
+    public Action? ChangeFighters { get; init; }
+
     public override void Initialize()
     {
         (UILayout layout, _compositor) = MenuLayouts.Load(MenuLayouts.FIGHT_HUD);
@@ -36,20 +56,45 @@ internal class HUDManager : GameComponent
         _layout = layout;
 
         // The fight sets its director up before its HUD, there is nothing to show without one
-        RoundDirector round = Fight.Round ?? throw new InvalidOperationException("The HUD of a fight needs its RoundDirector, which FightScene adds first.");
+        RoundDirector round = Round ?? throw new InvalidOperationException("The HUD of a fight needs its RoundDirector, which FightScene adds first.");
 
         _displays.Add(new HealthDisplay(layout, round));
         _displays.Add(new RoundDisplay(layout, round));
         _displays.Add(new VersusDisplay(layout, round));
+        _displays.Add(new ResultCard(layout, round, Stats, ChangeFighters));
 
         // What these would have written into stays empty without them, there is nothing to hide
         if (GameOptions.InputDisplay) _displays.Add(new InputDisplay(layout, round));
         if (GameOptions.HitCallouts) _displays.Add(new HitCalloutDisplay(layout, round, Fight.CombatLog));
 
-        // The frame bars are boxes with a track in them and not just text, so they are taken off when nobody wants them
-        if (GameOptions.FrameData) _displays.Add(new FrameBarDisplay(layout, round));
-        else layout.Get<UIComponent>(FrameBarDisplay.ROOT).Visible = false;
+        layout.Get<UIComponent>(FrameBarDisplay.ROOT).Visible = false;
+        FrameData = GameOptions.FrameData;
     }
+
+    /// <summary>
+    /// Whether the frame bars are up, what the options say to begin with and switched while the fight goes on by the lab
+    /// drawer. Not saved, the options are for that. The bars are boxes with a track in them and not just text, so they
+    /// are taken off the screen while nobody wants them, and start out empty when they come back.
+    /// </summary>
+    public bool FrameData
+    {
+        get => _frameBars is not null;
+        set
+        {
+            if (value == FrameData) return;
+
+            if (value) _displays.Add(_frameBars = new FrameBarDisplay(_layout, Round));
+            else
+            {
+                _displays.Remove(_frameBars!);
+                _frameBars = null;
+            }
+
+            _layout.Get<UIComponent>(FrameBarDisplay.ROOT).Visible = value;
+        }
+    }
+
+    private FrameBarDisplay? _frameBars;
 
     public override void UpdateState(float dt)
     {

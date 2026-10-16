@@ -6,7 +6,7 @@ using Horizon.Rendering;
 using Horizon.Rendering.Lighting;
 using Horizon.Rendering.Particles;
 
-namespace Fighter2D.Effects;
+namespace Fighter2D.Arena;
 
 /// <summary>
 /// The spots of a map that keep leaking particles (a dripping pipe, a crack with lava running out of it).

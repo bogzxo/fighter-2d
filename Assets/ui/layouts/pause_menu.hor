@@ -115,106 +115,14 @@ let btn_hitboxes = compositor.button({
     style: "button_flat"
 });
 
-let training_rule = compositor.divider({
-    parent: side,
-    layer: "training",
-    fill: "horizontal",
-    intro: "pop",
-    color: vec(0.58, 0.6, 0.66, 0.35)
-});
-
-let training_title = compositor.label({
-    parent: side,
-    layer: "training",
-    intro: "pop",
-    text: "@pause.training",
-    text_scale: 0.26,
-    color: vec(0.58, 0.6, 0.66, 1)
-});
-
-let dummy_row = compositor.stack({
-    parent: side,
-    layer: "training",
-    intro: "pop",
-    spacing: 16,
-    direction: "horizontal"
-});
-
-let dummy_title = compositor.label({
-    parent: dummy_row,
-    size: vec(130, 0),
-    text: "@pause.dummy",
-    text_scale: 0.28,
-    align: "left"
-});
-
-let dummy = compositor.selector({
-    parent: dummy_row,
-    size: vec(254, 44),
-    text_scale: 0.26
-});
-
-let opponent_row = compositor.stack({
-    parent: side,
-    layer: "training",
-    intro: "pop",
-    spacing: 16,
-    direction: "horizontal"
-});
-
-let opponent_title = compositor.label({
-    parent: opponent_row,
-    size: vec(130, 0),
-    text: "@pause.opponent",
-    text_scale: 0.28,
-    align: "left"
-});
-
-let opponent = compositor.selector({
-    parent: opponent_row,
-    size: vec(254, 44),
-    text_scale: 0.26
-});
-
-let refill_row = compositor.stack({
-    parent: side,
-    layer: "training",
-    intro: "pop",
-    spacing: 16,
-    direction: "horizontal"
-});
-
-let refill_title = compositor.label({
-    parent: refill_row,
-    size: vec(130, 0),
-    text: "@pause.refill",
-    text_scale: 0.28,
-    align: "left"
-});
-
-let refill = compositor.selector({
-    parent: refill_row,
-    size: vec(254, 44),
-    text_scale: 0.26
-});
-
-let btn_reset = compositor.button({
-    parent: side,
-    size: vec(400, 0),
-    layer: "training",
-    intro: "pop",
-    label: "@pause.reset_positions",
-    lbl_scale: 0.3,
-    style: "button_flat"
-});
-
+// Over the frame bars of the fight rather than on them, between them and the panels
 let hint = compositor.label({
-    pos: vec(0, 22),
+    pos: vec(0, 170),
     size: vec(1500, 30),
     layer: "menu",
     anchor: "bottom",
     pivot: "bottom",
-    text: "@pause.hint",
+    text: "",
     text_scale: 0.25,
     color: vec(0.86, 0.88, 0.92, 1)
 });

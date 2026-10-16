@@ -4,7 +4,7 @@ using System.Numerics;
 
 using Horizon.HIDL.Runtime;
 
-namespace Fighter2D.Map;
+namespace Fighter2D.Data;
 
 /// <summary>
 /// Reads the maps of the game out of Assets/data/maps.hor. Throws (saying which map is wrong) when the file is fucked.

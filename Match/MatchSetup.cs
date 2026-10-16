@@ -45,6 +45,19 @@ internal class MatchSetup(MatchMode mode)
     // The training menu changes it mid fight, and it stays changed for the rematch
     public string DummyCharacter { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Where the two players stand at the start of every round, in units of the world across the stage, each facing
+    /// the other. Null for the spawn of the map (both on it, pushed apart by their bodies, which lands them somewhere a
+    /// little different every time). For tests that have to start from the same place every time (--positions).
+    /// </summary>
+    public (float One, float Two)? TestPositions { get; set; }
+
+    /// <summary>
+    /// What the dummy does from the very first tick, rather than fighting until somebody changes it in the pause menu
+    /// (by which time it has dashed off somewhere). For tests (--dummy stand). Null for the usual, it fights.
+    /// </summary>
+    public DummyMode? StartingDummyMode { get; set; }
+
     // The connection to the other machine and what has been agreed on over it, only there for an online fight
     public NetSession? Session { get; private set; }
     public OnlineLobby? Lobby { get; private set; }
@@ -97,39 +110,19 @@ internal class MatchSetup(MatchMode mode)
     }
 
     /// <summary>
-    /// Helper method to make the fight everything was set up for. Where the players spawn is up to the scene, it knows the map.
+    /// Helper method to make the fight everything was set up for, the one way to make one. The scene reads everything else off
+    /// this setup, and comes back here for the rematch and for a reload. Where the players spawn is up to the scene, it knows the map.
     /// </summary>
     /// <param name="resume">Where a fight that is being built again was, null for one that starts from the top.</param>
     public FightScene CreateFight(MapDefinition mapDefinition, FightResume? resume = null)
     {
-        return new FightScene(mapDefinition, MenuSlot, CreateOpponent())
-        {
-            Session = Session,
-            Content = Lobby?.Content,
-            Resume = resume,
-
-            // The same fight from where it was, with everything read from disk again. The map as well, by the file it is in
-            Reload = from => CreateFight(MapLoader.TryFind(mapDefinition.FileName, out MapDefinition fresh) ? fresh : mapDefinition, from),
-
-            StartsOnTheRight = Lobby is { LocalSide: 1 },
-            CharacterId = GetCharacter(0),
-
-            // The dummy of a practice fight, and the training menu's way of swapping it for somebody else
-            OpponentCharacterId = Mode == MatchMode.Practice && DummyCharacter.Length > 0 ? DummyCharacter : null,
-            OpponentChanged = Mode == MatchMode.Practice ? id => DummyCharacter = id : null,
-
-            // Online both machines play by what the host settled on, which came along with the map
-            Rules = Lobby?.StartedRules ?? Rules,
-
-            // The same fight all over again. Not online, the other machine would have to want that as well
-            Rematch = IsOnline ? null : () => CreateFight(mapDefinition)
-        };
+        return new FightScene(this, mapDefinition, resume);
     }
 
     /// <summary>
     /// Helper method to make player two, null leaves it to the scene which puts the dummy there.
     /// </summary>
-    private Player? CreateOpponent()
+    public Player? CreateOpponent()
     {
         if (Lobby is not null)
         {

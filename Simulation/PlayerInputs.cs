@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Fighter2D.Fighters.Control;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// One line of the input display, which is a set of buttons and how many ticks they were held for.
@@ -28,7 +28,7 @@ internal sealed class PlayerInputs
     /// </summary>
     public IReadOnlyList<InputLogEntry> Log => _log;
 
-    public InputBuffer Buffer { get; } = new(FightTicks.INPUT_BUFFER_TICKS, FightTicks.DOUBLE_TAP_TICKS);
+    public InputBuffer Buffer { get; } = new(CombatRules.INPUT_BUFFER_TICKS, CombatRules.DOUBLE_TAP_TICKS);
 
     /// <summary>
     /// Saves what was held on a tick.

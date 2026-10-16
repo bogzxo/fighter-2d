@@ -5,7 +5,7 @@ using Horizon.Input;
 using Horizon.UI;
 using Horizon.UI.Components;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// Scene where the address of a server is typed in, with an on-screen keyboard that any gamepad can drive (or a real one).
@@ -16,14 +16,12 @@ internal class JoinServerScene : MenuScene
     // The two keys of our own on the keyboard, which are what they say, the same string every time it is asked for
     private static string KeyBack => Localisation.Get("join.key_back");
     private static string KeyConnect => Localisation.Get("join.key_connect");
-    private static string Hint => Localisation.Get("join.hint");
 
     // The address that was typed in last, so it doesn't have to be typed again after every fight
-    private static string lastAddress = "127.0.0.1";
 
     protected override string LayoutFile => MenuLayouts.JOIN_SERVER;
 
-    private Label _status = null!, _hint = null!;
+    private Label _status = null!;
     private TextBox _addressBox = null!;
     private OnScreenKeyboard _keyboard = null!;
 
@@ -38,11 +36,11 @@ internal class JoinServerScene : MenuScene
         // The screen is laid out in Assets/ui/layouts/join_server.hor
         _status = layout.Get<Label>("status");
         _status.Text = string.Empty;
-        _hint = layout.Get<Label>("hint");
 
         // A real keyboard can type into the box as well, enter connects
         _addressBox = layout.Get<TextBox>("address");
-        _addressBox.Text = lastAddress;
+        // Wherever the last fight that was joined was, kept in options.hor between runs
+        _addressBox.Text = GameOptions.JoinAddress;
         _addressBox.AllowedCharacters = "0123456789.";
         _addressBox.OnChanged = _ => _status.Text = string.Empty;
         _addressBox.OnSubmitted = _ => Connect();
@@ -71,47 +69,35 @@ internal class JoinServerScene : MenuScene
 
     protected override void UpdateMenu(float dt)
     {
-        // The hint shows the buttons of whichever gamepad was touched last
-        _hint.Text = ButtonGlyphs.Localize(Hint, GameInput.Manager.LastUsed);
+        if (_session is not null) UpdateConnecting(_session);
 
-        if (_session is not null)
-        {
-            UpdateConnecting(_session);
-            return;
-        }
+        // Nothing is pressed while a connection is being made
+        Actions.Enabled = _session is null;
+    }
 
-        if (!InputReady) return;
+    protected override void BuildActions()
+    {
+        // A real keyboard types straight into the box, which has enter to connect and backspace to delete by itself.
+        // All it needs from here is a way out, escape, which on a gamepad is the button that deletes
+        Actions.Add(GamepadInput.B, "hints.back", _ => Back(), OnKeyboard);
 
-        // Nobody has picked a gamepad yet, so the keyboard listens to all of them
-        foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
-        {
-            if (!gamepad.IsConnected) continue;
+        Actions.Directions("hints.move", (_, right, down) => _keyboard.Navigate(right, down), OnPad);
+        Actions.Add(GamepadInput.A, "hints.press", gamepad => Pressing(gamepad, _keyboard.Press), OnPad);
+        Actions.Add(GamepadInput.B, "hints.delete", _ => _addressBox.Backspace(), OnPad);
+        Actions.Add(GamepadInput.Y, "hints.connect", gamepad => Pressing(gamepad, Connect), OnPad);
+    }
 
-            // A real keyboard types straight into the box, which has enter to connect and backspace to delete by itself.
-            // All it needs from here is a way out, escape, which on a gamepad is the button that deletes
-            if (gamepad.Kind == GamepadKind.Keyboard)
-            {
-                if (gamepad.WasPressed(GamepadInput.B))
-                {
-                    Back();
-                    return;
-                }
+    private static bool OnKeyboard(Gamepad gamepad) => gamepad.Kind == GamepadKind.Keyboard;
+    private static bool OnPad(Gamepad gamepad) => gamepad.Kind != GamepadKind.Keyboard;
 
-                continue;
-            }
-
-            int right = MenuInput.Horizontal(gamepad), down = MenuInput.Vertical(gamepad);
-            if (right != 0 || down != 0) _keyboard.Navigate(right, down);
-
-            _connectedBy = gamepad.Slot;
-            if (gamepad.WasPressed(GamepadInput.A)) _keyboard.Press();
-            else if (gamepad.WasPressed(GamepadInput.B)) _addressBox.Backspace();
-            else if (gamepad.WasPressed(GamepadInput.Y)) Connect();
-            if (_session is null) _connectedBy = null;
-
-            // A key can have started connecting or taken us somewhere else
-            if (_session is not null) return;
-        }
+    /// <summary>
+    /// Helper method to press something that may start connecting, remembering whose gamepad it was if it did.
+    /// </summary>
+    private void Pressing(Gamepad gamepad, Action press)
+    {
+        _connectedBy = gamepad.Slot;
+        press();
+        if (_session is null) _connectedBy = null;
     }
 
     /// <summary>
@@ -121,8 +107,10 @@ internal class JoinServerScene : MenuScene
     {
         if (session.IsConnected)
         {
-            // We are in, the rest happens in the lobby
+            // We are in, the rest happens in the lobby. The address is the one to start on next time
             _session = null;
+            GameOptions.JoinAddress = _addressBox.Text.Trim();
+            GameOptions.Save();
 
             var setup = MatchSetup.Online(session);
             if (_connectedBy is { } slot) setup.Slots.Add(slot);
@@ -149,7 +137,6 @@ internal class JoinServerScene : MenuScene
             return;
         }
 
-        lastAddress = text;
         _session = NetSession.Join(text);
 
         _status.Color = MenuColors.Hint;

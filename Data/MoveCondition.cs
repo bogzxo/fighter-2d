@@ -1,4 +1,4 @@
-namespace Fighter2D.Moves;
+namespace Fighter2D.Data;
 
 /// <summary>
 /// What a phase of a move waits on, or keeps looping for.

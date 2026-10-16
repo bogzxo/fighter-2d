@@ -1,6 +1,6 @@
 using System;
 
-namespace Fighter2D.Moves;
+namespace Fighter2D.Data;
 
 /// <summary>
 /// The frame data of a move, in frames of the fight (see FightTicks.TICK_RATE), the same frames the move file is written in.

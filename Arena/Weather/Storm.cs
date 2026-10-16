@@ -6,7 +6,7 @@ using Horizon.Engine;
 using Horizon.Rendering;
 using Horizon.Rendering.Lighting;
 
-namespace Fighter2D.Effects;
+namespace Fighter2D.Arena;
 
 /// <summary>
 /// The thunderstorm over a map. Every so often a bolt lights everything up, flickers once more and rattles the screen a moment later.

@@ -12,7 +12,7 @@ using Horizon.UI.Components;
 
 using Button = Horizon.UI.Components.Button;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// Everything there is to settle before a fight, on the one screen. Who has which gamepad, who they play, where the
@@ -29,18 +29,17 @@ namespace Fighter2D.Scenes;
 /// A practice fight has the dummy in the other corner, X on the roster makes whoever you're on the dummy. An online
 /// fight has whoever is on the other machine there, and this is its lobby (see FightSetupScene.Online.cs).
 /// </para>
+/// <para>
+/// Every gamepad has a seat (<see cref="Seat"/>), not in yet, picking, locked in, or on the rules, and every action of
+/// the screen says which seat it is for. That one table (see <see cref="BuildActions"/>) is both what the buttons do
+/// and what the hint says, so the two can't drift apart the way fourteen hand written hints did.
+/// </para>
 /// </summary>
 internal partial class FightSetupScene(MatchSetup setup) : MenuScene
 {
     private const int GRID_ROWS_MIN = 2;
     // The row the bumpers flick through the maps of, by its name, wherever the layout has it
     private const string MAP_ROW = "map";
-
-    private static string HintJoin => Localisation.Get("setup.hint_join");
-    private static string HintPick => Localisation.Get("setup.hint_pick");
-    private static string HintPickPractice => Localisation.Get("setup.hint_pick_practice");
-    private static string HintWait => Localisation.Get("setup.hint_wait");
-    private static string HintMatch => Localisation.Get("setup.hint_match");
 
     // The colours of the two corners, the same ones the health bars of a fight have
     private static readonly Vector4 BlueCorner = new(0.42f, 0.66f, 1.0f, 1.0f);
@@ -67,7 +66,7 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
     private int _columns = 1, _gridRows = GRID_ROWS_MIN;
 
     private readonly SettingList _match = new();
-    private Label _hint = null!, _subtitle = null!;
+    private Label _subtitle = null!;
     private Button _fight = null!;
     private int _mapIndex;
 
@@ -77,10 +76,6 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
 
     // Whether the rows under the roster are player one's right now, which they are once everybody has locked in
     private bool _matchStage;
-
-    // Something the hint has to say for a moment in place of which buttons to press
-    private string _message = string.Empty;
-    private float _messageTime;
 
     private bool IsPractice => setup.Mode == MatchMode.Practice;
 
@@ -96,6 +91,13 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         {
             _cursors[i] = Math.Max(0, _characters.FindIndex(character => character.Id == setup.GetCharacter(i)));
         }
+
+        // Whoever the cursors start on is got ready for the fight now, on a worker, it's most likely who fights
+        foreach (int cursor in _cursors)
+        {
+            if (cursor < _characters.Count) CharacterArt.PrepareAhead(_characters[cursor]);
+        }
+        if (IsPractice && Dummy is { } dummy) CharacterArt.PrepareAhead(dummy);
 
         _mapIndex = Math.Max(0, _maps.FindIndex(map => map.FileName == lastMap));
     }
@@ -120,7 +122,6 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         // The screen is laid out in Assets/ui/layouts/fight_setup.hor, a corner in fighter_panel.hor and a cell of the roster in fighter_cell.hor
         layout.Get<Label>("title").Text = setup.Title;
         _subtitle = layout.Get<Label>("subtitle");
-        _hint = layout.Get<Label>("hint");
 
         _panels[0] = new FighterPanel(layout.Populate("left", 1)[0], mirrored: false);
         _panels[1] = new FighterPanel(layout.Populate("right", 1)[0], mirrored: true);
@@ -168,7 +169,6 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
     {
         _fastPulse.Update(dt);
         _slowPulse.Update(dt);
-        if (_messageTime > 0.0f) _messageTime -= dt;
 
         foreach (FighterPanel panel in _panels) panel.Update(dt);
         foreach (CharacterCell cell in _cells) cell.Update(dt);
@@ -181,122 +181,106 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
 
         ShowPanels();
         ShowCursors();
-        ShowHint();
-
-        if (!InputReady) return;
-
-        foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
-        {
-            if (!gamepad.IsConnected) continue;
-
-            // Only one thing happens per update, whoever pressed first wins
-            int player = setup.Slots.IndexOf(gamepad.Slot);
-            if (player < 0 ? HandleNewcomer(gamepad) : HandlePlayer(player, gamepad)) return;
-        }
+        ShowSubtitle();
     }
 
     /* The gamepads */
 
     /// <summary>
-    /// Called for every gamepad nobody has yet, returns whether it did anything.
+    /// Where a gamepad is on this screen. Not anybody's yet, a player walking the roster, a player who has locked in
+    /// (online, who is ready), or player one with the map and the rules once everybody has.
     /// </summary>
-    private bool HandleNewcomer(Gamepad gamepad)
+    private enum Seat
     {
-        if (gamepad.Pressed is not { } input) return false;
+        Out,
+        Picking,
+        Locked,
+        Rules
+    }
 
-        // B with nobody in is back like everywhere else, with somebody in it's theirs to press
-        if (input == GamepadInput.B && setup.Slots.Count == 0)
+    private Seat SeatOf(Gamepad gamepad)
+    {
+        int player = setup.Slots.IndexOf(gamepad.Slot);
+        if (player < 0) return Seat.Out;
+        if (player == 0 && _matchStage) return Seat.Rules;
+        return IsLocked(player) ? Seat.Locked : Seat.Picking;
+    }
+
+    private int PlayerOf(Gamepad gamepad) => setup.Slots.IndexOf(gamepad.Slot);
+
+    private bool Is(Gamepad gamepad, Seat seat) => SeatOf(gamepad) == seat;
+    private bool IsIn(Gamepad gamepad) => SeatOf(gamepad) != Seat.Out;
+
+    protected override void BuildActions()
+    {
+        bool online = setup.IsOnline;
+
+        // What the hint says before any button, the waits of a lobby
+        if (online)
         {
-            Back();
-            return true;
+            Actions.Add(new MenuAction { Text = "hints.find_you", Says = () => Localisation.Format("hints.find_you", ("addresses", _hostAddresses)), When = gamepad => IsIn(gamepad) && _lobby is { PeerPresent: false } });
+            Actions.Note("hints.host_choosing", gamepad => Is(gamepad, Seat.Locked) && _lobby is { BothReady: true, IsHost: false, ChoosingMap: true });
+            Actions.Note("hints.waiting_for_host", gamepad => Is(gamepad, Seat.Locked) && _lobby is { BothReady: true, IsHost: false, ChoosingMap: false });
+            Actions.Note("hints.waiting_for_them", gamepad => Is(gamepad, Seat.Locked) && _lobby is { BothReady: false });
         }
+        else Actions.Note("hints.waiting_for_everybody", gamepad => Is(gamepad, Seat.Locked));
 
-        if (setup.IsReady) return false;
+        // A gamepad nobody has yet. B with nobody in is back like everywhere else, any other button takes the next corner
+        Actions.Add(GamepadInput.B, "hints.back", _ => Back(), gamepad => Is(gamepad, Seat.Out) && setup.Slots.Count == 0);
+        Actions.Any("hints.press_any_to_join", Join, gamepad => Is(gamepad, Seat.Out) && !setup.IsReady && GameInput.Manager.ConnectedCount > setup.Slots.Count);
+        Actions.Note("hints.plug_in", gamepad => !setup.IsReady && GameInput.Manager.ConnectedCount <= setup.Slots.Count);
 
-        // Any button takes the next corner. Its panel jumps, so there is no doubt it went to them
+        // Player one on the rows under the roster, once everybody is locked in. Up and down pick a row, left and right change it
+        Actions.Directions("hints.choose_and_change", (_, right, down) =>
+        {
+            if (down != 0) _match.Move(down);
+            else _match.Step(right);
+        }, gamepad => Is(gamepad, Seat.Rules));
+        Actions.Add(GamepadInput.A, "hints.fight", _ => StartFight(), gamepad => Is(gamepad, Seat.Rules));
+
+        // Walking the roster and locking in. Online locking in is saying you're ready, which takes somebody to be ready
+        // for and the files to fight with, and a press without them says why instead
+        Actions.Directions("hints.choose", (gamepad, right, down) => Move(PlayerOf(gamepad), right, down), gamepad => Is(gamepad, Seat.Picking));
+        Actions.Add(GamepadInput.A, online ? "hints.ready" : "hints.lock_in", gamepad => Lock(PlayerOf(gamepad)), gamepad => Is(gamepad, Seat.Picking) && CanBeReady(out _));
+        Actions.Add(new MenuAction { Button = GamepadInput.A, Shown = false, Pressed = gamepad => Refuse(PlayerOf(gamepad)), When = gamepad => Is(gamepad, Seat.Picking) && !CanBeReady(out _) });
+
+        // X makes whoever you're on the dummy in practice, and swaps the corners online
+        if (IsPractice) Actions.Add(GamepadInput.X, "hints.make_them_the_dummy", gamepad => MakeDummy(_cursors[PlayerOf(gamepad)]), gamepad => Is(gamepad, Seat.Picking));
+        if (online) Actions.Add(GamepadInput.X, "hints.switch_corners", _ => SwitchCorners(), gamepad => Is(gamepad, Seat.Picking) && _lobby is { PeerPresent: true });
+
+        // The map is one press away for whoever drives the menus, wherever they are on the screen
+        Actions.Pair(GamepadInput.LeftBumper, GamepadInput.RightBumper, "hints.map", (_, step) => _match.Step(_match.IndexOf(MAP_ROW), step),
+            gamepad => PlayerOf(gamepad) == 0 && CanChangeMatch);
+
+        Actions.Add(GamepadInput.Y, "hints.bindings", gamepad => OpenBindings(gamepad.Slot), IsIn);
+
+        // B takes back whatever was done last. Off the rules back to the fighters, a lock in, and from the roster player
+        // one leaving is everybody leaving and anybody after them only gives their corner back
+        Actions.Add(GamepadInput.B, "hints.back_to_fighters", _ => Unlock(0), gamepad => Is(gamepad, Seat.Rules));
+        Actions.Add(GamepadInput.B, online ? "hints.not_ready" : "hints.change_your_mind", gamepad => Unlock(PlayerOf(gamepad)), gamepad => Is(gamepad, Seat.Locked));
+        Actions.Add(GamepadInput.B, online ? "hints.leave" : "hints.back", _ => Back(), gamepad => Is(gamepad, Seat.Picking) && PlayerOf(gamepad) == 0);
+        Actions.Add(GamepadInput.B, "hints.leave", gamepad => Leave(PlayerOf(gamepad)), gamepad => Is(gamepad, Seat.Picking) && PlayerOf(gamepad) > 0);
+    }
+
+    /// <summary>
+    /// A gamepad nobody had takes the next corner. Its panel jumps, so there is no doubt it went to them.
+    /// </summary>
+    private void Join(Gamepad gamepad)
+    {
         int player = setup.Slots.Count;
         setup.Slots.Add(gamepad.Slot);
         PanelOf(player).Bump(0.1f);
-        return true;
     }
 
     /// <summary>
-    /// Called for every gamepad that is somebody's, returns whether it did anything.
+    /// A press of lock in that can't be one yet, online with nobody to be ready for or without the files. Says why.
     /// </summary>
-    private bool HandlePlayer(int player, Gamepad gamepad)
+    private void Refuse(int player)
     {
-        if (gamepad.WasPressed(GamepadInput.Y))
-        {
-            OpenBindings(gamepad.Slot);
-            return true;
-        }
+        if (CanBeReady(out string why)) return;
 
-        // The map is one press away for whoever drives the menus, wherever they are on the screen
-        if (player == 0 && CanChangeMatch && (gamepad.WasPressed(GamepadInput.LeftBumper) || gamepad.WasPressed(GamepadInput.RightBumper)))
-        {
-            _match.Step(_match.IndexOf(MAP_ROW), gamepad.WasPressed(GamepadInput.RightBumper) ? 1 : -1);
-            return true;
-        }
-
-        if (_matchStage && player == 0) return HandleMatch(gamepad);
-
-        if (IsLocked(player))
-        {
-            // B on a fighter that is locked in only unlocks them
-            if (gamepad.WasPressed(GamepadInput.B))
-            {
-                Unlock(player);
-                return true;
-            }
-
-            return false;
-        }
-
-        if (gamepad.WasPressed(GamepadInput.B))
-        {
-            // Player one leaving is everybody leaving, anybody after them only gives their corner back
-            if (player == 0) Back();
-            else Leave(player);
-            return true;
-        }
-
-        int column = MenuInput.Horizontal(gamepad), row = MenuInput.Vertical(gamepad);
-        if (column != 0 || row != 0)
-        {
-            Move(player, column, row);
-            return true;
-        }
-
-        if (MenuInput.ConfirmPressed(gamepad))
-        {
-            Lock(player);
-            return true;
-        }
-
-        if (gamepad.WasPressed(GamepadInput.X))
-        {
-            if (IsPractice) MakeDummy(_cursors[player]);
-            else SwitchCorners();
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Called for player one's gamepad while the rows under the roster are theirs.
-    /// </summary>
-    private bool HandleMatch(Gamepad gamepad)
-    {
-        int vertical = MenuInput.Vertical(gamepad), horizontal = MenuInput.Horizontal(gamepad);
-
-        if (MenuInput.ConfirmPressed(gamepad)) StartFight();
-        else if (gamepad.WasPressed(GamepadInput.B)) Unlock(0);
-        else if (vertical != 0) _match.Move(vertical);
-        else if (horizontal != 0) _match.Step(horizontal);
-        else return false;
-
-        return true;
+        Hint?.Say(why);
+        PanelOf(player).Box.Shake(6.0f, 0.2f);
     }
 
     /// <summary>
@@ -326,15 +310,12 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
 
     private void OpenBindings(int slot)
     {
-        // Who everybody was on is kept for when we are back, nobody is ready while somebody is off changing buttons
-        for (int i = 0; i < _cursors.Length; i++)
-        {
-            Unlock(i);
-            if (_cells[_cursors[i]].Character is { } character) setup.SetCharacter(i, character.Id);
-        }
+        // Nobody is ready while somebody is off changing buttons, online the host can't start the fight under them.
+        // The screen is opened over this one, so who everybody was on is still here when they are back
+        for (int i = 0; i < _cursors.Length; i++) Unlock(i);
 
         int player = Math.Max(0, setup.Slots.IndexOf(slot));
-        GoTo(new BindingsScene(slot, Localisation.Format("bindings.title_player", ("number", player + 1)), () => new FightSetupScene(setup)));
+        Open(new BindingsScene(slot, Localisation.Format("bindings.title_player", ("number", player + 1))), Screen.BetweenMenus);
     }
 
     /* The roster */
@@ -354,6 +335,9 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
 
         _cursors[player] = target;
 
+        // Got ready while they make up their mind, a fight is over a second quicker to start for it
+        CharacterArt.PrepareAhead(_cells[target].Character!);
+
         // Whoever is on the other machine sees who we are looking at, not only who we end up with
         if (setup.IsOnline && _cells[target].Character is { } character) setup.SetCharacter(player, character.Id);
     }
@@ -364,10 +348,9 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         if (cell.Character is not { } character) return;
 
         // Online being locked in is being ready, which takes somebody to be ready for and the files to fight with
-        if (!CanBeReady(out string why))
+        if (!CanBeReady(out _))
         {
-            Say(why);
-            PanelOf(player).Box.Shake(6.0f, 0.2f);
+            Refuse(player);
             return;
         }
 
@@ -399,6 +382,7 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         if (_cells[index].Character is not { } character) return;
 
         setup.DummyCharacter = character.Id;
+        CharacterArt.PrepareAhead(character);
         _panels[1].Bump();
     }
 
@@ -560,45 +544,8 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         }
     }
 
-    private void ShowHint()
+    private void ShowSubtitle()
     {
-        GameInput.Manager.TryGet(setup.MenuSlot, out Gamepad? first);
-        Gamepad? gamepad = GameInput.Manager.LastUsed ?? first;
-
         _subtitle.Text = Localisation.Get(_matchStage ? "setup.where_and_rules" : EverybodyLocked ? "setup.everybody_locked" : "setup.pick_fighters");
-
-        if (_messageTime > 0.0f)
-        {
-            _hint.Text = _message;
-            _hint.Color = MenuColors.Error;
-            return;
-        }
-
-        _hint.Color = MenuColors.Hint;
-        _hint.Text = ButtonGlyphs.Localize(DescribeHint(), gamepad);
-    }
-
-    private string DescribeHint()
-    {
-        if (LobbyHint is { } lobby) return lobby;
-        if (_matchStage) return HintMatch;
-
-        if (!setup.IsReady)
-        {
-            return GameInput.Manager.ConnectedCount <= setup.Slots.Count ? Localisation.Get("setup.hint_plug_in") : HintJoin;
-        }
-
-        if (EverybodyLocked || IsLocked(0)) return HintWait;
-        return IsPractice ? HintPickPractice : HintPick;
-    }
-
-    /// <summary>
-    /// Helper method to have the hint say something else for a couple of seconds, why something that was pressed did nothing.
-    /// </summary>
-    private void Say(string message)
-    {
-        _message = message;
-        _messageTime = 2.5f;
-        _hint.Shake(6.0f);
     }
 }

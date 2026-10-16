@@ -1,5 +1,5 @@
 
-namespace Fighter2D.Fighters;
+namespace Fighter2D.Networking;
 
 /// <summary>
 /// A player who sits at another machine. They are played like anybody else, just with the buttons their machine says they pressed.

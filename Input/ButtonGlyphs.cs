@@ -72,6 +72,57 @@ internal static class ButtonGlyphs
         }
     }
 
+    // The same for a keyboard, whose buttons are written as the keys they are on. Forgotten when the bindings change
+    private static readonly Dictionary<InputFlags, string> heldKeyTexts = [];
+
+    /// <summary>
+    /// Forgets what was worked out of the bindings, for when they have changed (see GameInput.Save).
+    /// </summary>
+    public static void Forget()
+    {
+        lock (heldKeyTexts) heldKeyTexts.Clear();
+    }
+
+    /// <summary>
+    /// Helper method to write out the buttons of the move files that are held together the way the gamepad that holds
+    /// them has them. A keyboard has keys for them, the J its left kick is on and not the space bar the icon of the
+    /// bottom button is on a keyboard. One keyboard plays at a time, so its texts are kept by what is held alone.
+    /// </summary>
+    public static string Describe(InputFlags held, Gamepad? gamepad)
+    {
+        if (gamepad?.Kind != GamepadKind.Keyboard || held == InputFlags.None) return Describe(held);
+
+        lock (heldKeyTexts)
+        {
+            if (heldKeyTexts.TryGetValue(held, out string? known)) return known;
+
+            var text = new StringBuilder();
+            foreach (var (flag, icon) in FightIcons)
+            {
+                if ((held & flag) == 0) continue;
+                text.Append(KeyOf(gamepad, flag) ?? icon);
+            }
+
+            return heldKeyTexts[held] = text.ToString();
+        }
+    }
+
+    // The key the action of a button of the move files is on first, null for one on no key (or a direction, which the arrows say)
+    private static string? KeyOf(Gamepad gamepad, InputFlags flag)
+    {
+        if ((flag & (InputFlags.DPadLeft | InputFlags.DPadRight | InputFlags.DPadUp | InputFlags.DPadDown)) != 0) return null;
+
+        foreach (var action in GameInput.Actions)
+        {
+            if (action.Flag != flag) continue;
+
+            var keys = gamepad.Bindings.KeyCombinationsOf(action.Name);
+            return keys.Count > 0 ? Describe(keys[0]) : null;
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Helper method to write out the buttons of the move files that are held together, as icons. Empty if nothing is held.
     /// </summary>
@@ -114,6 +165,12 @@ internal static class ButtonGlyphs
         {
             if (text.Length > 0) text.Append(Localisation.Get("common.or"));
             text.Append(Describe(combination));
+        }
+
+        foreach (Silk.NET.Input.Key[] keys in bindings.KeyCombinationsOf(action))
+        {
+            if (text.Length > 0) text.Append(Localisation.Get("common.or"));
+            text.Append(Describe(keys));
         }
 
         return text.Length > 0 ? text.ToString() : Localisation.Get("common.not_bound");
@@ -167,6 +224,34 @@ internal static class ButtonGlyphs
         GamepadInput.RightStickRight => Stick("[icon:pad_rs]", "bindings.stick_right"),
         _ => input.ToString()
     };
+
+    // The keys the skins have a picture of (the ones the menus are on), by the name of the picture
+    private static readonly Dictionary<Silk.NET.Input.Key, string> KeyIcons = new()
+    {
+        [Silk.NET.Input.Key.A] = "key_a", [Silk.NET.Input.Key.C] = "key_c", [Silk.NET.Input.Key.D] = "key_d",
+        [Silk.NET.Input.Key.E] = "key_e", [Silk.NET.Input.Key.Q] = "key_q", [Silk.NET.Input.Key.R] = "key_r",
+        [Silk.NET.Input.Key.S] = "key_s", [Silk.NET.Input.Key.W] = "key_w", [Silk.NET.Input.Key.Z] = "key_z",
+        [Silk.NET.Input.Key.Up] = "key_up", [Silk.NET.Input.Key.Down] = "key_down", [Silk.NET.Input.Key.Left] = "key_left", [Silk.NET.Input.Key.Right] = "key_right",
+        [Silk.NET.Input.Key.Space] = "key_space", [Silk.NET.Input.Key.Enter] = "key_enter", [Silk.NET.Input.Key.Escape] = "key_esc",
+        [Silk.NET.Input.Key.Tab] = "key_tab", [Silk.NET.Input.Key.Backspace] = "key_backspace",
+        [Silk.NET.Input.Key.ShiftLeft] = "key_shift", [Silk.NET.Input.Key.ControlLeft] = "key_ctrl"
+    };
+
+    /// <summary>
+    /// Helper method to write out keys held together, as the pictures of them where the skin has one and the name of the
+    /// key in bold where it hasn't (J, semicolon).
+    /// </summary>
+    public static string Describe(IReadOnlyList<Silk.NET.Input.Key> keys)
+    {
+        var text = new StringBuilder();
+        foreach (Silk.NET.Input.Key key in keys)
+        {
+            if (text.Length > 0) text.Append(" + ");
+            if (KeyIcons.TryGetValue(key, out string? icon)) text.Append("[icon:").Append(icon).Append(']');
+            else text.Append("[b]").Append(key).Append("[/b]");
+        }
+        return text.ToString();
+    }
 
     // A stick pushed one way, the icon of the stick put wherever the language puts it
     private static string Stick(string icon, string key) => Localisation.Format(key, ("stick", icon));

@@ -8,7 +8,7 @@ using Horizon.Input;
 using Horizon.UI;
 using Horizon.UI.Components;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// Scene where the player sets the game up the way they like it. The window, the look of the game and what a fight shows on top of itself.
@@ -20,7 +20,6 @@ namespace Fighter2D.Scenes;
 /// <param name="tab">The tab that is open to begin with, and the row the gamepad starts on in it: for when the screen had to be made again half way through (see <see cref="Reload"/>).</param>
 internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
 {
-    private static string Hint => Localisation.Get("options.hint");
 
     protected override string LayoutFile => MenuLayouts.OPTIONS;
     protected override float InputDelay => 0.2f;
@@ -30,7 +29,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
     private SettingList _settings = null!;
     private TabPanel _tabs = null!;
 
-    private Label _hint = null!, _description = null!, _aboutTitle = null!;
+    private Label _description = null!, _aboutTitle = null!;
     private UICompositor _ui = null!;
 
     protected override void BuildUi(UILayout layout)
@@ -38,7 +37,6 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
         // The screen is laid out in Assets/ui/layouts/options.hor, what its rows choose between is decided here.
         // So is the line about each of them, which wraps by itself in the layout
         _ui = layout.Module.Compositor;
-        _hint = layout.Get<Label>("hint");
         _description = layout.Get<Label>("description");
         _aboutTitle = layout.Get<Label>("about_title");
 
@@ -48,8 +46,11 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
         {
             Gamepad? gamepad = GameInput.Manager.LastUsed ?? GameInput.Manager.Gamepads.FirstOrDefault(each => each.IsConnected);
             if (gamepad is not null) OpenBindings(gamepad);
-            else _hint.Shake(6.0f);
+            else Hint?.Label.Shake(6.0f);
         };
+
+        _module = layout.Module;
+        layout.Get<Horizon.UI.Components.Button>("btn_defaults").OnPressed = AskDefaults;
 
         _settings = _pages[0];
         AddWindowOptions(layout);
@@ -271,6 +272,50 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
         Reload(null);
     }
 
+    private Horizon.UI.UIModule _module = null!;
+
+    /// <summary>
+    /// Asks before the tab that is open goes back to how the game came, it is a lot of rows to set again by hand.
+    /// </summary>
+    private void AskDefaults()
+    {
+        string tab = Localisation.Get("options.tab_" + ((OptionsTab)_tabs.Selected).ToString().ToLowerInvariant());
+        Horizon.UI.Components.UIDialog.Show(_module, Localisation.Get("options.defaults_title"), Localisation.Format("options.defaults_question", ("tab", tab)),
+            new Horizon.UI.Components.DialogChoice(Localisation.Get("options.defaults_confirm"), ResetToDefaults),
+            new Horizon.UI.Components.DialogChoice(Localisation.Get("common.stay")));
+    }
+
+    /// <summary>
+    /// Helper method to put the open tab back to its defaults, see to whatever they change (the window, the skin, the
+    /// look of the fight), and make the screen again so its rows say the new values.
+    /// </summary>
+    private void ResetToDefaults()
+    {
+        var tab = (OptionsTab)_tabs.Selected;
+        GameOptions.ResetToDefaults(tab);
+        GameOptions.Save();
+
+        switch (tab)
+        {
+            case OptionsTab.Display:
+                Engine.WindowManager.Apply(GameOptions.Display);
+                if (Screen.Performance is { } overlay) overlay.Detail = GameOptions.Performance;
+                break;
+
+            case OptionsTab.Graphics:
+                Screen.ApplyOptions(Canvas, _ui);
+                break;
+
+            case OptionsTab.Look:
+                Screen.ApplySkin();
+                Screen.ApplyTransitions();
+                _ui.Scale = GameOptions.GuiScale;
+                break;
+        }
+
+        Reload(null);
+    }
+
     /// <summary>
     /// Helper method for the way out. Back to whatever the options were opened over (a fight, from its pause menu),
     /// which is underneath as it was left, or to the main menu when they were opened from there.
@@ -322,61 +367,42 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
     }
 
     /// <summary>
-    /// Off to the bindings of a gamepad, and back to the row we were on when they are done.
+    /// Off to the bindings of a gamepad, opened over this screen, which is back on the row we were on when they are done.
     /// </summary>
     private void OpenBindings(Gamepad gamepad)
     {
-        int page = _tabs.Selected, row = _settings.Selected;
-        GoTo(new BindingsScene(gamepad.Slot, Localisation.Get("bindings.title_options"), () => new OptionsScene(page, row)));
+        Open(new BindingsScene(gamepad.Slot, Localisation.Get("bindings.title_options")), Screen.BetweenMenus);
     }
 
     protected override void UpdateMenu(float dt)
     {
         if (_overAnother && Canvas.Enabled) Canvas.Enabled = false;
 
-        // Nobody has picked a gamepad yet, so the screen listens to all of them
-        _hint.Text = ButtonGlyphs.Localize(Hint, GameInput.Manager.LastUsed);
-
         // What a row is about, as it is written. The box wraps it by itself and reads it as markdown, so a line break in
         // it is meant (a heading for every choice, say), the ones that were only there for a wider screen are gone
         _aboutTitle.Text = _settings.Title;
         _description.Text = _settings.Hint;
 
-        if (!InputReady) return;
+    }
 
-        foreach (Gamepad gamepad in GameInput.Manager.Gamepads)
+    protected override void BuildActions()
+    {
+        // Up and down walk the rows, left and right change the one the gamepad is on (which can swap this screen for a new one)
+        Actions.Directions("hints.choose_and_change", (_, right, down) =>
         {
-            if (!gamepad.IsConnected) continue;
+            _settings.Move(down);
+            if (right != 0) _settings.Step(right);
+        });
 
-            if (gamepad.WasPressed(GamepadInput.B))
-            {
-                Back();
-                return;
-            }
+        // The bumpers flip between the tabs
+        Actions.Pair(GamepadInput.LeftBumper, GamepadInput.RightBumper, "hints.tabs", (_, step) =>
+        {
+            if (step > 0) _tabs.Next();
+            else _tabs.Previous();
+        });
 
-            if (gamepad.WasPressed(GamepadInput.Y))
-            {
-                OpenBindings(gamepad);
-                return;
-            }
-
-            // The bumpers flip between the tabs
-            if (gamepad.WasPressed(GamepadInput.LeftBumper) || gamepad.WasPressed(GamepadInput.RightBumper))
-            {
-                if (gamepad.WasPressed(GamepadInput.RightBumper)) _tabs.Next();
-                else _tabs.Previous();
-                return;
-            }
-
-            _settings.Move(MenuInput.Vertical(gamepad));
-
-            // A step can swap this screen for a new one, which is the end of this one
-            int horizontal = MenuInput.Horizontal(gamepad);
-            if (horizontal != 0)
-            {
-                _settings.Step(horizontal);
-                return;
-            }
-        }
+        Actions.Add(GamepadInput.Y, "hints.bindings", OpenBindings);
+        Actions.Add(GamepadInput.X, "hints.defaults", AskDefaults);
+        Actions.Add(GamepadInput.B, "hints.back", Back);
     }
 }

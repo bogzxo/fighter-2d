@@ -41,6 +41,17 @@ internal enum LightQuality
 /// The settings a player can flip on the options screen. They are kept in options.hor next to the game between runs.
 /// To add one give it a field here, a line in Load and Save, and a row on the options screen (OptionsScene and options.hor).
 /// </summary>
+/// <summary>
+/// The tabs of the options screen, which is what going back to the defaults goes by.
+/// </summary>
+internal enum OptionsTab
+{
+    Display,
+    Graphics,
+    Look,
+    Fight
+}
+
 internal static class GameOptions
 {
     public const string FILE = "options.hor";
@@ -122,6 +133,63 @@ internal static class GameOptions
     // How much of the engine's performance overlay is up (F3 goes round them too, but that isn't saved)
     public static Horizon.UI.PerformanceDetail Performance = Horizon.UI.PerformanceDetail.Off;
 
+    // Where the last fight that was joined was hosted, which the join screen starts out on
+    public static string JoinAddress = "127.0.0.1";
+
+    // What every option on the screen is before options.hor says anything, read off the fields above as the class is
+    // made (fields are made in the order they are written, these come last), so a default is only ever written once
+    private sealed record Values(
+        bool Fullscreen, Vector2 Resolution, bool VSync, int FrameLimit, Horizon.UI.PerformanceDetail Performance,
+        bool Crt, bool Bloom, bool RenderPathtraced, LightQuality LightQuality,
+        float GuiScale, string UiSkin, string UiTheme, TransitionStyle Transitions,
+        float CameraZoom, bool InputDisplay, bool HitCallouts, bool FrameData, bool Hitboxes);
+
+    private static readonly Values Defaults = new(
+        Fullscreen, Resolution, VSync, FrameLimit, Performance,
+        Crt, Bloom, RenderPathtraced, LightQuality,
+        GuiScale, UiSkin, UiTheme, Transitions,
+        CameraZoom, InputDisplay, HitCallouts, FrameData, Hitboxes);
+
+    /// <summary>
+    /// Puts the options of one tab of the options screen back to how the game came. Nothing is applied or saved, that is
+    /// the screen's to do (the window, the skin), and the language and the join address are nobody's tab.
+    /// </summary>
+    public static void ResetToDefaults(OptionsTab tab)
+    {
+        switch (tab)
+        {
+            case OptionsTab.Display:
+                Fullscreen = Defaults.Fullscreen;
+                Resolution = Defaults.Resolution;
+                VSync = Defaults.VSync;
+                FrameLimit = Defaults.FrameLimit;
+                Performance = Defaults.Performance;
+                break;
+
+            case OptionsTab.Graphics:
+                Crt = Defaults.Crt;
+                Bloom = Defaults.Bloom;
+                RenderPathtraced = Defaults.RenderPathtraced;
+                LightQuality = Defaults.LightQuality;
+                break;
+
+            case OptionsTab.Look:
+                GuiScale = Defaults.GuiScale;
+                UiSkin = Defaults.UiSkin;
+                UiTheme = Defaults.UiTheme;
+                Transitions = Defaults.Transitions;
+                break;
+
+            case OptionsTab.Fight:
+                CameraZoom = Defaults.CameraZoom;
+                InputDisplay = Defaults.InputDisplay;
+                HitCallouts = Defaults.HitCallouts;
+                FrameData = Defaults.FrameData;
+                Hitboxes = Defaults.Hitboxes;
+                break;
+        }
+    }
+
     /// <summary>
     /// The options of the window the way the engine wants them, see <see cref="WindowManager.Apply"/>.
     /// </summary>
@@ -165,6 +233,7 @@ internal static class GameOptions
             FrameData = HorReader.Bool(options, "frame_data", FrameData);
             Hitboxes = HorReader.Bool(options, "hitboxes", Hitboxes);
             Performance = HorReader.Named(options, "performance", Performance);
+            JoinAddress = HorReader.Text(options, "join_address", JoinAddress);
         }
         catch (Exception e)
         {
@@ -210,7 +279,8 @@ internal static class GameOptions
         text.AppendLine($"    hit_callouts: {Write(HitCallouts)},");
         text.AppendLine($"    frame_data: {Write(FrameData)},");
         text.AppendLine($"    hitboxes: {Write(Hitboxes)},");
-        text.AppendLine($"    performance: \"{Performance.ToString().ToLowerInvariant()}\"");
+        text.AppendLine($"    performance: \"{Performance.ToString().ToLowerInvariant()}\",");
+        text.AppendLine($"    join_address: \"{JoinAddress}\"");
         text.AppendLine("}");
 
         try

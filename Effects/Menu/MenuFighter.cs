@@ -41,6 +41,7 @@ internal sealed class MenuFighter(float size, CharacterDefinition character, IEn
 
         // Everything the duel is going to show is in the atlas before it starts
         _art.Prepare(animations);
+        _art.Atlas.Pack();
         ConfigureAtlas(_art.Atlas, _art.Sprites, IDLE);
 
         // Art that isn't drawn at a whole multiple of itself would come out with uneven pixels otherwise

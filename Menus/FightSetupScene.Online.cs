@@ -8,7 +8,7 @@ using Horizon.UI.Components;
 
 using Button = Horizon.UI.Components.Button;
 
-namespace Fighter2D.Scenes;
+namespace Fighter2D.Menus;
 
 // The fight setup screen as the lobby of an online fight. One player on this machine and one on another, a corner
 // each. Locking a fighter in is saying you're ready, the two of you can swap corners until you have, and once both
@@ -16,9 +16,6 @@ namespace Fighter2D.Scenes;
 // right here and follows the host in. Everything in here does nothing at all for a fight on one machine
 internal partial class FightSetupScene
 {
-    private static string HintLobby => Localisation.Get("online.hint_lobby");
-    private static string HintLobbyAlone => Localisation.Get("online.hint_lobby_alone");
-
     private OnlineLobby? _lobby;
     private string _hostAddresses = string.Empty;
 
@@ -187,24 +184,4 @@ internal partial class FightSetupScene
         }
     }
 
-    /// <summary>
-    /// What the hint says in a lobby, null when it has nothing to add to what the screen says anyway.
-    /// </summary>
-    private string? LobbyHint
-    {
-        get
-        {
-            if (_lobby is not { } lobby || setup.Slots.Count == 0) return null;
-
-            if (!lobby.PeerPresent) return Localisation.Format("online.hint_find_you", ("addresses", _hostAddresses), ("hint", HintLobbyAlone));
-
-            if (lobby.BothReady)
-            {
-                if (lobby.IsHost) return null;
-                return Localisation.Get(lobby.ChoosingMap ? "online.hint_host_choosing" : "online.hint_waiting_host");
-            }
-
-            return lobby.LocalReady ? Localisation.Get("online.hint_waiting_them") : HintLobby;
-        }
-    }
 }

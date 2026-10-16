@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace Fighter2D.Moves;
+namespace Fighter2D.Data;
 
 /// <summary>
 /// One move out of a move file. Everything about it is data, the code only knows how to play it (see MovePlayback).
@@ -49,7 +49,7 @@ public class FightingMove
     public int MeterCost { get; init; }
 
     // The stances the move can be started from
-    public Stance Stances { get; init; } = Fighters.Stance.Standing;
+    public Stance Stances { get; init; } = Simulation.Stance.Standing;
 
     // Any one of these starts the move, None means the move can only be reached through reroutes
     public InputFlags[] InputSignatures { get; init; } = [InputFlags.None];
@@ -109,7 +109,7 @@ public class FightingMove
     public Dictionary<Stance, string>? FinishReroutes { get; init; }
 
     // The hitboxes drawn by hand for the move (see CustomHitboxes), spread over its active frames, null for the limb its art has sticking out
-    internal Fighters.Box[]? CustomHitboxes { get; set; }
+    internal Box[]? CustomHitboxes { get; set; }
 
     // How many frames from the hit frame the hitbox stays out for, the active frames. What the phase with the hit says,
     // or the hand drawn hitboxes, or 1. The move tries to land on every one of them until it does, a hit is a hit once
@@ -127,6 +127,12 @@ public class FightingMove
     /// Whether the move uses up one of the jumps a character has in the air.
     /// </summary>
     public bool IsAirJump => Array.Exists(Phases, phase => phase.Jump == JumpKind.Double);
+
+    /// <summary>
+    /// Whether the move is one for getting around rather than hurting anybody (a jump, a run, a crouch, the block), which is
+    /// what a hit that landed buys the room to do, see CombatRules.HIT_MOVEMENT_CANCEL. The roll is not, i-frames aren't free.
+    /// </summary>
+    public bool IsMovement => Damage == 0 && Status is not (FighterStatus.Attacking or FighterStatus.Invulnerable);
 
     /// <summary>
     /// Whether a move can be cancelled into another one once its hit has landed.

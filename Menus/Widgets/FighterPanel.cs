@@ -4,7 +4,7 @@ using System.Numerics;
 using Horizon.UI;
 using Horizon.UI.Components;
 
-namespace Fighter2D.Scenes.Widgets;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// One side of the fight setup screen. Who is in that corner, drawn big with their name and their stat bars, and under

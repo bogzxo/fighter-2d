@@ -1,0 +1,130 @@
+// training_drawer, laid out with Horizon.Hex.
+// Load it with UILayout.Load, every component is there under the name it has here.
+// The lab of a practice fight, a drawer that slides in from the left over the fight while it carries on (the back
+// button on a gamepad, see HUD/TrainingDrawer.cs). What the dummy does, who it is, whether health comes back, the
+// frame bars, the hitboxes, and both fighters back on their marks.
+#define layout
+
+compositor.design({ size: vec(1600, 900), fit: "contain" });
+
+let drawer = compositor.stack({
+    pos: vec(24, 0),
+    anchor: "left",
+    pivot: "left",
+    padding: vec(32, 28, 32, 28),
+    background: "panel",
+    spacing: 12,
+    slide: "left",
+    slide_time: 0.18
+});
+
+let training_title = compositor.label({
+    parent: drawer,
+    text: "@pause.training",
+    text_scale: 0.3,
+    color: vec(0.58, 0.6, 0.66, 1)
+});
+
+let dummy_row = compositor.stack({
+    parent: drawer,
+    spacing: 16,
+    direction: "horizontal"
+});
+
+let dummy_title = compositor.label({
+    parent: dummy_row,
+    size: vec(130, 0),
+    text: "@pause.dummy",
+    text_scale: 0.28,
+    align: "left"
+});
+
+let dummy = compositor.selector({
+    parent: dummy_row,
+    size: vec(254, 44),
+    text_scale: 0.26
+});
+
+let opponent_row = compositor.stack({
+    parent: drawer,
+    spacing: 16,
+    direction: "horizontal"
+});
+
+let opponent_title = compositor.label({
+    parent: opponent_row,
+    size: vec(130, 0),
+    text: "@pause.opponent",
+    text_scale: 0.28,
+    align: "left"
+});
+
+let opponent = compositor.selector({
+    parent: opponent_row,
+    size: vec(254, 44),
+    text_scale: 0.26
+});
+
+let refill_row = compositor.stack({
+    parent: drawer,
+    spacing: 16,
+    direction: "horizontal"
+});
+
+let refill_title = compositor.label({
+    parent: refill_row,
+    size: vec(130, 0),
+    text: "@pause.refill",
+    text_scale: 0.28,
+    align: "left"
+});
+
+let refill = compositor.selector({
+    parent: refill_row,
+    size: vec(254, 44),
+    text_scale: 0.26
+});
+
+let frame_data_row = compositor.stack({
+    parent: drawer,
+    spacing: 16,
+    direction: "horizontal"
+});
+
+let frame_data_title = compositor.label({
+    parent: frame_data_row,
+    size: vec(130, 0),
+    text: "@pause.frame_data",
+    text_scale: 0.28,
+    align: "left"
+});
+
+let frame_data = compositor.selector({
+    parent: frame_data_row,
+    size: vec(254, 44),
+    text_scale: 0.26
+});
+
+let btn_hitboxes = compositor.button({
+    parent: drawer,
+    size: vec(400, 0),
+    label: "@pause.hitboxes_off",
+    lbl_scale: 0.3,
+    style: "button_flat"
+});
+
+let btn_reset = compositor.button({
+    parent: drawer,
+    size: vec(400, 0),
+    label: "@pause.reset_positions",
+    lbl_scale: 0.3,
+    style: "button_flat"
+});
+
+let hint = compositor.label({
+    parent: drawer,
+    size: vec(400, 30),
+    text: "",
+    text_scale: 0.22,
+    color: vec(0.86, 0.88, 0.92, 1)
+});

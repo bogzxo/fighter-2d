@@ -1,4 +1,4 @@
-namespace Fighter2D.Fighters;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// What a player is busy with as far as getting hit goes. The moves set these, apart from hitstun which the hit that caused it sets.

@@ -1,6 +1,6 @@
 using System;
 
-namespace Fighter2D.Fighters.Inputs.Dummy;
+namespace Fighter2D.Simulation.Dummy;
 
 /// <summary>
 /// The offensive half of the dummy's brain. Throws attacks when the other player is in range, punishes whiffs and follows up on hitstun.

@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Fighter2D.Map;
+namespace Fighter2D.Data;
 
 /// <summary>
 /// A map as maps.hor describes it. The tiles themselves are in its .tmx file, this is everything around them.

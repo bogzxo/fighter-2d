@@ -6,6 +6,8 @@ using System.IO;
 using Horizon.Engine;
 using Horizon.Input;
 
+using Silk.NET.Input;
+
 namespace Fighter2D.Input;
 
 /// <summary>
@@ -73,11 +75,11 @@ internal static class GameInput
             Manager.DefaultBindings.CopyFrom(CreateDefaultBindings());
         }
 
-        // The
-        // is a gamepad like any other from here on, which is what makes every menu (they all listen to
-        // every gamepad) work off the keys, and lets somebody without a gamepad into a fight. After the file, it takes
-        // the slot and the bindings it was saved with
-        //Manager.AddKeyboardGamepad(engine.Input.Keyboard);
+        // The keyboard is a gamepad like any other from here on, which is what makes every menu (they all listen to every
+        // gamepad) work off the keys, through the keys its menu inputs are on (KeyboardGamepad.DefaultKeys, the ones the
+        // skins have icons for). In a fight its actions are on keys of their own (CreateKeyboardBindings), rebindable on
+        // the bindings screen. After the file, it takes the slot and the bindings it was saved with
+        Manager.AddKeyboardGamepad(engine.Input.Keyboard, bindings: CreateKeyboardBindings());
     }
 
     /// <summary>
@@ -85,6 +87,9 @@ internal static class GameInput
     /// </summary>
     public static void Save()
     {
+        // What a keyboard's keys were written as may be another key now
+        ButtonGlyphs.Forget();
+
         try
         {
             Manager.Save(BINDINGS_FILE);
@@ -121,6 +126,40 @@ internal static class GameInput
             .Bind("combo_a_x")
             .Bind("combo_b_y");
     }
+
+    /// <summary>
+    /// The keys a keyboard fights with until somebody changes them. WASD to move with space to jump as well, the kicks and
+    /// the punches under the right hand (J K, U I), block on L, the left bumper (the roll) on O, the triggers either side.
+    /// Escape and enter are the menus', escape pauses a fight.
+    /// </summary>
+    public static GamepadBindings CreateKeyboardBindings()
+    {
+        return new GamepadBindings()
+            .BindKeys("move_left", Key.A)
+            .BindKeys("move_right", Key.D)
+            .BindKeys("jump", Key.W, Key.Space)
+            .BindKeys("crouch", Key.S)
+            .BindKeys("kick_left", Key.J)
+            .BindKeys("kick_right", Key.K)
+            .BindKeys("punch_left", Key.U)
+            .BindKeys("punch_right", Key.I)
+            .BindKeys("block", Key.L)
+            .BindKeys("left_bumper", Key.O)
+            .BindKeys("left_trigger", Key.H)
+            .BindKeys("right_trigger", Key.Semicolon)
+
+            // Not on anything until somebody wants them
+            .BindKeys("combo_a_b")
+            .BindKeys("combo_x_y")
+            .BindKeys("combo_a_x")
+            .BindKeys("combo_b_y");
+    }
+
+    /// <summary>
+    /// The bindings a gamepad goes back to on the bindings screen, the keyboard's own for the keyboard.
+    /// </summary>
+    public static GamepadBindings DefaultsFor(Gamepad gamepad) =>
+        gamepad.Kind == GamepadKind.Keyboard ? CreateKeyboardBindings() : CreateDefaultBindings();
 
     /// <summary>
     /// Helper method to turn everything a gamepad holds into the buttons of the move files, through its bindings.

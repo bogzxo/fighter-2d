@@ -1,6 +1,6 @@
 using Horizon.Content;
 
-namespace Fighter2D.Fighters.Inputs.Dummy;
+namespace Fighter2D.Simulation.Dummy;
 
 /// <summary>
 /// What the dummy does with itself. It fights back unless training mode tells it to stand there and take it, see <see cref="DummyPlayerInput.Mode"/>.

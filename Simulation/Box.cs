@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Fighter2D.Fighters;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// An axis aligned box, used for hitboxes and hurtboxes.

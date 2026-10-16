@@ -5,6 +5,7 @@ using System.Numerics;
 using Horizon.Logging;
 
 using Horizon.Physics;
+using Horizon.Physics.Fixtures;
 using Horizon.Rendering.Spriting;
 
 namespace Fighter2D.Fighters;
@@ -13,9 +14,9 @@ namespace Fighter2D.Fighters;
 /// A fighter in the arena. This is the sprite, the physics body and the health bar's worth of health.
 /// What it actually does is up to its <see cref="PlayerController"/>.
 /// </summary>
-internal class Player() : Sprite(SIZE)
+internal class Player() : Sprite(SIZE), IFighter, IFighterBody
 {
-    public const byte MAX_HEALTH = 100;
+    public const byte MAX_HEALTH = CombatRules.MAX_HEALTH;
 
     // The tag of the fixture under the feet, the state tracker asks it whether we are on the ground
     public const string FEET_TAG = "feet";
@@ -29,27 +30,33 @@ internal class Player() : Sprite(SIZE)
     // The animation a character shows before its controller has said anything
     private const string IDLE_ANIMATION = "idle";
 
-    internal PlayerController Controller { get; init; } = null!;
+    public PlayerController Controller { get; init; } = null!;
+
+    /// <summary>
+    /// The fight we are in, which the scene gives us before we are added to it. Everything that was a static Fight
+    /// is in here, the opponent, the effects, the stage, the rounds, see <see cref="FightContext"/>.
+    /// </summary>
+    public FightContext Fight { get; internal set; } = null!;
     public Vector2 SpawnPosition { get; set; }
 
     /// <summary>
     /// Which way the player faces at the start of every round, -1 left and 1 right, null for however the art was drawn.
-    /// Set by a fight that puts its players in exact places for a test (see FightScene.TestPositions).
+    /// Set by a fight that puts its players in exact places for a test (see MatchSetup.TestPositions).
     /// </summary>
     public float? StartFacing { get; set; }
 
     /// <summary>
     /// This is the player health out of 100, 0 being dead.
     /// </summary>
-    public byte Health = MAX_HEALTH;
+    public byte Health { get; set; } = MAX_HEALTH;
 
-    public const byte MAX_METER = 100;
+    public const byte MAX_METER = CombatRules.MAX_METER;
 
     /// <summary>
     /// The super meter out of 100. It builds off hits dealt and taken (see CombatRules) and buys the moves that cost it (meter_cost).
     /// It carries over from one round to the next and starts the match empty.
     /// </summary>
-    public byte Meter;
+    public byte Meter { get; set; }
 
     /// <summary>
     /// Helper method to add to the meter, up to full.
@@ -119,9 +126,9 @@ internal class Player() : Sprite(SIZE)
     /// <summary>
     /// Whether the other player is in front of us rather than behind our back. Somebody standing right on top of us is both.
     /// </summary>
-    public bool IsFacing(Player other)
+    public bool IsFacing(IFighterBody other)
     {
-        float toOther = other.Transform.Position.X - Transform.Position.X;
+        float toOther = other.Position.X - Transform.Position.X;
         return toOther == 0.0f || (toOther < 0.0f) == Flipped;
     }
 
@@ -152,8 +159,75 @@ internal class Player() : Sprite(SIZE)
     {
         base.UpdateState(dt);
 
+        // The controller used to be a component and ran in the base update, so it still goes before the boxes follow the frame
+        Controller?.Update(dt);
         if (Controller is not null && Atlas is not null) Boxes?.Sync();
     }
+
+    public override void UpdatePhysics(float dt)
+    {
+        base.UpdatePhysics(dt);
+        Controller?.UpdatePhysics(dt);
+    }
+
+    /* The fighter as the simulation sees it, see IFighter and IFighterBody. The body is the sprite and the physics body in one */
+
+    IFighterBody IFighter.Body => this;
+
+    public Vector2 Position => Transform.Position;
+    public Vector2 Velocity => PhysicsBody.Velocity;
+    public void SetVelocity(Vector2 velocity) => PhysicsBody.SetVelocity(velocity);
+    public void ApplyImpulse(Vector2 impulse) => PhysicsBody.ApplyImpulse(impulse);
+    public void Nudge(Vector2 step) => PhysicsBody.Position += step;
+
+    public void Teleport(Vector2 position, Vector2 velocity)
+    {
+        PhysicsBody.Position = position;
+        PhysicsBody.SetVelocity(velocity);
+        Transform.Snap();
+    }
+
+    public float GravityScale
+    {
+        get => PhysicsBody.GravityScale;
+        set => PhysicsBody.GravityScale = value;
+    }
+
+    public float MaxFallSpeed
+    {
+        get => PhysicsBody.MaxFallSpeed;
+        set => PhysicsBody.MaxFallSpeed = value;
+    }
+
+    public float WorldGravity => Parent?.GetComponent<PhysicsWorld>()?.Gravity.Length() ?? 0.0f;
+
+    // Looked up once rather than on every update
+    private IPhysicsFixture? _feetFixture;
+
+    public bool IsGrounded
+    {
+        get
+        {
+            if (PhysicsBody is null) return false;
+
+            _feetFixture ??= PhysicsBody.KinematicFixtures.Find(f => f.Tag == FEET_TAG);
+            return _feetFixture?.IsTouching ?? false;
+        }
+    }
+
+    public void PlayAnimation(string animation) => SetAnimation(animation);
+    public string? ShownAnimation => FrameName;
+    public void ShowFrame(int frame) => Frame = frame;
+    public int FrameCount(string animation) => GetFrameCount(animation);
+    public void TintTo(Vector4 tint, float time) => this.TweenTint(tint, time);
+    void IFighterBody.Flash(Vector4 colour, float time, float amount) => this.Flash(colour, time, amount);
+
+    public Box Hurtbox => Boxes.Hurtbox;
+    public Box Hitbox(uint frame) => Boxes.Hitbox(frame);
+
+    public bool HitboxTouches(uint frame, IFighterBody other) => other is Player them
+        ? Boxes.HitboxFixture.TestIntersection(them.Boxes.HurtboxFixture, Transform.Position, them.Transform.Position)
+        : Hitbox(frame).Overlaps(other.Hurtbox, out _);
 
     public override void Initialize()
     {
@@ -174,7 +248,8 @@ internal class Player() : Sprite(SIZE)
 
         Boxes = new PlayerBoxes(this, boxes);
 
-        AddComponent(Controller);
+        // The controller is no component, the player ticks it (see UpdateState), so it comes to life here by hand
+        Controller.Attach(this);
     }
 
     /// <summary>
@@ -199,7 +274,12 @@ internal class Player() : Sprite(SIZE)
         }
 
         // Every animation a move can play is in the atlas before the fight starts, nothing turns up late
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
         art.Prepare(MoveList.Animations);
+        // Packed now, or waited for if a worker is at it (the fight setup got the character ready ahead), so the
+        // first frame of the fight has every frame of the character
+        art.Atlas.Pack();
+        double preparedMs = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds;
 
         // Whatever the character has to stand around in, the controller picks the real one on its first tick
         string first = art.Has(IDLE_ANIMATION) ? IDLE_ANIMATION : MoveList.Animations.FirstOrDefault(art.Has) ?? IDLE_ANIMATION;
@@ -210,6 +290,7 @@ internal class Player() : Sprite(SIZE)
 
         // The frame data of a move depends on how long the animations it plays are
         MoveList.Bake(animation => (uint)Math.Max(1, art.FrameCount(animation)), Character.FrameRate);
+        Log.Info($"[Player] '{Character.Id}' ready in {System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds:0} ms, {preparedMs:0} of them putting the frames in the atlas and tracing their boxes.");
 
         return art.Boxes;
     }

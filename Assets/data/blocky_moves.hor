@@ -23,7 +23,7 @@
 //
 // The uppercut (RightTrigger) puts them 90 up, above juggle height, floating down on half their gravity for 40 frames of
 // hitstun, and lets him jump straight out of it the frame after it lands (hit_cancel). Jump after them, jump punch, double jump,
-// jump kick. Every hit up there makes them a bit heavier (see Combat/CombatRules.cs) so it comes down by itself.
+// jump kick. Every hit up there makes them a bit heavier (see combat_rules.hor) so it comes down by itself.
 // Jab into straight links on the ground, the straight into the uppercut, and the dragon punch ends it. His normals
 // cancel into the specials and the dragon punch on hit or block (hit_cancel by kind), the heavy ones cost a few frames
 // when they miss (whiff_lag), and the launchers go further the more health is gone (launch_growth).
@@ -60,7 +60,7 @@ let moves = {
         input: "DPadDown",
         trigger: "held",
         priority: 60,
-        stances: "crouching | standing",
+        stances: "standing",
         walk: 0,
         stance: "crouching",
         stance_after: "standing",
@@ -158,9 +158,11 @@ let moves = {
         }
     },
 
+    // A double tap like everybody's, the header above says so. It was on LeftBumper, which the roll took first (priority
+    // 10 against 36) so the hook never came out
     dodge_roll: {
-        input: "LeftBumper",
-        trigger: "pressed",
+        input: "DPadLeft | DPadRight",
+        trigger: "double_tap",
         priority: 10,
         stances: "standing | crouching",
         walk: 0,

@@ -28,8 +28,6 @@ internal sealed class RoundDisplay : IHudDisplay
     private const float STRIPE_TIME = 0.18f;
 
     private const string NO_TIME_LIMIT = "--";
-    private static string ContinueHint => Localisation.Get("fight.continue_hint");
-    private static string RematchHint => Localisation.Get("fight.rematch_hint");
 
     private static readonly Vector4 TimeColor = Vector4.One;
     private static readonly Vector4 LowTimeColor = new(1.0f, 0.38f, 0.32f, 1.0f);
@@ -120,7 +118,10 @@ internal sealed class RoundDisplay : IHudDisplay
     /// </summary>
     private void ShowRound()
     {
-        int round = _round.Score.Round;
+        // The round being played, or once the match is decided the last one that was. It used to go on to a round 4
+        // that was never coming the moment the third was called
+        MatchScore score = _round.Score;
+        int round = score.IsOver ? Math.Max(1, score.Rounds.Count) : score.Round;
         if (round == _shownRound) return;
 
         _shownRound = round;
@@ -162,13 +163,7 @@ internal sealed class RoundDisplay : IHudDisplay
                     _ => (Localisation.Get(_round.TimedOut ? "fight.draw" : "fight.double_ko"), Localisation.Get("fight.nobody_takes_round"))
                 };
 
-            case RoundPhase.MatchOver:
-                string hint = _round.RematchOffered ? RematchHint : ContinueHint;
-                string result = Localisation.Format("fight.result", ("one", score.Wins(0)), ("two", score.Wins(1)), ("hint", ButtonGlyphs.Localize(hint, GameInput.Manager.LastUsed)));
-
-                return score.Winner is int winner
-                    ? (Localisation.Format("fight.wins", ("name", NameOf(winner).ToUpperInvariant())), result)
-                    : (Localisation.Get("fight.draw"), result);
+            // The result card has the screen once the match is decided, see ResultCard
 
             default:
                 return (string.Empty, string.Empty);

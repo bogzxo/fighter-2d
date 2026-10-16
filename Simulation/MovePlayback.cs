@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace Fighter2D.Moves;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// Plays a move a frame of the fight at a time, the way its file describes it, one phase after the other.
@@ -171,12 +171,12 @@ internal sealed class MovePlayback(PlayerController controller)
 
     private void Enter(MovePhase phase)
     {
-        var player = controller.Player;
+        IFighterBody body = controller.Body;
 
         if (phase.Impulse != Vector2.Zero)
         {
             // X is the way we are facing
-            player.PhysicsBody.ApplyImpulse(new Vector2(player.Facing * phase.Impulse.X, phase.Impulse.Y));
+            body.ApplyImpulse(new Vector2(body.Facing * phase.Impulse.X, phase.Impulse.Y));
 
             // Going up is the start of a new fall, and a shove downwards (a dive kick) is as fast as a fast fall goes
             if (phase.Impulse.Y > 0) controller.State.ResetFallDuration();

@@ -2,7 +2,7 @@ using System.Numerics;
 
 using Horizon.Core.Tweening;
 
-namespace Fighter2D.Scenes.Menus;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// A value that swings back and forth forever, for text that should pulse to get somebody's attention.

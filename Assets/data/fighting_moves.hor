@@ -53,7 +53,11 @@
 //   stance            the stance the move puts the player in, and stance_after the one it leaves them in.
 //   warns             whether the opponent gets a heads up that the move is coming (the dummy uses it to block). Moves that do damage warn unless they say no.
 //   repeat            a condition (see below) under which the move starts over after its last phase.
-//   stance_reroutes   another move to do instead, by the stance the player is in when the input comes (kick in the air is a jump kick).
+//   stance_reroutes   another move to do instead, by the stance the input comes in (kick in the air is a jump kick). On the ground
+//                     that stance is the direction held with the button, down and a kick is the crouching kick whether or not the
+//                     player was crouching already, so a crouching move is one input and not a stance to get into first. A button
+//                     with no crouching version comes out standing with down held. That is for a press, a held input (the crouch
+//                     itself, the run, the block) goes by the stance the body is in, which is how the crouch starts from standing.
 //   finish_reroutes   the move to carry on with once this one is over, by the stance the player is in by then. Without one they go back to "idle".
 //   phases            what the move actually does, see below.
 //
@@ -87,7 +91,7 @@
 // get back up from it (straight to idle without one), "tech" and "tech_roll" how they get up out of one they teched. "victory" is what the winner of a round plays over whoever they knocked out,
 // after walking over to their head with "run". A character without one just stands there like a decent person.
 //
-// How hits work (the numbers behind all of this are in Combat/CombatRules.cs):
+// How hits work (the numbers behind all of this are in combat_rules.hor, next to this file):
 //   - Every hit puts the victim in hitstun for exactly what the move says. They are stuck in "hit_stun" and can't do anything until it runs out.
 //   - A move that doesn't say its hitstun gets a guess, a fast move a little minus on hit and a slow one plus enough to link off.
 //     Write the number in, the guess is only there so a new move does something.
@@ -104,6 +108,9 @@
 //     one takes a bit off, 9% for the newest down to 1% for the oldest.
 //   - A hit that catches somebody in the recovery of their own attack is a punish. Same as a normal hit, but the HUD calls them out for it.
 //   - Every hit of a combo after the first does less damage, so a long combo isn't a round by itself.
+//   - A move whose hit landed or was blocked can be left for a move that doesn't attack (a jump, a run, a crouch, the block, not
+//     the roll) 4 frames after its last active frame, however long its recovery is. A whiff plays out. That is what lets the
+//     attacker jump after somebody they launched before they come down (CombatRules.HIT_MOVEMENT_CANCEL).
 //   - Blocking only covers the front, and you can't turn around while you are blocking. A block held with down is a crouching block,
 //     which is what stops a low. A blocked hit still shoves the blocker back, keeps them in the block for the blockstun and takes a
 //     sliver of chip damage (never the last of their health).

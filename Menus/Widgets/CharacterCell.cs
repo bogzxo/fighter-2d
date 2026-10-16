@@ -5,7 +5,7 @@ using Horizon.UI.Components;
 
 using Button = Horizon.UI.Components.Button;
 
-namespace Fighter2D.Scenes.Widgets;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// One cell of the roster on the fight setup screen, a button with a character in it (or a question mark if there is nobody for it).

@@ -1,4 +1,4 @@
-namespace Fighter2D.Combat;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// What became of an attack once its hit came out.

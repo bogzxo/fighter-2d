@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Fighter2D.Moves;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// Every move a character has, read out of the move files of the game's content.
@@ -114,14 +114,17 @@ internal class MoveList
     /// </summary>
     /// <param name="meter">How much meter the player has, a move that costs more than that is passed over for the next match.</param>
     /// <param name="airJumps">How many jumps the player has left in the air, a double jump is passed over without one.</param>
+    /// <param name="stance">The stance a press is matched in, on the ground the direction held with it (see PlayerController.MatchStance).</param>
+    /// <param name="heldStance">The stance a held input is matched in, which is the one the body is in. Holding down is the crouch, and the crouch starts from standing.</param>
     /// <param name="allowed">Which of the moves can start right now, null for all of them (a hit cancel only lets some through).</param>
     /// <param name="signature">The input signature of the move which matched.</param>
-    public bool TryMatchInput(InputBuffer input, Stance stance, int meter, int airJumps, Func<FightingMove, bool>? allowed, out FightingMove move, out InputFlags signature)
+    public bool TryMatchInput(InputBuffer input, Stance stance, Stance heldStance, int meter, int airJumps, Func<FightingMove, bool>? allowed, out FightingMove move, out InputFlags signature)
     {
         foreach (FightingMove candidate in _inputMoves)
         {
-            // Reject all moves that are not allowed in our current stance, and the ones the player can't afford
-            if ((candidate.Stances & stance) == 0 || candidate.MeterCost > meter) continue;
+            // Reject all moves that are not allowed in the stance they go by, and the ones the player can't afford
+            Stance matchIn = candidate.Trigger == InputTrigger.Held ? heldStance : stance;
+            if ((candidate.Stances & matchIn) == 0 || candidate.MeterCost > meter) continue;
             if (candidate.IsAirJump && airJumps <= 0) continue;
             if (allowed is not null && !allowed(candidate)) continue;
 

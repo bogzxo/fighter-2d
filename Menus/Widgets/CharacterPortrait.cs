@@ -3,7 +3,7 @@ using System;
 using Horizon.Rendering.Spriting;
 using Horizon.UI.Components;
 
-namespace Fighter2D.Scenes.Widgets;
+namespace Fighter2D.Menus;
 
 /// <summary>
 /// A character playing one of its animations inside of an image of the UI, for the menus and the versus screen.

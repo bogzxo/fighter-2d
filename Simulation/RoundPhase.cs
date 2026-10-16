@@ -1,4 +1,4 @@
-namespace Fighter2D.Match;
+namespace Fighter2D.Simulation;
 
 /// <summary>
 /// The steps a match goes through, see <see cref="RoundDirector"/>.

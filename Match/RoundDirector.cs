@@ -10,7 +10,7 @@ namespace Fighter2D.Match;
 /// It only decides and keeps the score, showing any of it is up to the HUD and what happens after the match is up to <see cref="Finished"/>.
 /// Online only the host decides (see <see cref="IsAuthority"/>), the other machine is told how the match stands and goes along with it.
 /// </summary>
-internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player playerTwo) : GameComponent
+internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player playerTwo) : GameComponent, IRoundClock
 {
     // How long (in seconds) each of the phases lasts that end by themselves
     private const float VERSUS_TIME = 2.8f;
@@ -23,7 +23,7 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
 
     // How long the result of the match stays up at the most, and how soon a button can skip the rest of it
     private const float MATCH_OVER_TIME = 8.0f;
-    private const float MATCH_OVER_SKIP = 1.5f;
+    internal const float MATCH_OVER_SKIP = 1.5f;
 
     public MatchRules Rules { get; } = rules;
     public MatchScore Score { get; } = new(rules);
@@ -278,19 +278,39 @@ internal sealed class RoundDirector(MatchRules rules, Player playerOne, Player p
 
         if (listening && Rematch is not null && RematchRequested?.Invoke() == true)
         {
-            _finished = true;
-            Rematch();
+            StartRematch();
             return;
         }
 
         // With a rematch on offer the result waits for an answer. Without one it moves on by itself after a while
         bool timeIsUp = Rematch is null && PhaseTime >= MATCH_OVER_TIME;
 
-        if (timeIsUp || (listening && SkipRequested?.Invoke() == true))
-        {
-            _finished = true;
-            Finished?.Invoke();
-        }
+        if (timeIsUp || (listening && SkipRequested?.Invoke() == true)) TryFinish();
+    }
+
+    /// <summary>
+    /// The match is over and the players want the same fight again (the result card). Does nothing if it isn't, if
+    /// there is no rematch to be had, or if a way on was already taken.
+    /// </summary>
+    public void StartRematch()
+    {
+        if (_finished || Phase != RoundPhase.MatchOver || Rematch is null) return;
+
+        _finished = true;
+        Rematch();
+    }
+
+    /// <summary>
+    /// The match is over and done with, <see cref="Finished"/> unless a way on was already taken.
+    /// </summary>
+    /// <returns>Whether this was the way on, false if one was taken already or the match isn't over.</returns>
+    public bool TryFinish()
+    {
+        if (_finished || Phase != RoundPhase.MatchOver) return false;
+
+        _finished = true;
+        Finished?.Invoke();
+        return true;
     }
 
     // Somebody in the middle of their victory lap, the next round can wait for that

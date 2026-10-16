@@ -518,3 +518,4 @@ Thumbs.db
 .idea/
 .claudiaideconfig
 /Art/tools/migrate_moves.py
+/CLAUDE.md
