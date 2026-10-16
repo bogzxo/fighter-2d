@@ -49,6 +49,18 @@ internal class HUDManager : GameComponent
     /// </summary>
     public Action? ChangeFighters { get; init; }
 
+    /// <summary>
+    /// Whether the fight is the lab, where the card of the controls is up unless the options say never, and says how to
+    /// get the drawer out.
+    /// </summary>
+    public bool Practice { get; init; }
+
+    /// <summary>
+    /// Asked every update whether the card of the controls is to get out of the way, the drawer is out over it or the
+    /// pause is up.
+    /// </summary>
+    public Func<bool>? ControlsHidden { get; init; }
+
     public override void Initialize()
     {
         (UILayout layout, _compositor) = MenuLayouts.Load(MenuLayouts.FIGHT_HUD);
@@ -69,6 +81,27 @@ internal class HUDManager : GameComponent
 
         layout.Get<UIComponent>(FrameBarDisplay.ROOT).Visible = false;
         FrameData = GameOptions.FrameData;
+
+        _controls = new ControlsDisplay(layout, round, Practice, ControlsHidden);
+        _controls.Wanted = GameOptions.Controls switch
+        {
+            ControlsShown.Always => true,
+            ControlsShown.Practice => Practice,
+            _ => false
+        };
+        _displays.Add(_controls);
+    }
+
+    private ControlsDisplay _controls = null!;
+
+    /// <summary>
+    /// Whether the card of the controls is wanted, what the options say to begin with and switched by the lab drawer.
+    /// Not saved either.
+    /// </summary>
+    public bool Controls
+    {
+        get => _controls.Wanted;
+        set => _controls.Wanted = value;
     }
 
     /// <summary>

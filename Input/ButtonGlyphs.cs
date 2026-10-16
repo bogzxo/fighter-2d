@@ -145,6 +145,22 @@ internal static class ButtonGlyphs
     }
 
     /// <summary>
+    /// Helper method to write out the first thing an action is bound to on a gamepad, as icons (the keys first on a
+    /// keyboard), null when it is on nothing. For a card of the controls, where "or the left stick" is room nobody has.
+    /// Not localized, see <see cref="Localize"/>.
+    /// </summary>
+    public static string? FirstOf(Gamepad gamepad, string action)
+    {
+        IReadOnlyList<Silk.NET.Input.Key[]> keys = gamepad.Bindings.KeyCombinationsOf(action);
+        if (gamepad.Kind == GamepadKind.Keyboard && keys.Count > 0) return Describe(keys[0]);
+
+        IReadOnlyList<uint> buttons = gamepad.Bindings.CombinationsOf(action);
+        if (buttons.Count > 0) return Describe(buttons[0]);
+
+        return keys.Count > 0 ? Describe(keys[0]) : null;
+    }
+
+    /// <summary>
     /// Helper method to write out what an action is bound to on a gamepad.
     /// </summary>
     public static string Describe(Gamepad gamepad, string action) => Localize(Describe(gamepad.Bindings, action), gamepad);

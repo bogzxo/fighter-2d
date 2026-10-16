@@ -4,6 +4,8 @@
 // out of trouble he shoves it away:
 //   LeftTrigger   shove, both hands to the chest. Next to no damage, but whoever eats it ends up across the stage
 
+#define fight_move
+
 let moves = {
     punch_right: {
         input: "Y",

@@ -23,6 +23,8 @@
 //
 // Whoever takes a round by K.O. walks over to the head of the loser and plays "victory" over it (see VictoryTaunt).
 
+#define fight_move
+
 let moves = {
     /* Getting around */
 

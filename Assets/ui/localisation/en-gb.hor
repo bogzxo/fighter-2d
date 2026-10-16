@@ -106,6 +106,7 @@ let strings = {
         input_display: "Input display",
         hit_callouts: "Hit callouts",
         frame_data: "Frame data",
+        controls: "Controls on screen",
         hitboxes: "Hitboxes",
 
         about_display: "Fullscreen takes up the whole screen, at the displays native resolution.",
@@ -126,6 +127,10 @@ let strings = {
         about_hit_callouts: "Calls out what every attack resolved to. HIT, COUNTER HIT, PUNISH, BLOCKED, PARRY or WHIFF.",
         about_frame_data: "Adds the startup of a move to the callouts, and who gets to act first after it. For the lab rats, Jean.",
         about_hitboxes: "Draws all the active collision boxes over all colliders in a scene.",
+        about_controls: "A card in the bottom corner of a fight with what every button of yours does, and how to get the training drawer out. In practice fights, in every fight or never.",
+        controls_off: "Never",
+        controls_practice: "In practice",
+        controls_always: "Every fight",
 
         fullscreen: "Fullscreen",
         windowed: "Windowed",
@@ -288,10 +293,29 @@ let strings = {
         opponent: "Opponent",
         refill: "Refill",
         frame_data: "Frames",
+        controls: "Controls",
         reset_positions: "Reset positions",
         leave_title: "Leave the fight?",
         leave_question: "The match is lost, there is no coming back to it.",
         leave_confirm: "Leave"
+    },
+
+    // What the fight setup screen says about a fighter, round their portrait. characters.hor names these as its blurbs
+    characters: {
+        the_male: "Heavy on his feet and heavier with his hands. Slow to get going, but whatever he lands on stays landed on.",
+        the_female: "Quicker than The Male and lighter with it. In, a few hits, and gone before anybody swings back.",
+        cammy: "All speed and no padding. The quickest walk in the game, the lightest frame, and a move list that pays you back for learning it.",
+        blocky: "The test dummy that grew a move list. Something in every slot the game has, which makes him the one to learn it on.",
+        the_man: "Where it all started. A kick, a punch, a jump kick, a block and a roll, nothing that costs meter. Honest work."
+    },
+
+    // The card of what the buttons do in the corner of a fight, see HUD/ControlsDisplay.cs
+    controls: {
+        title: "CONTROLS",
+        move: "Move",
+        drawer: "training drawer",
+        pause: "pause",
+        line: "{button}  {action}"
     },
 
     fight: {

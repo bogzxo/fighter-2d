@@ -1,7 +1,7 @@
-// One side of the fight setup screen, made once a side by fight_setup.hor. Who is in that corner, drawn big, what
-// they are like in four bars, and under that whoever is going to play them (a gamepad, the dummy, somebody on
-// another machine) and what they are up to. The two lines at the bottom are a fixed size so nothing jumps about as
-// their texts change.
+// One side of the fight setup screen, made once a side by fight_setup.hor. Who is in that corner, drawn big with a few
+// words about them running round their outline, what they are like in four bars, and under that whoever is going to
+// play them (a gamepad, the dummy, somebody on another machine) and what they are up to. The two lines at the bottom
+// are a fixed size so nothing jumps about as their texts change.
 #define layout
 
 let box = compositor.stack({
@@ -11,7 +11,23 @@ let box = compositor.stack({
 });
 
 let title = compositor.label({ parent: box, text: "Player 1", text_scale: 0.44 });
-let portrait = compositor.image({ parent: box, size: vec(320, 300) });
+// The fighter stands off to one side and the blurb runs round them on the other (Menus/Widgets/FighterPanel.cs moves
+// them over for the right hand corner, and gives the blurb their outline)
+let portrait_box = compositor.panel({ parent: box, size: vec(320, 300) });
+let portrait = compositor.image({ parent: portrait_box, pos: vec(-100, 0), size: vec(320, 300) });
+// From their head down, the top of a frame is air over them and a blurb up there would never meet them
+let blurb = compositor.label({
+    parent: portrait_box,
+    anchor: "bottom",
+    pivot: "bottom",
+    size: vec(320, 165),
+    text: "",
+    text_scale: 0.22,
+    color: vec(0.74, 0.78, 0.86, 1),
+    align: "top_left",
+    wrap: true,
+    wrap_around: portrait
+});
 let name = compositor.label({ parent: box, size: vec(330, 34), text: "Fighter", text_scale: 0.4 });
 
 let speed_row = compositor.stack({ parent: box, direction: "horizontal", spacing: 12 });

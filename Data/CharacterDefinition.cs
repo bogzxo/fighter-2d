@@ -19,6 +19,12 @@ internal class CharacterDefinition
     public string Id { get; private init; } = string.Empty;
     public string PrettyName { get; private init; } = string.Empty;
 
+    /// <summary>
+    /// A few words about them for the fight setup screen, or a key of the localisation (@characters.blocky). Empty for
+    /// one that hasn't got any.
+    /// </summary>
+    public string Blurb { get; private init; } = string.Empty;
+
     // Where the art is, relative to the content. An .ase file with a tag for every animation, or a folder with an old sprite sheet and its definition.hor
     public string Sprites { get; private init; } = string.Empty;
 
@@ -89,6 +95,7 @@ internal class CharacterDefinition
         {
             Id = id,
             PrettyName = HorReader.Text(character, "pretty_name", id),
+            Blurb = HorReader.Text(character, "blurb", string.Empty),
             Sprites = HorReader.Text(character, "sprites"),
             MoveFiles = [.. moveFiles.Values.OfType<StringValue>().Select(moveFile => moveFile.Value)],
             Movement = movement,

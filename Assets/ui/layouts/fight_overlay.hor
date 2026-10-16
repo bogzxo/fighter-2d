@@ -316,6 +316,109 @@ let player2_move_bar = compositor.segments({
     ahead_opacity: 0.3
 });
 
+// What every button of a player's gamepad does, in the bottom corner on their side (HUD/ControlsDisplay.cs), with how to
+// get the lab drawer out in a practice fight. Filled in from their own bindings, so a rebound key is what it says
+
+let player1_controls = compositor.stack({
+    pos: vec(40, 100),
+    layer: "controls",
+    anchor: "bottom_left",
+    pivot: "bottom_left",
+    padding: vec(20, 14, 20, 14),
+    background: "panel",
+    spacing: 6,
+    slide: "down",
+    slide_time: 0.2
+});
+
+let player1_controls_title = compositor.label({
+    parent: player1_controls,
+    size: vec(400, 0),
+    text: "@controls.title",
+    text_scale: 0.2,
+    color: vec(0.58, 0.6, 0.66, 1),
+    align: "left"
+});
+
+let player1_controls_columns = compositor.stack({
+    parent: player1_controls,
+    spacing: 20,
+    direction: "horizontal",
+    stretch: true
+});
+
+let player1_controls_left = compositor.label({
+    parent: player1_controls_columns,
+    size: vec(190, 0),
+    text_scale: 0.22,
+    align: "top_left"
+});
+
+let player1_controls_right = compositor.label({
+    parent: player1_controls_columns,
+    size: vec(190, 0),
+    text_scale: 0.22,
+    align: "top_left"
+});
+
+let player1_controls_hint = compositor.label({
+    parent: player1_controls,
+    size: vec(400, 0),
+    text_scale: 0.22,
+    color: vec(0.86, 0.88, 0.92, 1),
+    align: "left"
+});
+
+let player2_controls = compositor.stack({
+    pos: vec(-40, 100),
+    layer: "controls",
+    anchor: "bottom_right",
+    pivot: "bottom_right",
+    padding: vec(20, 14, 20, 14),
+    background: "panel",
+    spacing: 6,
+    slide: "down",
+    slide_time: 0.2
+});
+
+let player2_controls_title = compositor.label({
+    parent: player2_controls,
+    size: vec(400, 0),
+    text: "@controls.title",
+    text_scale: 0.2,
+    color: vec(0.58, 0.6, 0.66, 1),
+    align: "left"
+});
+
+let player2_controls_columns = compositor.stack({
+    parent: player2_controls,
+    spacing: 20,
+    direction: "horizontal",
+    stretch: true
+});
+
+let player2_controls_left = compositor.label({
+    parent: player2_controls_columns,
+    size: vec(190, 0),
+    text_scale: 0.22,
+    align: "top_left"
+});
+
+let player2_controls_right = compositor.label({
+    parent: player2_controls_columns,
+    size: vec(190, 0),
+    text_scale: 0.22,
+    align: "top_left"
+});
+
+let player2_controls_hint = compositor.label({
+    parent: player2_controls,
+    size: vec(400, 0),
+    text_scale: 0.22,
+    color: vec(0.86, 0.88, 0.92, 1),
+    align: "left"
+});
+
 let banner_stripe = compositor.stack({
     layer: "banner",
     padding: vec(100, 32, 100, 32),

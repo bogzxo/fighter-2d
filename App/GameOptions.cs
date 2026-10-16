@@ -44,6 +44,18 @@ internal enum LightQuality
 /// <summary>
 /// The tabs of the options screen, which is what going back to the defaults goes by.
 /// </summary>
+// When the card of what the buttons do is in the corner of a fight (HUD/ControlsDisplay.cs)
+internal enum ControlsShown
+{
+    Off,
+
+    // The lab, where somebody is finding out what their character does
+    Practice,
+
+    // Every fight on this machine
+    Always
+}
+
 internal enum OptionsTab
 {
     Display,
@@ -128,6 +140,9 @@ internal static class GameOptions
     // Whether the hitboxes, hurtboxes and collision of a fight are drawn over it
     public static bool Hitboxes = false;
 
+    // When the card of what every button does is in the corner of a fight, with how to get the lab drawer out
+    public static ControlsShown Controls = ControlsShown.Practice;
+
     /* Under the hood */
 
     // How much of the engine's performance overlay is up (F3 goes round them too, but that isn't saved)
@@ -142,13 +157,13 @@ internal static class GameOptions
         bool Fullscreen, Vector2 Resolution, bool VSync, int FrameLimit, Horizon.UI.PerformanceDetail Performance,
         bool Crt, bool Bloom, bool RenderPathtraced, LightQuality LightQuality,
         float GuiScale, string UiSkin, string UiTheme, TransitionStyle Transitions,
-        float CameraZoom, bool InputDisplay, bool HitCallouts, bool FrameData, bool Hitboxes);
+        float CameraZoom, bool InputDisplay, bool HitCallouts, bool FrameData, bool Hitboxes, ControlsShown Controls);
 
     private static readonly Values Defaults = new(
         Fullscreen, Resolution, VSync, FrameLimit, Performance,
         Crt, Bloom, RenderPathtraced, LightQuality,
         GuiScale, UiSkin, UiTheme, Transitions,
-        CameraZoom, InputDisplay, HitCallouts, FrameData, Hitboxes);
+        CameraZoom, InputDisplay, HitCallouts, FrameData, Hitboxes, Controls);
 
     /// <summary>
     /// Puts the options of one tab of the options screen back to how the game came. Nothing is applied or saved, that is
@@ -186,6 +201,7 @@ internal static class GameOptions
                 HitCallouts = Defaults.HitCallouts;
                 FrameData = Defaults.FrameData;
                 Hitboxes = Defaults.Hitboxes;
+                Controls = Defaults.Controls;
                 break;
         }
     }
@@ -232,6 +248,7 @@ internal static class GameOptions
             HitCallouts = HorReader.Bool(options, "hit_callouts", HitCallouts);
             FrameData = HorReader.Bool(options, "frame_data", FrameData);
             Hitboxes = HorReader.Bool(options, "hitboxes", Hitboxes);
+            Controls = HorReader.Named(options, "controls", Controls);
             Performance = HorReader.Named(options, "performance", Performance);
             JoinAddress = HorReader.Text(options, "join_address", JoinAddress);
         }
@@ -278,6 +295,7 @@ internal static class GameOptions
         text.AppendLine($"    input_display: {Write(InputDisplay)},");
         text.AppendLine($"    hit_callouts: {Write(HitCallouts)},");
         text.AppendLine($"    frame_data: {Write(FrameData)},");
+        text.AppendLine($"    controls: \"{Controls.ToString().ToLowerInvariant()}\",");
         text.AppendLine($"    hitboxes: {Write(Hitboxes)},");
         text.AppendLine($"    performance: \"{Performance.ToString().ToLowerInvariant()}\",");
         text.AppendLine($"    join_address: \"{JoinAddress}\"");

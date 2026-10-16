@@ -228,6 +228,10 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
         _settings.AddSwitch(layout, "frame_data", GameOptions.FrameData, on => GameOptions.FrameData = on,
             Localisation.Get("options.about_frame_data"));
 
+        _settings.Add(layout, "controls", Enum.GetValues<ControlsShown>(), GameOptions.Controls,
+            shown => Localisation.Get("options.controls_" + shown.ToString().ToLowerInvariant()), shown => GameOptions.Controls = shown,
+            Localisation.Get("options.about_controls"));
+
         _settings.AddSwitch(layout, "hitboxes", GameOptions.Hitboxes, on => GameOptions.Hitboxes = on,
             Localisation.Get("options.about_hitboxes"));
     }

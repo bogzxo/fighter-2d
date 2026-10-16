@@ -48,6 +48,10 @@ internal sealed class TrainingDrawer(TrainingMode training) : GameComponent
     public Func<bool>? FrameDataShown { get; init; }
     public Action<bool>? ShowFrameData { get; init; }
 
+    /// <summary>The card of the controls in the corner (the HUD's <c>Controls</c>). Null leaves the row out.</summary>
+    public Func<bool>? ControlsShown { get; init; }
+    public Action<bool>? ShowControls { get; init; }
+
     public override void Initialize()
     {
         (_layout, _compositor) = MenuLayouts.Load(MenuLayouts.TRAINING_DRAWER);
@@ -101,6 +105,16 @@ internal sealed class TrainingDrawer(TrainingMode training) : GameComponent
             frames.OnChanged = _ => show(frames.Index == 1);
         }
         else _layout.Get<StackPanel>("frame_data_row").Visible = false;
+
+        // Put away while the drawer is out, it comes back (or doesn't) as the drawer goes
+        var controls = _layout.Get<Selector>("controls");
+        if (ControlsShown is { } controlsShown && ShowControls is { } showControls)
+        {
+            controls.Options = [Localisation.Get("common.off"), Localisation.Get("common.on")];
+            controls.Index = controlsShown() ? 1 : 0;
+            controls.OnChanged = _ => showControls(controls.Index == 1);
+        }
+        else _layout.Get<StackPanel>("controls_row").Visible = false;
 
         _hitboxes = _layout.Get<Button>("btn_hitboxes");
         if (ToggleHitboxes is { } toggle)

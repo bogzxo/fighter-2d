@@ -1,5 +1,7 @@
 // The moves for getting around. See fighting_moves.hor for what all of this means.
 
+#define fight_move
+
 let moves = {
     idle: {
         stances: "standing",

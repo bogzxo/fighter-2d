@@ -6,6 +6,8 @@
 // crouch. The roll has it all in the right order though. He goes down through its last two of those (legs over, then
 // lying), stays on the last, and gets up with the three the roll ends on (kneeling, rising, standing).
 
+#define fight_move
+
 let moves = {
     knocked_out: {
         stances: "standing | crouching | jumping | falling",

@@ -476,6 +476,29 @@ let frame_data = compositor.selector({
     text_scale: 0.28
 });
 
+let controls_row = compositor.stack({
+    parent: fight_rows,
+    padding: vec(14, 5, 14, 5),
+    hover: "nudge",
+    radius: 6,
+    spacing: 24,
+    direction: "horizontal"
+});
+
+let controls_title = compositor.label({
+    parent: controls_row,
+    size: vec(300, 0),
+    text: "@options.controls",
+    text_scale: 0.32,
+    align: "left"
+});
+
+let controls = compositor.selector({
+    parent: controls_row,
+    size: vec(380, 48),
+    text_scale: 0.28
+});
+
 let hitboxes_row = compositor.stack({
     parent: fight_rows,
     padding: vec(14, 5, 14, 5),

@@ -116,6 +116,8 @@
 //     sliver of chip damage (never the last of their health).
 //   - Both players build super meter off hits dealt and taken, blocks and even whiffs. The moves that cost meter say so (meter_cost).
 
+#define fight_move
+
 let moves = {
     block: {
         input: "RightBumper",

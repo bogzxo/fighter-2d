@@ -4,6 +4,8 @@
 // hurt a little less, and she has a way out that he doesn't:
 //   LeftTrigger   backstep, a hop away from whoever she is facing with i-frames on the way out
 
+#define fight_move
+
 let moves = {
     punch_left: {
         input: "X",

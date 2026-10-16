@@ -187,7 +187,9 @@ internal partial class FightScene
             Round = _round,
             Stats = new MatchStats(_fight, _round),
             ChangeFighters = _setup.IsOnline ? null : ChangeFighters,
-            BannerHidden = () => _pause is { HoldsFight: true }
+            BannerHidden = () => _pause is { HoldsFight: true },
+            Practice = _training is not null,
+            ControlsHidden = () => _drawer is { IsOpen: true } || _pause is { HoldsFight: true }
         });
         AddTrainingDrawer();
         AddPauseMenu();
@@ -211,7 +213,9 @@ internal partial class FightScene
             ToggleHitboxes = () => _world.RenderDebug = !_world.RenderDebug,
             HitboxesShown = () => _world.RenderDebug,
             FrameDataShown = () => _hud.FrameData,
-            ShowFrameData = shown => _hud.FrameData = shown
+            ShowFrameData = shown => _hud.FrameData = shown,
+            ControlsShown = () => _hud.Controls,
+            ShowControls = shown => _hud.Controls = shown
         });
     }
 

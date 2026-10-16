@@ -5,6 +5,7 @@ using System.Numerics;
 using Horizon.Logging;
 
 using Horizon.Rendering.Spriting;
+using Horizon.UI;
 
 namespace Fighter2D.Fighters;
 
@@ -132,6 +133,48 @@ internal sealed class CharacterArt
             // Not the end of the world, the fight gets it ready itself
             Log.Warning($"[CharacterArt] Couldn't get '{character.Id}' ready ahead: {exception.Message}");
         }
+    }
+
+    // The outlines of animations that were asked for, by the animation and whether it faces the other way, see OutlineOf
+    private readonly Dictionary<(string Animation, bool Mirrored), Task<UIWrapShape?>> _outlines = [];
+
+    /// <summary>
+    /// The outline of an animation for text to run round (the blurb on the fight setup screen), every pixel any of its
+    /// frames draws on, so the text stays put while the fighter runs on the spot. Worked out on a worker the first time
+    /// and kept, null for an animation the character hasn't got (nor its idle).
+    /// </summary>
+    /// <param name="mirrored">Whether it is for the character facing left, the way whoever is on the right is shown.</param>
+    public Task<UIWrapShape?> OutlineOf(string animation, bool mirrored)
+    {
+        lock (_outlines)
+        {
+            if (_outlines.TryGetValue((animation, mirrored), out var known)) return known;
+            return _outlines[(animation, mirrored)] = Task.Run(() => TraceOutline(animation, mirrored));
+        }
+    }
+
+    private UIWrapShape? TraceOutline(string animation, bool mirrored)
+    {
+        if (!TryFind(animation, out SpriteSource source)) return null;
+
+        int width = source.Width, height = source.Height;
+        var union = new byte[width * height * 4];
+        for (int frame = 0; frame < source.Frames; frame++)
+        {
+            if (source.ReadFrame(frame) is not { } pixels || pixels.Width != width || pixels.Height != height) continue;
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int from = (y * width + x) * 4 + 3;
+                    int to = (y * width + (mirrored ? width - 1 - x : x)) * 4 + 3;
+                    if (pixels.Data[from] > union[to]) union[to] = pixels.Data[from];
+                }
+            }
+        }
+
+        return UIWrapShape.FromPixels(union, width, height);
     }
 
     public bool Has(string animation) => Sprites.Has(animation);

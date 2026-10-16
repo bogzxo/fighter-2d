@@ -4,6 +4,8 @@
 // What the files were made from is in Art/characters, which the game doesn't load and doesn't send to whoever joins.
 //
 //   pretty_name   what the character is called on screen
+//   blurb         a few words about them, which the fight setup screen runs round their portrait. A key of the localisation
+//                 ("@characters.blocky") so it can be had in every language, or the words themselves for a game pack
 //   sprites       its .ase file. A folder with a spritesheet.png and a definition.hor in it (how characters used to come) works as well
 //   moves         the files its moves come from. A move in a later file replaces the one of the same name from an earlier one,
 //                 so a character can share most of its moves with another and only change a few
@@ -28,6 +30,7 @@
 let characters = {
     the_male: {
         pretty_name: "The Male",
+        blurb: "@characters.the_male",
         sprites: "Assets/sprites/characters/the_male/the_male.ase",
         moves: {
             shared: "Assets/data/mannequin_moves.hor",
@@ -60,6 +63,7 @@ let characters = {
 
     the_female: {
         pretty_name: "The Female",
+        blurb: "@characters.the_female",
         sprites: "Assets/sprites/characters/the_female/the_female.ase",
         moves: {
             shared: "Assets/data/mannequin_moves.hor",
@@ -93,6 +97,7 @@ let characters = {
 
     cammy: {
         pretty_name: "Cammy",
+        blurb: "@characters.cammy",
         sprites: "Assets/sprites/characters/cammy/cammy.ase",
         moves: {
             movement: "Assets/data/movement_moves.hor",
@@ -130,6 +135,7 @@ let characters = {
     // run the bat, and he is different
     blocky: {
         pretty_name: "Blocky",
+        blurb: "@characters.blocky",
         sprites: "Assets/sprites/characters/blocky/blocky.ase",
         moves: {
             all: "Assets/data/blocky_moves.hor"
@@ -163,6 +169,7 @@ let characters = {
     // on two buttons each, a jump kick, a block and a roll, and nothing that costs meter
     the_man: {
         pretty_name: "The Man",
+        blurb: "@characters.the_man",
         sprites: "Assets/sprites/characters/the_man/the_man.ase",
         moves: {
             movement: "Assets/data/movement_moves.hor",
