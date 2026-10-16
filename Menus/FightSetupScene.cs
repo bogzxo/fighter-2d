@@ -66,7 +66,11 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
     private int _columns = 1, _gridRows = GRID_ROWS_MIN;
 
     private readonly SettingList _match = new();
-    private Label _subtitle = null!;
+    private Label _subtitle = null!, _mapName = null!, _mapAbout = null!;
+
+    // The picking (the two corners and the roster) and the stage select, one slid away while the other is up
+    private UIComponent[] _picking = [];
+    private UIComponent _stage = null!;
     private Button _fight = null!;
     private int _mapIndex;
 
@@ -122,6 +126,10 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         // The screen is laid out in Assets/ui/layouts/fight_setup.hor, a corner in fighter_panel.hor and a cell of the roster in fighter_cell.hor
         layout.Get<Label>("title").Text = setup.Title;
         _subtitle = layout.Get<Label>("subtitle");
+        _mapName = layout.Get<Label>("map_name");
+        _mapAbout = layout.Get<Label>("map_about");
+        _picking = [layout.Get<UIComponent>("left"), layout.Get<UIComponent>("right"), layout.Get<UIComponent>("middle")];
+        _stage = layout.Get<UIComponent>("stage");
 
         _panels[0] = new FighterPanel(layout.Populate("left", 1)[0], mirrored: false);
         _panels[1] = new FighterPanel(layout.Populate("right", 1)[0], mirrored: true);
@@ -160,7 +168,7 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         // For the mouse, a gamepad goes back with B
         layout.Get<Button>("btn_back").OnPressed = Back;
 
-        if (_maps.Count > 0) _preview.Show(_maps[_mapIndex]);
+        if (_maps.Count > 0) ShowMap(_maps[_mapIndex]);
 
         BuildLobby(layout);
     }
@@ -420,6 +428,10 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         _matchStage = ready;
         ChoosingMatch(ready);
 
+        // The fighters and the roster out of the way of the map, the stage select up, and back the other way
+        foreach (UIComponent picking in _picking) picking.Show(!ready);
+        _stage.Show(ready);
+
         if (ready)
         {
             // Onto the fight button's doorstep, A straight away is the fight on what was there last time
@@ -433,6 +445,8 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
     {
         _mapIndex = Math.Max(0, _maps.FindIndex(each => each.FileName == map.FileName));
         _preview.Show(map);
+        _mapName.Text = map.PrettyName;
+        _mapAbout.Text = map.Description;
     }
 
     private void StartFight()

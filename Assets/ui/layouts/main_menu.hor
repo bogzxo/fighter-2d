@@ -1,110 +1,126 @@
 // main_menu, laid out with Horizon.Hex.
 // Load it with UILayout.Load, every component is there under the name it has here.
+// The logo top left, the buttons under it on a strip of glass, and the rest of the screen the live Japan map with the
+// duel on it (Menus/MainMenuScene.cs). What the button that is picked does is said under the buttons, what the gamepad
+// does on the strip along the bottom.
 #define layout
-
 
 compositor.design({ size: vec(1600, 900), fit: "contain" });
 
 let menu = compositor.stack({
-    pos: vec(90, -120),
+    pos: vec(60, -96),
     anchor: "left",
     pivot: "left",
-    padding: vec(36, 28, 36, 28),
+    padding: vec(22, 20, 22, 22),
     intro: "slide",
     intro_time: 0.55,
     intro_delay: 0.2,
     intro_offset: vec(-520, 0),
     background: "panel",
     stagger: 0.1,
-    spacing: 10
+    spacing: 8
 });
 
 let btn_pvp = compositor.button({
     parent: menu,
-    pos: vec(0, 1.1349335),
-    size: vec(360, 0),
+    size: vec(380, 56),
     intro: "pop",
     intro_delay: 0.35,
-    hover: "pulse",
-    label: "@main_menu.pvp"
+    hover: "nudge",
+    label: "@main_menu.pvp",
+    lbl_scale: 0.4,
+    style: "button_flat"
 });
 
 let btn_practice = compositor.button({
     parent: menu,
-    size: vec(360, 0),
+    size: vec(380, 56),
     intro: "pop",
     intro_delay: 0.35,
-    hover: "pulse",
-    label: "@main_menu.practice"
+    hover: "nudge",
+    label: "@main_menu.practice",
+    lbl_scale: 0.4,
+    style: "button_flat"
 });
 
 let btn_host = compositor.button({
     parent: menu,
-    size: vec(360, 0),
+    size: vec(380, 56),
     intro: "pop",
     intro_delay: 0.35,
-    hover: "pulse",
-    label: "@main_menu.host"
+    hover: "nudge",
+    label: "@main_menu.host",
+    lbl_scale: 0.4,
+    style: "button_flat"
 });
 
 let btn_join = compositor.button({
     parent: menu,
-    size: vec(360, 0),
+    size: vec(380, 56),
     intro: "pop",
     intro_delay: 0.35,
-    hover: "pulse",
-    label: "@main_menu.join"
+    hover: "nudge",
+    label: "@main_menu.join",
+    lbl_scale: 0.4,
+    style: "button_flat"
 });
 
 let btn_options = compositor.button({
     parent: menu,
-    size: vec(360, 0),
+    size: vec(380, 56),
     intro: "pop",
     intro_delay: 0.35,
-    hover: "pulse",
+    hover: "nudge",
     label: "@main_menu.options",
+    lbl_scale: 0.4,
     style: "button_flat"
 });
 
 let btn_quit = compositor.button({
     parent: menu,
-    size: vec(360, 0),
+    size: vec(380, 56),
     intro: "pop",
     intro_delay: 0.35,
-    hover: "pulse",
+    hover: "nudge",
     label: "@main_menu.quit",
+    lbl_scale: 0.4,
     style: "button_flat"
-});
-
-let rule = compositor.divider({
-    parent: menu,
-    fill: "horizontal",
-    color: vec(0.58, 0.6, 0.66, 0.35)
 });
 
 let description = compositor.label({
     parent: menu,
-    size: vec(360, 46),
+    size: vec(380, 64),
     text: "@main_menu.about_pvp",
-    text_scale: 0.24,
-    color: vec(0.86, 0.88, 0.92, 1),
+    text_scale: 0.28,
+    color: vec(0.86, 0.88, 0.94, 1),
     wrap: true,
     align: "top"
 });
 
+// The line of what the buttons do, on a strip of its own so it reads over anything
+let hint_bar = compositor.stack({
+    pos: vec(0, 14),
+    anchor: "bottom",
+    pivot: "bottom",
+    padding: vec(24, 8, 24, 8),
+    background: "panel"
+});
+
 let hint = compositor.label({
-    parent: menu,
-    size: vec(0, 30),
+    parent: hint_bar,
+    size: vec(1500, 34),
     text: "",
-    text_scale: 0.25,
-    color: vec(0.58, 0.6, 0.66, 1)
+    text_scale: 0.34,
+    color: vec(0.86, 0.88, 0.94, 1)
 });
 
 let version = compositor.label({
-    parent: menu,
+    pos: vec(-24, 64),
+    anchor: "bottom_right",
+    pivot: "bottom_right",
     text: "version",
-    text_scale: 0.2,
-    color: vec(0.58, 0.6, 0.66, 1)
+    text_scale: 0.22,
+    color: vec(0.72, 0.74, 0.82, 1)
 });
 
 let logo = compositor.image({

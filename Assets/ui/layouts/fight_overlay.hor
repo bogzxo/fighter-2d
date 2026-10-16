@@ -6,7 +6,7 @@ compositor.design({ size: vec(1600, 900), fit: "stretch" });
 
 let player1_health = compositor.progress_bar({
     pos: vec(40, -22),
-    size: vec(580, 48),
+    size: vec(580, 36),
     layer: "hud",
     anchor: "top_left",
     pivot: "top_left",
@@ -19,7 +19,7 @@ let player1_health = compositor.progress_bar({
 
 let player2_health = compositor.progress_bar({
     pos: vec(-40, -22),
-    size: vec(580, 48),
+    size: vec(580, 36),
     layer: "hud",
     anchor: "top_right",
     pivot: "top_right",
@@ -89,8 +89,7 @@ let timer_background = compositor.panel({
     intro: "slide",
     intro_delay: 0.35,
     intro_offset: vec(0, 148),
-    background: "button_selected",
-    color: vec(1, 1, 1, 0.604)
+    background: "frame"
 });
 
 let timer_label = compositor.readout({
@@ -453,8 +452,7 @@ let versus = compositor.stack({
     layer: "versus",
     padding: vec(56, 40, 56, 40),
     intro: "pop",
-    background: "bar_frame",
-    color: vec(1, 1, 1, 0.5),
+    background: "panel",
     spacing: 44,
     direction: "horizontal"
 });
@@ -465,7 +463,7 @@ let versus_p1_box = compositor.stack({
     intro: "slide",
     intro_delay: 0.2,
     intro_offset: vec(-150, 0),
-    background: "button_flat",
+    background: "frame",
     spacing: 12
 });
 
@@ -504,7 +502,7 @@ let versus_p2_box = compositor.stack({
     intro: "slide",
     intro_delay: 0.2,
     intro_offset: vec(150, 0),
-    background: "button_flat",
+    background: "frame",
     spacing: 12
 });
 
@@ -524,7 +522,7 @@ let result = compositor.stack({
     padding: vec(52, 36, 52, 36),
     intro: "pop",
     intro_time: 0.25,
-    background: "panel",
+    background: "frame",
     stagger: 0.03,
     spacing: 12
 });

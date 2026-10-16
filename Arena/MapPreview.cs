@@ -81,6 +81,12 @@ internal sealed class MapPreview : GameObject
     /// </summary>
     public void Show(MapDefinition map) => _wanted = map;
 
+    /// <summary>The map that is up, null until the first one has loaded (on a worker).</summary>
+    public FightingStage? Stage => _stage;
+
+    /// <summary>What the map is drawn and lit in, for something that stands on it and wants its light (the menu's duel).</summary>
+    public DeferredRenderer2D Renderer => _renderer;
+
     public override void UpdateState(float dt)
     {
         _stage?.Tick(dt);

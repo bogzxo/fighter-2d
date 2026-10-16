@@ -134,7 +134,7 @@ internal class BindingsScene(int slot, string title) : MenuScene
         switch (state)
         {
             case CaptureState.Changed:
-                _entries[row].Label = keyboard is not null ? ButtonGlyphs.Describe(_capture.Keys) : ButtonGlyphs.Describe(_gamepad, _capture.Buttons);
+                _entries[row].Label = ButtonGlyphs.OnButton(keyboard is not null ? ButtonGlyphs.Describe(_capture.Keys) : ButtonGlyphs.Describe(_gamepad, _capture.Buttons));
                 break;
 
             case CaptureState.Captured:
@@ -262,7 +262,7 @@ internal class BindingsScene(int slot, string title) : MenuScene
 
         for (int i = 0; i < ActionCount; i++)
         {
-            _entries[i].Label = ButtonGlyphs.Describe(_gamepad, GameInput.Actions[i].Name);
+            _entries[i].Label = ButtonGlyphs.OnButton(ButtonGlyphs.Describe(_gamepad, GameInput.Actions[i].Name));
         }
 
         Hint?.Release();

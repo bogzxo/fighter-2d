@@ -20,7 +20,7 @@ let menu = compositor.stack({
     padding: vec(44, 34, 44, 34),
     intro: "pop",
     intro_time: 0.25,
-    background: "panel",
+    background: "frame",
     stagger: 0.05,
     spacing: 14
 });
@@ -116,15 +116,22 @@ let btn_hitboxes = compositor.button({
 });
 
 // Over the frame bars of the fight rather than on them, between them and the panels
-let hint = compositor.label({
-    pos: vec(0, 170),
-    size: vec(1500, 30),
+// The line of what the buttons do, on a strip of its own so it reads over anything
+let hint_bar = compositor.stack({
+    pos: vec(0, 160),
     layer: "menu",
     anchor: "bottom",
     pivot: "bottom",
+    padding: vec(24, 8, 24, 8),
+    background: "panel"
+});
+
+let hint = compositor.label({
+    parent: hint_bar,
+    size: vec(1500, 34),
     text: "",
-    text_scale: 0.25,
-    color: vec(0.86, 0.88, 0.92, 1)
+    text_scale: 0.34,
+    color: vec(0.86, 0.88, 0.94, 1)
 });
 
 let count = compositor.readout({

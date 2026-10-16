@@ -347,5 +347,20 @@ internal sealed class FightingStage : IDisposable, IArena
         return true;
     }
 
+    /// <summary>
+    /// The height of the ground under a point, the top of the highest thing to stand on below it, for something that
+    /// wants to stand on the map without a physics body (the main menu's duel). The point itself if there's nothing.
+    /// </summary>
+    public float FloorUnder(Vector2 at)
+    {
+        float floor = float.MinValue;
+        foreach (TileMapBox box in Map.BuildColliders())
+        {
+            if (at.X >= box.Min.X && at.X <= box.Max.X && box.Max.Y <= at.Y + 0.5f && box.Max.Y > floor) floor = box.Max.Y;
+        }
+
+        return floor == float.MinValue ? at.Y : floor;
+    }
+
     public void Dispose() => _occlusion.Dispose();
 }

@@ -26,12 +26,19 @@ let address = compositor.textbox({ parent: panel, size: vec(460, 60), text: "127
 let status = compositor.label({ parent: panel, size: vec(0, 22), text_scale: 0.25, color: vec(1, 0.45, 0.4, 1) });
 let keyboard_slot = compositor.stack({ parent: panel });
 
-// What to press, along the bottom of the screen where every menu has it
-let hint = compositor.label({
+// The line of what the buttons do, on a strip of its own so it reads over anything
+let hint_bar = compositor.stack({
+    pos: vec(0, 14),
     anchor: "bottom",
-    pos: vec(0, 22),
-    size: vec(1500, 30),
+    pivot: "bottom",
+    padding: vec(24, 8, 24, 8),
+    background: "panel"
+});
+
+let hint = compositor.label({
+    parent: hint_bar,
+    size: vec(1500, 34),
     text: "",
-    text_scale: 0.25,
-    color: vec(0.58, 0.6, 0.66, 1)
+    text_scale: 0.34,
+    color: vec(0.86, 0.88, 0.94, 1)
 });

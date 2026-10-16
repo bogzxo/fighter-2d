@@ -193,6 +193,7 @@ let strings = {
 
     setup: {
         pick_fighters: "pick your fighters",
+        stage_select: "STAGE SELECT",
         map: "Map",
         rounds: "Rounds",
         round_time: "Round time",

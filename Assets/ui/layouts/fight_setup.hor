@@ -1,51 +1,64 @@
 // fight_setup, laid out with Horizon.Hex.
 // Load it with UILayout.Load, every component is there under the name it has here.
+// Two looks on one screen over the live map. Picking, the fighters stand on their own sides and the roster sits low in
+// the middle, so the top of the map shows. Once everybody is locked in that slides away and the stage select comes up,
+// the map the whole screen and a bar across the bottom with the map, the rules and the fight (Menus/FightSetupScene.cs
+// swaps them, Show and slide).
 #define layout
 
 compositor.design({ size: vec(1600, 900), fit: "contain" });
 
 let left = compositor.stack({
-    pos: vec(36, 6),
+    pos: vec(28, 10),
     anchor: "left",
     pivot: "left",
     intro: "slide",
     intro_time: 0.4,
     intro_offset: vec(-460, 0),
+    slide: "left",
+    slide_time: 0.25,
     template: "fighter_panel.hor",
     preview_count: 1
 });
 
 let right = compositor.stack({
-    pos: vec(-36, 6),
+    pos: vec(-28, 10),
     anchor: "right",
     pivot: "right",
     intro: "slide",
     intro_time: 0.4,
     intro_offset: vec(460, 0),
+    slide: "right",
+    slide_time: 0.25,
     template: "fighter_panel.hor",
     preview_count: 1
 });
 
+// The roster, low in the middle with the top of the map over it
 let middle = compositor.stack({
-    pos: vec(0, 6),
-    padding: vec(30, 24, 30, 24),
+    pos: vec(0, 76),
+    anchor: "bottom",
+    pivot: "bottom",
+    padding: vec(24, 18, 24, 20),
     intro: "pop",
     background: "panel",
-    spacing: 12
+    slide: "down",
+    slide_time: 0.25,
+    spacing: 10
 });
 
 let title = compositor.label({
     parent: middle,
     text: "Versus",
-    text_scale: 0.56
+    text_scale: 0.5
 });
 
 let subtitle = compositor.label({
     parent: middle,
-    size: vec(520, 22),
+    size: vec(520, 26),
     text: "@setup.pick_fighters",
-    text_scale: 0.24,
-    color: vec(0.58, 0.6, 0.66, 1)
+    text_scale: 0.28,
+    color: vec(0.72, 0.74, 0.82, 1)
 });
 
 let grid = compositor.grid({
@@ -57,126 +70,159 @@ let grid = compositor.grid({
     spacing: 8
 });
 
-let rule = compositor.divider({
-    parent: middle,
-    fill: "horizontal",
-    color: vec(0.58, 0.6, 0.66, 0.35)
+// The stage select, a bar across the bottom once everybody is locked in. The name of the map big, what it is like, the
+// rules in a row, and the fight
+let stage = compositor.stack({
+    pos: vec(0, 76),
+    anchor: "bottom",
+    pivot: "bottom",
+    padding: vec(30, 18, 30, 20),
+    background: "panel",
+    slide: "down",
+    slide_time: 0.25,
+    shown: false,
+    spacing: 14
 });
 
-let rows = compositor.stack({ parent: middle, spacing: 6 });
+let stage_title = compositor.label({
+    parent: stage,
+    size: vec(1300, 0),
+    text: "@setup.stage_select",
+    text_scale: 0.26,
+    color: vec(0.72, 0.74, 0.82, 1)
+});
+
+let map_name = compositor.label({
+    parent: stage,
+    size: vec(1300, 0),
+    text: "Japan",
+    text_scale: 0.62
+});
+
+let map_about = compositor.label({
+    parent: stage,
+    size: vec(1300, 0),
+    text: "",
+    text_scale: 0.28,
+    color: vec(0.72, 0.74, 0.82, 1)
+});
+
+let rows = compositor.stack({ parent: stage, spacing: 14, direction: "horizontal" });
 
 let map_row = compositor.stack({
     parent: rows,
-    padding: vec(10, 3, 10, 3),
+    padding: vec(10, 6, 10, 6),
     radius: 6,
-    spacing: 16,
-    direction: "horizontal"
+    spacing: 6
 });
 
 let map_title = compositor.label({
     parent: map_row,
-    size: vec(150, 0),
+    size: vec(290, 0),
     text: "@setup.map",
-    text_scale: 0.3,
-    align: "left"
+    text_scale: 0.28,
+    color: vec(0.72, 0.74, 0.82, 1)
 });
 
 let map = compositor.selector({
     parent: map_row,
-    size: vec(340, 44),
-    text_scale: 0.28
+    size: vec(290, 48),
+    text_scale: 0.3
 });
 
 let rounds_row = compositor.stack({
     parent: rows,
-    padding: vec(10, 3, 10, 3),
+    padding: vec(10, 6, 10, 6),
     radius: 6,
-    spacing: 16,
-    direction: "horizontal"
+    spacing: 6
 });
 
 let rounds_title = compositor.label({
     parent: rounds_row,
-    size: vec(150, 0),
+    size: vec(290, 0),
     text: "@setup.rounds",
-    text_scale: 0.3,
-    align: "left"
+    text_scale: 0.28,
+    color: vec(0.72, 0.74, 0.82, 1)
 });
 
 let rounds = compositor.selector({
     parent: rounds_row,
-    size: vec(340, 44),
-    text_scale: 0.28
+    size: vec(290, 48),
+    text_scale: 0.3
 });
 
 let time_row = compositor.stack({
     parent: rows,
-    padding: vec(10, 3, 10, 3),
+    padding: vec(10, 6, 10, 6),
     radius: 6,
-    spacing: 16,
-    direction: "horizontal"
+    spacing: 6
 });
 
 let time_title = compositor.label({
     parent: time_row,
-    size: vec(150, 0),
+    size: vec(290, 0),
     text: "@setup.round_time",
-    text_scale: 0.3,
-    align: "left"
+    text_scale: 0.28,
+    color: vec(0.72, 0.74, 0.82, 1)
 });
 
 let time = compositor.selector({
     parent: time_row,
-    size: vec(340, 44),
-    text_scale: 0.28
+    size: vec(290, 48),
+    text_scale: 0.3
 });
 
 let weather_row = compositor.stack({
     parent: rows,
-    padding: vec(10, 3, 10, 3),
+    padding: vec(10, 6, 10, 6),
     radius: 6,
-    spacing: 16,
-    direction: "horizontal"
+    spacing: 6
 });
 
 let weather_title = compositor.label({
     parent: weather_row,
-    size: vec(150, 0),
+    size: vec(290, 0),
     text: "@setup.weather",
-    text_scale: 0.3,
-    align: "left"
+    text_scale: 0.28,
+    color: vec(0.72, 0.74, 0.82, 1)
 });
 
 let weather = compositor.selector({
     parent: weather_row,
-    size: vec(340, 44),
-    text_scale: 0.28
+    size: vec(290, 48),
+    text_scale: 0.3
 });
 
 let btn_fight = compositor.button({
-    parent: middle,
-    size: vec(260, 0),
-    intro: "pop",
-    intro_delay: 0.2,
-    label: "@setup.fight"
+    parent: stage,
+    size: vec(300, 0),
+    label: "@setup.fight",
+    lbl_scale: 0.42
+});
+
+// The line of what the buttons do, on a strip of its own so it reads over anything
+let hint_bar = compositor.stack({
+    pos: vec(0, 14),
+    anchor: "bottom",
+    pivot: "bottom",
+    padding: vec(24, 8, 24, 8),
+    background: "panel"
 });
 
 let hint = compositor.label({
-    pos: vec(0, 22),
-    size: vec(1500, 30),
-    anchor: "bottom",
-    pivot: "bottom",
+    parent: hint_bar,
+    size: vec(1500, 34),
     text: "",
-    text_scale: 0.25,
-    color: vec(0.58, 0.6, 0.66, 1)
+    text_scale: 0.34,
+    color: vec(0.86, 0.88, 0.94, 1)
 });
 
 let btn_back = compositor.button({
-    pos: vec(36, -22),
+    pos: vec(28, -22),
     size: vec(130, 0),
     anchor: "top_left",
     pivot: "top_left",
     label: "@setup.back",
-    lbl_scale: 0.26,
+    lbl_scale: 0.28,
     style: "button_flat"
 });

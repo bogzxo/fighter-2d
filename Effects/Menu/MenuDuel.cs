@@ -17,7 +17,8 @@ namespace Fighter2D.Effects;
 /// </summary>
 internal class MenuDuel : GameObject
 {
-    // Everything is in the units of the camera (pixels of the window)
+    // Everything is in the units of the camera, the numbers below for fighters 448 across (pixels of the window, the
+    // way it was first made), and all of it scaled to whatever size the duel is made with (a fight's on a live map)
     private const float FIGHTER_SIZE = 448;
     private const float GAP_FAR = 620;
     private const float GAP_NEAR = 170;
@@ -68,7 +69,14 @@ internal class MenuDuel : GameObject
     public event Action? Struck;
 
     // Where the fighters meet (X) and the height of the ground they stand on (Y)
-    private readonly Vector2 _center;
+    private Vector2 _center;
+    private bool _placed = true;
+    private PhysicsWorld _world = null!;
+
+    // How big the fighters are against the numbers above, and what they're drawn in if it isn't one of the duel's own
+    private readonly float _scale;
+    private readonly SpriteBatch? _batch;
+    private float Size => FIGHTER_SIZE * _scale;
 
     private MenuFighter _fighterLeft = null!, _fighterRight = null!;
     private ParticleRenderer2D _dust = null!, _sparksBlue = null!, _sparksRed = null!;
@@ -77,10 +85,16 @@ internal class MenuDuel : GameObject
     private float _phaseTime;
     private bool _leftAttacks, _struck;
 
-    /// <param name="center">Where the fighters meet (X) and the ground they stand on (Y)</param>
-    public MenuDuel(Vector2 center)
+    /// <param name="center">Where the fighters meet (X) and the ground they stand on (Y), null for later (see <see cref="Place"/>)</param>
+    /// <param name="size">How big the frame of a fighter is in the units of the camera, everything else goes with it.</param>
+    /// <param name="batch">What the fighters are drawn in. A lit renderer only draws the sprite batches that are its
+    /// own, so a duel on a live map is handed one of the map's, without it the duel makes one of its own.</param>
+    public MenuDuel(Vector2? center, float size = FIGHTER_SIZE, SpriteBatch? batch = null)
     {
-        _center = center;
+        _center = center ?? Vector2.Zero;
+        _placed = center is not null;
+        _scale = size / FIGHTER_SIZE;
+        _batch = batch;
         Name = "Menu Duel";
     }
 
@@ -89,15 +103,17 @@ internal class MenuDuel : GameObject
         // A world where nothing pulls on the fighters (the duel puts them where they are), only the sparks fall
         var world = AddComponent<PhysicsWorld>();
 
-        var ground = world.CreateBody(PhysicsBodySimulationType.Static, new Vector2(_center.X - GROUND_REACH, _center.Y - GROUND_DEPTH));
-        ground.CreateRectangularFixture(Vector2.Zero, new Vector2(GROUND_REACH * 2, GROUND_DEPTH));
+        _world = world;
+        if (_placed) MakeGround();
 
-        var spriteBatch = AddEntity<SpriteBatch>();
+        var spriteBatch = _batch ?? AddEntity<SpriteBatch>();
 
         // The fighter on the left is the blue corner, the one on the right the red one
-        _fighterLeft = AddEntity(CreateFighter(world, CHARACTER_LEFT, TintBlue));
-        _fighterRight = AddEntity(CreateFighter(world, CHARACTER_RIGHT, TintRed));
+        _fighterLeft = AddEntity(CreateFighter(world, CHARACTER_LEFT, TintBlue, Size));
+        _fighterRight = AddEntity(CreateFighter(world, CHARACTER_RIGHT, TintRed, Size));
         _fighterRight.Flipped = true;
+        // See-through until the duel is put down somewhere
+        if (!_placed) _fighterLeft.Tint = _fighterRight.Tint = Vector4.Zero;
 
         spriteBatch.Add(_fighterLeft);
         spriteBatch.Add(_fighterRight);
@@ -105,19 +121,19 @@ internal class MenuDuel : GameObject
         // Added after the fighters so whatever the duel throws up is drawn in front of them
         _dust = AddEntity(new ParticleRenderer2D(8192)
         {
-            ParticleSize = 5,
+            ParticleSize = 5 * _scale,
             MaxAge = 0.7f,
             StartColor = new Vector3(0.55f, 0.5f, 0.45f),
             EndColor = new Vector3(0.08f, 0.07f, 0.06f),
-            Gravity = new Vector2(0, 160)
+            Gravity = new Vector2(0, 160 * _scale)
         });
-        _sparksBlue = AddEntity(CreateSparks(world, new Vector3(0.7f, 0.95f, 1.0f), new Vector3(0.0f, 0.2f, 0.9f)));
-        _sparksRed = AddEntity(CreateSparks(world, new Vector3(1.0f, 0.95f, 0.7f), new Vector3(0.9f, 0.1f, 0.0f)));
+        _sparksBlue = AddEntity(CreateSparks(world, new Vector3(0.7f, 0.95f, 1.0f), new Vector3(0.0f, 0.2f, 0.9f), _scale));
+        _sparksRed = AddEntity(CreateSparks(world, new Vector3(1.0f, 0.95f, 0.7f), new Vector3(0.9f, 0.1f, 0.0f), _scale));
 
         base.Initialize();
     }
 
-    private static MenuFighter CreateFighter(PhysicsWorld world, string character, Vector4 tint) => new(FIGHTER_SIZE, CharacterDefinition.Load(character), Animations)
+    private static MenuFighter CreateFighter(PhysicsWorld world, string character, Vector4 tint, float size) => new(size, CharacterDefinition.Load(character), Animations)
     {
         BaseTint = tint,
         Tint = tint,
@@ -127,38 +143,65 @@ internal class MenuDuel : GameObject
     /// <summary>
     /// Helper method to make the sparks of one corner. They are small, bouncy and land on the ground and on the fighters.
     /// </summary>
-    private static ParticleRenderer2D CreateSparks(PhysicsWorld world, Vector3 startColor, Vector3 endColor)
+    private static ParticleRenderer2D CreateSparks(PhysicsWorld world, Vector3 startColor, Vector3 endColor, float scale)
     {
         var simulator = new PhysicsParticleSimulator2D(world)
         {
-            Radius = 4.0f,
+            Radius = 4.0f * scale,
             Restitution = 0.45f,
             Friction = 4.0f,
 
             // The fighters wade through what lies about rather than firing it off
             BodyPush = 0.3f,
-            BodyPushLimit = 260.0f
+            BodyPushLimit = 260.0f * scale
         };
 
         return new ParticleRenderer2D(16384, simulator)
         {
-            ParticleSize = 4,
+            ParticleSize = 4 * scale,
             MaxAge = 1.1f,
             StartColor = startColor,
             EndColor = endColor,
-            Gravity = new Vector2(0, -900)
+            Gravity = new Vector2(0, -900 * scale)
         };
+    }
+
+    // The ground the sparks land on, made where the duel is (a static body stays where it was made)
+    private void MakeGround()
+    {
+        var ground = _world.CreateBody(PhysicsBodySimulationType.Static, new Vector2(_center.X - GROUND_REACH * _scale, _center.Y - GROUND_DEPTH * _scale));
+        ground.CreateRectangularFixture(Vector2.Zero, new Vector2(GROUND_REACH * 2, GROUND_DEPTH) * _scale);
+    }
+
+    /// <summary>
+    /// Puts the duel down where the fighters meet (X) on the ground (Y), for one made without a place (the floor of a
+    /// map that is still loading), which waits out of sight until then. It has to be made with the scene all the same,
+    /// its fighters' art is got ready as the scene is set up, a duel made later never shows them.
+    /// </summary>
+    public void Place(Vector2 center)
+    {
+        _center = center;
+        _placed = true;
+        MakeGround();
+        _fighterLeft.Tint = _fighterLeft.BaseTint;
+        _fighterRight.Tint = _fighterRight.BaseTint;
     }
 
     public override void UpdateState(float dt)
     {
+        if (!_placed)
+        {
+            base.UpdateState(dt);
+            return;
+        }
+
         AdvancePhase(dt);
 
         // How far through the current step we are, from 0 to 1
         float t = _phaseTime / PhaseDurations[(int)_phase];
-        float gap = PlayPhase(t);
+        float gap = PlayPhase(t) * _scale;
 
-        float y = _center.Y + FIGHTER_SIZE / 2;
+        float y = _center.Y + Size / 2;
         _fighterLeft.MoveTo(new Vector2(_center.X - gap / 2, y), dt);
         _fighterRight.MoveTo(new Vector2(_center.X + gap / 2, y), dt);
 
@@ -243,11 +286,11 @@ internal class MenuDuel : GameObject
     private void Strike(MenuFighter defender)
     {
         var sparks = _leftAttacks ? _sparksBlue : _sparksRed;
-        var impact = new Vector2(_center.X, _center.Y + FIGHTER_SIZE * 0.42f);
+        var impact = new Vector2(_center.X, _center.Y + Size * 0.42f);
 
         // Most of it sprays past the one who blocked, the rest goes everywhere
-        sparks.AddCone(impact, new Vector2(_leftAttacks ? 1 : -1, 0.5f), MathF.PI / 1.5f, 500, 620);
-        sparks.AddBurst(impact, 250, 380);
+        sparks.AddCone(impact, new Vector2(_leftAttacks ? 1 : -1, 0.5f), MathF.PI / 1.5f, 500, 620 * _scale);
+        sparks.AddBurst(impact, 250, 380 * _scale);
 
         defender.Flash();
         Struck?.Invoke();
@@ -258,9 +301,10 @@ internal class MenuDuel : GameObject
     /// </summary>
     private void KickUpDust(int count)
     {
-        float feet = _center.Y + 14;
+        float feet = _center.Y + 14 * _scale;
+        float speed = (140 + 120 * Random.Shared.NextSingle()) * _scale;
 
-        _dust.AddCone(new Vector2(_fighterLeft.Transform.Position.X, feet), new Vector2(-1, 0.6f), MathF.PI / 3.0f, count, 140 + 120 * Random.Shared.NextSingle());
-        _dust.AddCone(new Vector2(_fighterRight.Transform.Position.X, feet), new Vector2(1, 0.6f), MathF.PI / 3.0f, count, 140 + 120 * Random.Shared.NextSingle());
+        _dust.AddCone(new Vector2(_fighterLeft.Transform.Position.X, feet), new Vector2(-1, 0.6f), MathF.PI / 3.0f, count, speed);
+        _dust.AddCone(new Vector2(_fighterRight.Transform.Position.X, feet), new Vector2(1, 0.6f), MathF.PI / 3.0f, count, speed);
     }
 }

@@ -269,6 +269,12 @@ internal static class ButtonGlyphs
         return text.ToString();
     }
 
+    /// <summary>
+    /// Helper method to make what is written for a label right for a button, which draws the icons but not the styles
+    /// of a label, so the name of a key (J, semicolon) is written plain rather than with its [b] showing.
+    /// </summary>
+    public static string OnButton(string text) => text.Contains('[') ? text.Replace("[b]", string.Empty).Replace("[/b]", string.Empty) : text;
+
     // A stick pushed one way, the icon of the stick put wherever the language puts it
     private static string Stick(string icon, string key) => Localisation.Format(key, ("stick", icon));
 }

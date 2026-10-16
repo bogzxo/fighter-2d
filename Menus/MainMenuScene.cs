@@ -22,8 +22,13 @@ namespace Fighter2D.Menus;
 /// </summary>
 internal class MainMenuScene : MenuScene
 {
-    // Where the fighters of the background meet and the ground they stand on, in pixels of the window
-    private static readonly Vector2 DuelCenter = new(330, -330);
+    // How big the fighters of the background are, a fighter's frame in a fight, and how far right of the middle of
+    // the map's two spawns they meet, clear of the menu on the left
+    private const float DUEL_SIZE = 128.0f;
+    private const float DUEL_ACROSS = 40.0f;
+
+    // The map the menu is in front of
+    private const string BACKDROP_MAP = "japan";
 
     protected override string LayoutFile => MenuLayouts.MAIN_MENU;
     protected override Vector2 CameraSize => Engine.WindowManager.ViewportSize;
@@ -32,6 +37,8 @@ internal class MainMenuScene : MenuScene
     private UILayout _layout = null!;
     private UINavigator _nav = null!;
     private MenuDuel? _duel;
+    private MapPreview _preview = null!;
+    private bool _duelPlaced;
     private Label _description = null!;
 
     // What every button has to say for itself, by the button
@@ -42,23 +49,27 @@ internal class MainMenuScene : MenuScene
 
     protected override void BuildBackdrop()
     {
-        // The picture goes in a batch of its own so it ends up behind everything else
-        var backdropBatch = Canvas.AddEntity<SpriteBatch>();
+        // The live Japan map behind it all, the same preview the setup screen has (and the textures it warms up are
+        // the ones the setup screen and the fight want next), seen through a world camera the way a fight does
+        Vector2 viewport = Engine.WindowManager.ViewportSize;
+        var worldCamera = AddEntity(new Horizon.Engine.Camera2D(viewport / 2.0f));
+        ActiveCamera = worldCamera;
+        var world = AddComponent<Horizon.Physics.PhysicsWorld>();
+        _preview = Canvas.AddEntity(new MapPreview(worldCamera, world, viewport, Vector2.Zero));
+        if (MapLoader.TryFind(BACKDROP_MAP, out MapDefinition map)) _preview.Show(map);
 
-        if (TryLoadTexture("Assets/backgrounds/background_layer_albedo.png", out Texture background))
-        {
-            // Scaled up until it covers the window whatever its shape, whatever sticks out is simply off screen
-            Vector2 window = Engine.WindowManager.WindowSize;
-            Vector2 size = new(background.Width, background.Height);
-            float scale = MathF.Max(window.X / size.X, window.Y / size.Y);
+        // Made now, its fighters' art is got ready with the scene, and stood on the map once that has loaded
+        _duel = Canvas.AddEntity(new MenuDuel(null, DUEL_SIZE));
+    }
 
-            var sprite = backdropBatch.AddEntity(new Sprite(size * scale));
-            sprite.ConfigureSpriteSheet(SpriteSheet.FromTexture(background, size), "bg");
-            backdropBatch.Add(sprite);
-        }
-
-        // The right of the screen belongs to the duel, which looks after itself
-        _duel = Canvas.AddEntity(new MenuDuel(DuelCenter));
+    // The duel stands on the map's own floor, so it waits for the map to be loaded (see UpdateMenu)
+    private void PlaceDuel(MenuDuel duel, FightingStage stage)
+    {
+        // In the map's own light, and on its floor (the spawns are up in the air, a fighter drops from there)
+        Vector2 spawns = (stage.LeftSpawn + stage.RightSpawn) / 2.0f + new Vector2(DUEL_ACROSS, 0.0f);
+        var floor = new Vector2(spawns.X, stage.FloorUnder(spawns));
+        duel.Place(floor);
+        _duelPlaced = true;
     }
 
     protected override void BuildUi(UILayout layout)
@@ -66,6 +77,7 @@ internal class MainMenuScene : MenuScene
         _layout = layout;
 
         // The logo is part of the layout, so it scales with the rest of the UI. It rattles along with every kick of the duel
+        // The logo rattles along with every kick of the duel
         if (layout.TryGet<Image>("logo", out var logo) && _duel is { } duel) duel.Struck += () => logo.Shake(8.0f, 0.35f);
 
         // The menu is laid out in Assets/ui/layouts/main_menu.hor, what its buttons do is decided here
@@ -141,5 +153,8 @@ internal class MainMenuScene : MenuScene
         _pressedBy = null;
     }
 
-    protected override void UpdateMenu(float dt) { }
+    protected override void UpdateMenu(float dt)
+    {
+        if (!_duelPlaced && _duel is { } duel && _preview.Stage is { } stage) PlaceDuel(duel, stage);
+    }
 }

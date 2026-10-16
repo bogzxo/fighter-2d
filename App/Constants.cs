@@ -9,6 +9,6 @@ internal static class Constants
 
     // What the window says, in whichever language is loaded, so it has to be asked for after that
     public static string WindowTitle => Localisation.Format("app.window_title", ("version", VERSION_LABEL));
-    public const string UI_SKIN = "dragon";
+    public const string UI_SKIN = "ink";
     public const string UI_THEME = "night";
 }

@@ -73,14 +73,14 @@ let display_title = compositor.label({
     parent: display_row,
     size: vec(300, 0),
     text: "@options.display",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let display = compositor.selector({
     parent: display_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let resolution_row = compositor.stack({
@@ -97,14 +97,14 @@ let resolution_title = compositor.label({
     parent: resolution_row,
     size: vec(300, 0),
     text: "@options.resolution",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let resolution = compositor.selector({
     parent: resolution_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let vsync_row = compositor.stack({
@@ -120,14 +120,14 @@ let vsync_title = compositor.label({
     parent: vsync_row,
     size: vec(300, 0),
     text: "@options.vsync",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let vsync = compositor.selector({
     parent: vsync_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let frame_limit_row = compositor.stack({
@@ -143,14 +143,14 @@ let frame_limit_title = compositor.label({
     parent: frame_limit_row,
     size: vec(300, 0),
     text: "@options.frame_limit",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let frame_limit = compositor.selector({
     parent: frame_limit_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let performance_row = compositor.stack({
@@ -166,14 +166,14 @@ let performance_title = compositor.label({
     parent: performance_row,
     size: vec(300, 0),
     text: "@options.performance",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let performance = compositor.selector({
     parent: performance_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let graphics_rows = compositor.stack({
@@ -197,14 +197,14 @@ let pathtraced_title = compositor.label({
     parent: pathtraced_row,
     size: vec(300, 0),
     text: "@options.pathtraced",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let pathtraced = compositor.selector({
     parent: pathtraced_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let crt_row = compositor.stack({
@@ -220,14 +220,14 @@ let crt_title = compositor.label({
     parent: crt_row,
     size: vec(300, 0),
     text: "@options.crt",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let crt = compositor.selector({
     parent: crt_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let bloom_row = compositor.stack({
@@ -243,14 +243,14 @@ let bloom_title = compositor.label({
     parent: bloom_row,
     size: vec(300, 0),
     text: "@options.bloom",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let bloom = compositor.selector({
     parent: bloom_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let light_quality_row = compositor.stack({
@@ -266,14 +266,14 @@ let light_quality_title = compositor.label({
     parent: light_quality_row,
     size: vec(300, 0),
     text: "@options.light_quality",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let light_quality = compositor.selector({
     parent: light_quality_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let look_rows = compositor.stack({
@@ -297,14 +297,14 @@ let gui_scale_title = compositor.label({
     parent: gui_scale_row,
     size: vec(300, 0),
     text: "@options.gui_scale",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let gui_scale = compositor.selector({
     parent: gui_scale_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let ui_skin_row = compositor.stack({
@@ -320,14 +320,14 @@ let ui_skin_title = compositor.label({
     parent: ui_skin_row,
     size: vec(300, 0),
     text: "@options.ui_skin",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let ui_skin = compositor.selector({
     parent: ui_skin_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let ui_theme_row = compositor.stack({
@@ -343,14 +343,14 @@ let ui_theme_title = compositor.label({
     parent: ui_theme_row,
     size: vec(300, 0),
     text: "@options.ui_theme",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let ui_theme = compositor.selector({
     parent: ui_theme_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let transitions_row = compositor.stack({
@@ -366,14 +366,14 @@ let transitions_title = compositor.label({
     parent: transitions_row,
     size: vec(300, 0),
     text: "@options.transitions",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let transitions = compositor.selector({
     parent: transitions_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let fight_rows = compositor.stack({
@@ -397,14 +397,14 @@ let camera_zoom_title = compositor.label({
     parent: camera_zoom_row,
     size: vec(300, 0),
     text: "@options.camera_zoom",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let camera_zoom = compositor.selector({
     parent: camera_zoom_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let input_display_row = compositor.stack({
@@ -420,14 +420,14 @@ let input_display_title = compositor.label({
     parent: input_display_row,
     size: vec(300, 0),
     text: "@options.input_display",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let input_display = compositor.selector({
     parent: input_display_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let hit_callouts_row = compositor.stack({
@@ -443,14 +443,14 @@ let hit_callouts_title = compositor.label({
     parent: hit_callouts_row,
     size: vec(300, 0),
     text: "@options.hit_callouts",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let hit_callouts = compositor.selector({
     parent: hit_callouts_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let frame_data_row = compositor.stack({
@@ -466,14 +466,14 @@ let frame_data_title = compositor.label({
     parent: frame_data_row,
     size: vec(300, 0),
     text: "@options.frame_data",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let frame_data = compositor.selector({
     parent: frame_data_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let controls_row = compositor.stack({
@@ -489,14 +489,14 @@ let controls_title = compositor.label({
     parent: controls_row,
     size: vec(300, 0),
     text: "@options.controls",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let controls = compositor.selector({
     parent: controls_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let hitboxes_row = compositor.stack({
@@ -512,14 +512,14 @@ let hitboxes_title = compositor.label({
     parent: hitboxes_row,
     size: vec(300, 0),
     text: "@options.hitboxes",
-    text_scale: 0.32,
+    text_scale: 0.36,
     align: "left"
 });
 
 let hitboxes = compositor.selector({
     parent: hitboxes_row,
-    size: vec(380, 48),
-    text_scale: 0.28
+    size: vec(380, 50),
+    text_scale: 0.32
 });
 
 let about = compositor.stack({
@@ -554,8 +554,8 @@ let description = compositor.label({
     parent: about,
     size: vec(330, 267.53336),
     fill: "vertical",
-    text_scale: 0.25,
-    color: vec(0.86, 0.88, 0.92, 1),
+    text_scale: 0.3,
+    color: vec(0.86, 0.88, 0.94, 1),
     wrap: true,
     markdown: true,
     align: "top_left"
@@ -577,14 +577,14 @@ let btn_bindings = compositor.button({
     parent: actions,
     size: vec(330, 0),
     label: "@options.bindings",
-    lbl_scale: 0.3
+    lbl_scale: 0.34
 });
 
 let btn_defaults = compositor.button({
     parent: actions,
     size: vec(330, 0),
     label: "@options.defaults",
-    lbl_scale: 0.3,
+    lbl_scale: 0.34,
     style: "button_flat"
 });
 
@@ -592,16 +592,23 @@ let btn_back = compositor.button({
     parent: actions,
     size: vec(180, 0),
     label: "@options.back",
-    lbl_scale: 0.3,
+    lbl_scale: 0.34,
     style: "button_flat"
 });
 
-let hint = compositor.label({
-    pos: vec(0, 22),
-    size: vec(1500, 30),
+// The line of what the buttons do, on a strip of its own so it reads over anything
+let hint_bar = compositor.stack({
+    pos: vec(0, 14),
     anchor: "bottom",
     pivot: "bottom",
+    padding: vec(24, 8, 24, 8),
+    background: "panel"
+});
+
+let hint = compositor.label({
+    parent: hint_bar,
+    size: vec(1500, 34),
     text: "",
-    text_scale: 0.5,
-    color: vec(1, 1, 1, 1)
+    text_scale: 0.34,
+    color: vec(0.86, 0.88, 0.94, 1)
 });
