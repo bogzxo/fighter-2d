@@ -17,7 +17,7 @@ internal sealed class MapPreview : GameObject
 {
     // How far (in world units) the camera drifts to either side, and how long (in seconds) one trip there and back takes
     private const float DRIFT = 36.0f;
-    private const float DRIFT_TIME = 14.0f;
+    private const float DRIFT_TIME = 6.0f;
 
     private readonly Camera2D _camera;
     private readonly PhysicsWorld _world;
