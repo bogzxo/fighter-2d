@@ -97,6 +97,19 @@ public partial class ContentTests
     }
 
     [Fact]
+    public void EverySoundReads()
+    {
+        // Each one decoded whole (the music too, which the game streams), something out of every file
+        TestFight.UseGameContent();
+        string folder = Path.Combine(GameContent.Home, "Assets", "sounds");
+        string[] files = [.. Directory.EnumerateFiles(folder, "*.ogg", SearchOption.AllDirectories)];
+        Assert.NotEmpty(files);
+
+        string[] broken = [.. files.Where(file => Horizon.Audio.Sound.Load(file) is not { Frames: > 0 }).Select(Path.GetFileName).OfType<string>()];
+        Assert.True(broken.Length == 0, $"sounds that don't read, {string.Join(", ", broken)}");
+    }
+
+    [Fact]
     public void EveryTextTheGameNamesIsThere()
     {
         TestFight.UseGameContent();

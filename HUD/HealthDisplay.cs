@@ -46,6 +46,13 @@ internal sealed class HealthDisplay : IHudDisplay
     private readonly ProgressBar[] _bars, _meters;
     private readonly Label[] _names, _rounds, _meterLabels;
 
+    // The faces next to the bars, filled in once the players have read their characters
+    private readonly CharacterPortrait[] _faces;
+    private readonly bool[] _faceShown = new bool[2];
+
+    // What a face shows, standing about
+    private const string FACE_ANIMATION = "idle";
+
     // The red of a bar on its last legs and the glow of a full meter swing on these
     private readonly Pulse _lowPulse = new(0.3f, 1.0f, 0.8f);
     private readonly Pulse _fullPulse = new(0.7f, 1.0f, 1.2f);
@@ -63,6 +70,7 @@ internal sealed class HealthDisplay : IHudDisplay
         _names = [layout.Get<Label>("player1_name"), layout.Get<Label>("player2_name")];
         _rounds = [layout.Get<Label>("player1_rounds"), layout.Get<Label>("player2_rounds")];
         _meterLabels = [layout.Get<Label>("player1_meter_label"), layout.Get<Label>("player2_meter_label")];
+        _faces = [new CharacterPortrait(layout.Get<Image>("player1_portrait")), new CharacterPortrait(layout.Get<Image>("player2_portrait")) { Mirrored = true }];
 
         foreach (ProgressBar meter in _meters) meter.Progress = 0.0f;
     }
@@ -75,6 +83,13 @@ internal sealed class HealthDisplay : IHudDisplay
         for (int i = 0; i < _bars.Length; i++)
         {
             Player player = _round.PlayerOf(i);
+
+            // The first frame of their idle, held, a face that fidgets next to the bar takes the eye off the fight
+            if (!_faceShown[i] && player.Character is { } character)
+            {
+                _faces[i].Show(character, FACE_ANIMATION);
+                _faceShown[i] = true;
+            }
 
             ShowHealth(i, player.Health / (float)Player.MAX_HEALTH);
             ShowMeter(i, player.Meter / (float)Player.MAX_METER);

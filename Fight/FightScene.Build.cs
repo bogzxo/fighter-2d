@@ -167,6 +167,10 @@ internal partial class FightScene
             Rematch = _setup.IsOnline ? null : StartRematch,
             // The result card asks, see ResultCard. Online the match moves on by itself after a while as well
         });
+        _round.PhaseChanged += OnRoundPhase;
+
+        // What the fight sounds like, which only listens to it
+        AddComponent(new FightSounds(_fight, _round, _mapDefinition));
 
 
         _fight.Network = null;

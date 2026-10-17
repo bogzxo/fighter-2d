@@ -42,7 +42,8 @@ let tabs = compositor.tabs({
     "@options.tab_display",
     "@options.tab_graphics",
     "@options.tab_look",
-    "@options.tab_fight"
+    "@options.tab_fight",
+    "@options.tab_sound"
 ],
     text_scale: 0.36,
     spacing: 56,
@@ -518,6 +519,83 @@ let hitboxes_title = compositor.label({
 
 let hitboxes = compositor.selector({
     parent: hitboxes_row,
+    size: vec(380, 50),
+    text_scale: 0.32
+});
+
+let sound_rows = compositor.stack({
+    parent: tabs,
+    intro: "slide",
+    intro_time: 0.25,
+    intro_offset: vec(0, -24),
+    spacing: 6
+});
+
+let music_volume_row = compositor.stack({
+    parent: sound_rows,
+    padding: vec(14, 5, 14, 5),
+    hover: "nudge",
+    radius: 6,
+    spacing: 24,
+    direction: "horizontal"
+});
+
+let music_volume_title = compositor.label({
+    parent: music_volume_row,
+    size: vec(300, 0),
+    text: "@options.music_volume",
+    text_scale: 0.36,
+    align: "left"
+});
+
+let music_volume = compositor.selector({
+    parent: music_volume_row,
+    size: vec(380, 50),
+    text_scale: 0.32
+});
+
+let effects_volume_row = compositor.stack({
+    parent: sound_rows,
+    padding: vec(14, 5, 14, 5),
+    hover: "nudge",
+    radius: 6,
+    spacing: 24,
+    direction: "horizontal"
+});
+
+let effects_volume_title = compositor.label({
+    parent: effects_volume_row,
+    size: vec(300, 0),
+    text: "@options.effects_volume",
+    text_scale: 0.36,
+    align: "left"
+});
+
+let effects_volume = compositor.selector({
+    parent: effects_volume_row,
+    size: vec(380, 50),
+    text_scale: 0.32
+});
+
+let interface_volume_row = compositor.stack({
+    parent: sound_rows,
+    padding: vec(14, 5, 14, 5),
+    hover: "nudge",
+    radius: 6,
+    spacing: 24,
+    direction: "horizontal"
+});
+
+let interface_volume_title = compositor.label({
+    parent: interface_volume_row,
+    size: vec(300, 0),
+    text: "@options.interface_volume",
+    text_scale: 0.36,
+    align: "left"
+});
+
+let interface_volume = compositor.selector({
+    parent: interface_volume_row,
     size: vec(380, 50),
     text_scale: 0.32
 });

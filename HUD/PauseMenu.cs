@@ -224,6 +224,7 @@ internal sealed class PauseMenu : GameComponent
     private void Open()
     {
         IsOpen = true;
+        GameSounds.Ui(UiSound.Open);
 
         // The layers have to be up before the navigator will stand on anything in them. Back onto whatever it was left
         // on, if that is still there to stand on, and onto carrying on if it isn't
@@ -238,6 +239,7 @@ internal sealed class PauseMenu : GameComponent
     private void Close()
     {
         IsOpen = false;
+        GameSounds.Ui(UiSound.Close);
         _layout.Module.Dialog?.Close();
         _nav.Select(null);
 

@@ -69,6 +69,7 @@ internal class Program
 
         // Every scene reads its gamepads through here, so the bindings have to be in before the first one
         GameInput.Attach(engine);
+        GameSounds.ApplyVolumes();
 
         // Keeps the connection of an online fight alive from the lobby into the fight
         engine.AddEntity(new NetPump());

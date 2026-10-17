@@ -4,9 +4,52 @@
 
 compositor.design({ size: vec(1600, 900), fit: "stretch" });
 
+// Who is fighting, chest up out of their idle, in a window of glass next to their bar (HUD/HealthDisplay.cs)
+let player1_face = compositor.panel({
+    pos: vec(34, -16),
+    size: vec(76, 76),
+    layer: "hud",
+    anchor: "top_left",
+    pivot: "top_left",
+    intro: "slide",
+    intro_delay: 0.4,
+    intro_offset: vec(-200, 0),
+    background: "panel",
+    clip: true
+});
+
+let player1_portrait = compositor.image({
+    parent: player1_face,
+    pos: vec(0, 96),
+    size: vec(250, 250),
+    anchor: "top",
+    pivot: "top"
+});
+
+let player2_face = compositor.panel({
+    pos: vec(-34, -16),
+    size: vec(76, 76),
+    layer: "hud",
+    anchor: "top_right",
+    pivot: "top_right",
+    intro: "slide",
+    intro_delay: 0.4,
+    intro_offset: vec(200, 0),
+    background: "panel",
+    clip: true
+});
+
+let player2_portrait = compositor.image({
+    parent: player2_face,
+    pos: vec(0, 96),
+    size: vec(250, 250),
+    anchor: "top",
+    pivot: "top"
+});
+
 let player1_health = compositor.progress_bar({
-    pos: vec(40, -22),
-    size: vec(580, 36),
+    pos: vec(122, -22),
+    size: vec(498, 36),
     layer: "hud",
     anchor: "top_left",
     pivot: "top_left",
@@ -18,8 +61,8 @@ let player1_health = compositor.progress_bar({
 });
 
 let player2_health = compositor.progress_bar({
-    pos: vec(-40, -22),
-    size: vec(580, 36),
+    pos: vec(-122, -22),
+    size: vec(498, 36),
     layer: "hud",
     anchor: "top_right",
     pivot: "top_right",
@@ -32,7 +75,7 @@ let player2_health = compositor.progress_bar({
 });
 
 let player1_plate = compositor.stack({
-    pos: vec(52, -76),
+    pos: vec(130, -66),
     layer: "hud",
     anchor: "top_left",
     pivot: "top_left",
@@ -56,7 +99,7 @@ let player1_rounds = compositor.label({
 });
 
 let player2_plate = compositor.stack({
-    pos: vec(-52, -76),
+    pos: vec(-130, -66),
     layer: "hud",
     anchor: "top_right",
     pivot: "top_right",
@@ -418,11 +461,12 @@ let player2_controls_hint = compositor.label({
     align: "left"
 });
 
+// The calls across the screen, a band the whole width of it, the way the arcade ones do it
 let banner_stripe = compositor.stack({
     layer: "banner",
-    padding: vec(100, 32, 100, 32),
-    color: vec(0.1, 0.12, 0.17, 0.9),
-    radius: 16
+    fill: "horizontal",
+    padding: vec(100, 26, 100, 26),
+    color: vec(0.05, 0.05, 0.14, 0.82)
 });
 
 let banner = compositor.label({

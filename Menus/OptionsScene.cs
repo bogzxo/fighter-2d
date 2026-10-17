@@ -25,7 +25,7 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
     protected override float InputDelay => 0.2f;
 
     // A list of rows for every page of the tabs (the gamepad goes down the rows of the open one), and the tabs themselves
-    private readonly SettingList[] _pages = [new(), new(), new(), new()];
+    private readonly SettingList[] _pages = [new(), new(), new(), new(), new()];
     private SettingList _settings = null!;
     private TabPanel _tabs = null!;
 
@@ -60,6 +60,8 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
         AddLookOptions(layout);
         _settings = _pages[3];
         AddFightOptions(layout);
+        _settings = _pages[4];
+        AddSoundOptions(layout);
 
         foreach (SettingList list in _pages) list.Changed = GameOptions.Save;
 
@@ -236,6 +238,20 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
             Localisation.Get("options.about_hitboxes"));
     }
 
+    private void AddSoundOptions(UILayout layout)
+    {
+        // Heard as it's changed, the menus click at their new volume as you step it
+        _settings.Add(layout, "music_volume", GameOptions.Volumes, GameOptions.MusicVolume, DescribeVolume,
+            volume => { GameOptions.MusicVolume = volume; GameSounds.ApplyVolumes(); }, Localisation.Get("options.about_music_volume"));
+        _settings.Add(layout, "effects_volume", GameOptions.Volumes, GameOptions.EffectsVolume, DescribeVolume,
+            volume => { GameOptions.EffectsVolume = volume; GameSounds.ApplyVolumes(); }, Localisation.Get("options.about_effects_volume"));
+        _settings.Add(layout, "interface_volume", GameOptions.Volumes, GameOptions.InterfaceVolume, DescribeVolume,
+            volume => { GameOptions.InterfaceVolume = volume; GameSounds.ApplyVolumes(); }, Localisation.Get("options.about_interface_volume"));
+    }
+
+    private static string DescribeVolume(float volume) =>
+        volume <= 0.0f ? Localisation.Get("options.volume_off") : Localisation.Format("options.percent", ("percent", (int)MathF.Round(volume * 100.0f)));
+
     /// <summary>
     /// Helper method to list the sizes a window can be on the screen it is on. Whatever it is set to right now is always one of them.
     /// </summary>
@@ -308,6 +324,10 @@ internal class OptionsScene(int tab = 0, int selected = 0) : MenuScene
 
             case OptionsTab.Graphics:
                 Screen.ApplyOptions(Canvas, _ui);
+                break;
+
+            case OptionsTab.Sound:
+                GameSounds.ApplyVolumes();
                 break;
 
             case OptionsTab.Look:

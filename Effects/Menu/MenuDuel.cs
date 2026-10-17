@@ -46,6 +46,9 @@ internal class MenuDuel : GameObject
     // How far into the kick (0 to 1) it connects, which is where the leg of the art is all the way out
     private const float STRIKE_MOMENT = 0.45f;
 
+    // How long the fighters take to show once the duel is put down (see Place)
+    private const float PLACED_FADE = 0.5f;
+
     private static readonly Vector4 TintBlue = new(0.45f, 0.7f, 1.0f, 1.0f);
     private static readonly Vector4 TintRed = new(1.0f, 0.5f, 0.5f, 1.0f);
 
@@ -183,8 +186,9 @@ internal class MenuDuel : GameObject
         _center = center;
         _placed = true;
         MakeGround();
-        _fighterLeft.Tint = _fighterLeft.BaseTint;
-        _fighterRight.Tint = _fighterRight.BaseTint;
+        // Faded in on their floor rather than popping up out of nowhere
+        _fighterLeft.TweenTint(_fighterLeft.BaseTint, PLACED_FADE);
+        _fighterRight.TweenTint(_fighterRight.BaseTint, PLACED_FADE);
     }
 
     public override void UpdateState(float dt)

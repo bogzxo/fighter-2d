@@ -20,10 +20,20 @@ let tags = compositor.label({
     text_scale: 0.26
 });
 
-let portrait = compositor.image({
+// The fighter from the chest up and big, the whole of them in a cell this size was too small to tell apart
+let window = compositor.panel({
     parent: box,
-    pos: vec(0, 2),
-    size: vec(96, 96)
+    pos: vec(0, 4),
+    size: vec(150, 92),
+    clip: true
+});
+
+let portrait = compositor.image({
+    parent: window,
+    pos: vec(0, 112),
+    size: vec(290, 290),
+    anchor: "top",
+    pivot: "top"
 });
 
 let name = compositor.label({

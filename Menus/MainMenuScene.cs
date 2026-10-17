@@ -39,6 +39,7 @@ internal class MainMenuScene : MenuScene
     private MenuDuel? _duel;
     private MapPreview _preview = null!;
     private bool _duelPlaced;
+    private Image? _logo;
     private Label _description = null!;
 
     // What every button has to say for itself, by the button
@@ -49,6 +50,10 @@ internal class MainMenuScene : MenuScene
 
     protected override void BuildBackdrop()
     {
+        // The menus have their music, the fight's and its rain stop as you come out of one
+        GameSounds.Music(GameSounds.MENU_MUSIC);
+        GameSounds.Ambience(null);
+
         // The live Japan map behind it all, the same preview the setup screen has (and the textures it warms up are
         // the ones the setup screen and the fight want next), seen through a world camera the way a fight does
         Vector2 viewport = Engine.WindowManager.ViewportSize;
@@ -58,9 +63,15 @@ internal class MainMenuScene : MenuScene
         _preview = Canvas.AddEntity(new MapPreview(worldCamera, world, viewport, Vector2.Zero));
         if (MapLoader.TryFind(BACKDROP_MAP, out MapDefinition map)) _preview.Show(map);
 
-        // Made now, its fighters' art is got ready with the scene, and stood on the map once that has loaded
+        // Made now, its fighters' art is got ready with the scene, and stood on the map's floor once that has loaded. It
+        // is drawn over the map and not in its light, put in the map's renderer (made up front or later) nothing of it
+        // was drawn at all
         _duel = Canvas.AddEntity(new MenuDuel(null, DUEL_SIZE));
+        _duel.Struck += ShakeLogo;
     }
+
+    // The logo rattles along with every kick of the duel
+    private void ShakeLogo() => _logo?.Shake(8.0f, 0.35f);
 
     // The duel stands on the map's own floor, so it waits for the map to be loaded (see UpdateMenu)
     private void PlaceDuel(MenuDuel duel, FightingStage stage)
@@ -77,8 +88,7 @@ internal class MainMenuScene : MenuScene
         _layout = layout;
 
         // The logo is part of the layout, so it scales with the rest of the UI. It rattles along with every kick of the duel
-        // The logo rattles along with every kick of the duel
-        if (layout.TryGet<Image>("logo", out var logo) && _duel is { } duel) duel.Struck += () => logo.Shake(8.0f, 0.35f);
+        if (layout.TryGet<Image>("logo", out var logo)) _logo = logo;
 
         // The menu is laid out in Assets/ui/layouts/main_menu.hor, what its buttons do is decided here
         AddButton(layout, "btn_pvp", () => Play(MatchMode.Pvp), "main_menu.about_pvp");

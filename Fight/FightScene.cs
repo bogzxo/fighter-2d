@@ -114,6 +114,7 @@ internal partial class FightScene : Scene
         if (_awaitingPeer) AwaitPeer(dt);
 
         UpdateBackdropBlur();
+        UpdateKnockOut(dt);
         UpdateReload(dt);
 
         // Our own content changed on the disk (saved in Hex), read again the way the pause menu's reload does it
@@ -200,6 +201,9 @@ internal partial class FightScene : Scene
         if (!_handedOver) _network?.Dispose();
 
         _stage?.Dispose();
+
+        // The time of the scene manager outlives the fight, a K.O. that was still slow mustn't leave the next scene slow
+        if (_knockOutTime >= 0.0f) EndKnockOut();
 
         // Never set up (another scene was asked for before this one was shown), the stage it loaded was never put anywhere
         if (_stage is null && _stageLoading.IsCompletedSuccessfully)

@@ -3,6 +3,7 @@
 
 global using Fighter2D.App;
 global using Fighter2D.Arena;
+global using Fighter2D.Audio;
 global using Fighter2D.Content;
 global using Fighter2D.Data;
 global using Fighter2D.Effects;

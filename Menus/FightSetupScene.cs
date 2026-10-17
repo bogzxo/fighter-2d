@@ -108,6 +108,10 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
 
     protected override void BuildBackdrop()
     {
+        // The menus' music carries on from the main menu, a rematch that came back here gets it back from the fight's
+        GameSounds.Music(GameSounds.MENU_MUSIC);
+        GameSounds.Ambience(null);
+
         Vector2 viewport = Engine.WindowManager.ViewportSize;
 
         // The preview is a piece of the world, so the scene looks at it through a world camera the way a fight does.
@@ -130,6 +134,9 @@ internal partial class FightSetupScene(MatchSetup setup) : MenuScene
         _mapAbout = layout.Get<Label>("map_about");
         _picking = [layout.Get<UIComponent>("left"), layout.Get<UIComponent>("right"), layout.Get<UIComponent>("middle")];
         _stage = layout.Get<UIComponent>("stage");
+
+        // Put away from the start without sliding, the layout saying it isn't shown played it going out on the first frame
+        _stage.Show(false, instantly: true);
 
         _panels[0] = new FighterPanel(layout.Populate("left", 1)[0], mirrored: false);
         _panels[1] = new FighterPanel(layout.Populate("right", 1)[0], mirrored: true);

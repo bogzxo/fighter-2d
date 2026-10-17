@@ -136,6 +136,7 @@ internal sealed class TrainingDrawer(TrainingMode training) : GameComponent
     private void Open()
     {
         IsOpen = true;
+        GameSounds.Ui(UiSound.Open);
         _drawer.Show(true);
         _nav.SelectFirst();
     }
@@ -143,6 +144,7 @@ internal sealed class TrainingDrawer(TrainingMode training) : GameComponent
     private void Close()
     {
         IsOpen = false;
+        GameSounds.Ui(UiSound.Close);
         _drawer.Show(false);
         _nav.Select(null);
     }

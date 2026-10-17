@@ -61,7 +61,8 @@ internal enum OptionsTab
     Display,
     Graphics,
     Look,
-    Fight
+    Fight,
+    Sound
 }
 
 internal static class GameOptions
@@ -143,6 +144,14 @@ internal static class GameOptions
     // When the card of what every button does is in the corner of a fight, with how to get the lab drawer out
     public static ControlsShown Controls = ControlsShown.Practice;
 
+    /* Sound */
+
+    // How loud the music, the fight and the menus are, 0 to 1 in tenths (Audio/GameSounds.cs)
+    public static readonly float[] Volumes = [0.0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f];
+    public static float MusicVolume = 0.7f;
+    public static float EffectsVolume = 0.9f;
+    public static float InterfaceVolume = 0.8f;
+
     /* Under the hood */
 
     // How much of the engine's performance overlay is up (F3 goes round them too, but that isn't saved)
@@ -157,13 +166,15 @@ internal static class GameOptions
         bool Fullscreen, Vector2 Resolution, bool VSync, int FrameLimit, Horizon.UI.PerformanceDetail Performance,
         bool Crt, bool Bloom, bool RenderPathtraced, LightQuality LightQuality,
         float GuiScale, string UiSkin, string UiTheme, TransitionStyle Transitions,
-        float CameraZoom, bool InputDisplay, bool HitCallouts, bool FrameData, bool Hitboxes, ControlsShown Controls);
+        float CameraZoom, bool InputDisplay, bool HitCallouts, bool FrameData, bool Hitboxes, ControlsShown Controls,
+        float MusicVolume, float EffectsVolume, float InterfaceVolume);
 
     private static readonly Values Defaults = new(
         Fullscreen, Resolution, VSync, FrameLimit, Performance,
         Crt, Bloom, RenderPathtraced, LightQuality,
         GuiScale, UiSkin, UiTheme, Transitions,
-        CameraZoom, InputDisplay, HitCallouts, FrameData, Hitboxes, Controls);
+        CameraZoom, InputDisplay, HitCallouts, FrameData, Hitboxes, Controls,
+        MusicVolume, EffectsVolume, InterfaceVolume);
 
     /// <summary>
     /// Puts the options of one tab of the options screen back to how the game came. Nothing is applied or saved, that is
@@ -202,6 +213,12 @@ internal static class GameOptions
                 FrameData = Defaults.FrameData;
                 Hitboxes = Defaults.Hitboxes;
                 Controls = Defaults.Controls;
+                break;
+
+            case OptionsTab.Sound:
+                MusicVolume = Defaults.MusicVolume;
+                EffectsVolume = Defaults.EffectsVolume;
+                InterfaceVolume = Defaults.InterfaceVolume;
                 break;
         }
     }
@@ -249,6 +266,9 @@ internal static class GameOptions
             FrameData = HorReader.Bool(options, "frame_data", FrameData);
             Hitboxes = HorReader.Bool(options, "hitboxes", Hitboxes);
             Controls = HorReader.Named(options, "controls", Controls);
+            MusicVolume = Closest(Volumes, (float)HorReader.Number(options, "music_volume", MusicVolume));
+            EffectsVolume = Closest(Volumes, (float)HorReader.Number(options, "effects_volume", EffectsVolume));
+            InterfaceVolume = Closest(Volumes, (float)HorReader.Number(options, "interface_volume", InterfaceVolume));
             Performance = HorReader.Named(options, "performance", Performance);
             JoinAddress = HorReader.Text(options, "join_address", JoinAddress);
         }
@@ -296,6 +316,9 @@ internal static class GameOptions
         text.AppendLine($"    hit_callouts: {Write(HitCallouts)},");
         text.AppendLine($"    frame_data: {Write(FrameData)},");
         text.AppendLine($"    controls: \"{Controls.ToString().ToLowerInvariant()}\",");
+        text.AppendLine($"    music_volume: {MusicVolume.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
+        text.AppendLine($"    effects_volume: {EffectsVolume.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
+        text.AppendLine($"    interface_volume: {InterfaceVolume.ToString(System.Globalization.CultureInfo.InvariantCulture)},");
         text.AppendLine($"    hitboxes: {Write(Hitboxes)},");
         text.AppendLine($"    performance: \"{Performance.ToString().ToLowerInvariant()}\",");
         text.AppendLine($"    join_address: \"{JoinAddress}\"");

@@ -128,6 +128,7 @@ internal class HUDManager : GameComponent
     }
 
     private FrameBarDisplay? _frameBars;
+    private UIComponent? _frameBarsRoot;
 
     public override void UpdateState(float dt)
     {
@@ -137,6 +138,10 @@ internal class HUDManager : GameComponent
         }
 
         _layout.Module.SetLayerVisible(BANNER_LAYER, BannerHidden?.Invoke() != true);
+
+        // The result card has the bottom of the screen once the match is decided
+        _frameBarsRoot ??= _layout.Get<UIComponent>(FrameBarDisplay.ROOT);
+        _frameBarsRoot.Visible = _frameBars is not null && Round.Phase != RoundPhase.MatchOver;
         _compositor.UpdateState(dt);
     }
 

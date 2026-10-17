@@ -145,6 +145,7 @@ internal sealed class MenuActions
                 if (right == 0 && down == 0) continue;
 
                 action.Moved?.Invoke(gamepad, right, down);
+                GameSounds.Ui(UiSound.Move);
                 return true;
             }
 
@@ -153,6 +154,7 @@ internal sealed class MenuActions
                 if (gamepad.Pressed is null) continue;
 
                 action.Pressed?.Invoke(gamepad);
+                GameSounds.Ui(UiSound.Pick);
                 return true;
             }
 
@@ -164,6 +166,7 @@ internal sealed class MenuActions
                 if (step == 0) continue;
 
                 action.Stepped?.Invoke(gamepad, step);
+                GameSounds.Ui(UiSound.Switch);
                 return true;
             }
 
@@ -172,10 +175,21 @@ internal sealed class MenuActions
             if (!pressed) continue;
 
             action.Pressed?.Invoke(gamepad);
+            GameSounds.Ui(SoundOf(action, button));
             return true;
         }
 
         return false;
+    }
+
+    // What a press sounds like, B going back, a lock in, a press that's refused (an A nobody is told about is the
+    // setup screen saying why it can't), a pick. A screen that opens or shuts something says so itself as well
+    private static UiSound SoundOf(MenuAction action, GamepadInput button)
+    {
+        if (button == GamepadInput.A && !action.Shown) return UiSound.Refuse;
+        if (button is GamepadInput.B or GamepadInput.Back) return UiSound.Back;
+        if (action.Text is "hints.lock_in" or "hints.ready" or "hints.fight") return UiSound.LockIn;
+        return button == GamepadInput.A ? UiSound.Pick : UiSound.Switch;
     }
 
     /// <summary>
@@ -191,12 +205,14 @@ internal sealed class MenuActions
             if (gamepad.WasPressed(GamepadInput.B))
             {
                 dialog.Cancel();
+                GameSounds.Ui(UiSound.Back);
                 return;
             }
 
             if (MenuInput.ConfirmPressed(gamepad))
             {
                 navigation.Activate();
+                GameSounds.Ui(UiSound.Pick);
                 return;
             }
 
@@ -204,6 +220,7 @@ internal sealed class MenuActions
             if (right != 0 || down != 0)
             {
                 navigation.Move(right, down);
+                GameSounds.Ui(UiSound.Move);
                 return;
             }
         }

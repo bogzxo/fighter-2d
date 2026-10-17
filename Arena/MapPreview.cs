@@ -19,6 +19,9 @@ internal sealed class MapPreview : GameObject
     private const float DRIFT = 36.0f;
     private const float DRIFT_TIME = 6.0f;
 
+    // How long the first map takes to come up out of the dark, rather than popping in over a black screen
+    private const float FADE_IN = 0.45f;
+
     private readonly Camera2D _camera;
     private readonly PhysicsWorld _world;
     private readonly Vector2 _viewportSize;
@@ -84,8 +87,7 @@ internal sealed class MapPreview : GameObject
     /// <summary>The map that is up, null until the first one has loaded (on a worker).</summary>
     public FightingStage? Stage => _stage;
 
-    /// <summary>What the map is drawn and lit in, for something that stands on it and wants its light (the menu's duel).</summary>
-    public DeferredRenderer2D Renderer => _renderer;
+
 
     public override void UpdateState(float dt)
     {
@@ -142,8 +144,10 @@ internal sealed class MapPreview : GameObject
         }
 
         long started = System.Diagnostics.Stopwatch.GetTimestamp();
+        bool first = _stage is null;
         Unload();
         Attach(stage, map);
+        if (first) FadeIn(stage);
         _shownFile = map.FileName;
         Horizon.Logging.Log.Info($"[MapPreview] Swapped in '{map.FileName}' in {System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds:0} ms, with the game standing still for it.");
     }
@@ -174,6 +178,13 @@ internal sealed class MapPreview : GameObject
 
         _focus = (_stage.LeftSpawn + _stage.RightSpawn) / 2.0f + _focusOffset;
         _view = new FightCamera(_camera, _stage, _viewportSize, _focus);
+    }
+
+    // A method of its own, Swap runs every frame and a lambda over its stage would be an object every frame
+    private void FadeIn(FightingStage stage)
+    {
+        stage.Map.Opacity = 0.0f;
+        _tweens.Play(Tween.To(() => stage.Map.Opacity, opacity => stage.Map.Opacity = opacity, 1.0f, FADE_IN).SetEasing(Easing.OutCubic));
     }
 
     private static void Discard(FightingStage stage)
